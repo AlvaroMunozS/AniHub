@@ -6,6 +6,8 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-23
+
 ### Added
 
 - *Acerca de* is now its own screen, where you can check for a new version and install it, with pre-releases as an option.
@@ -26,5 +28,6 @@ First public release.
 - Offline use: the library and cover images are stored on the device.
 - Library import from an `anihub-library` JSON file.
 
-[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AlvaroMunozS/AniHub/releases/tag/v1.0.0
