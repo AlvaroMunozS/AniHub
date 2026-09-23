@@ -57,7 +57,7 @@ Each release lists the SHA-256 of the APK and of its signing certificate. The
 signing certificate is always:
 
 ```
-e667fdf95c20d91007e91ae41524af4677aa0ffcdcb69a9ba28c9fbe57524500
+75557ba41bf7ecc3da370d4352a909637d0c2a9cdf9c1bd343eea89bca7307e9
 ```
 
 ```bash
