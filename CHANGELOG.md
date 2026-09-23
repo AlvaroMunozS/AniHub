@@ -16,6 +16,7 @@ All notable changes to AniHub are documented here. The format follows
 
 - *Import library* moves to *Settings → Backup*.
 - The details screen, the search bar and the tabs no longer stretch across tablets and landscape screens.
+- When an anime is no longer on MyAnimeList, its page says so and offers to remove it from your library.
 
 ### Fixed
 

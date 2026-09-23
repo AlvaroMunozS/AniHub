@@ -30,6 +30,7 @@
     }
   },
   "catalogInvalidResponse": "MyAnimeList no devolvió datos válidos. Inténtalo de nuevo en unos segundos.",
+  "catalogNotFound": "Ya no aparece en el catálogo.",
 
   "entryAdded": "Añadido a «{status}»",
   "@entryAdded": {
@@ -110,6 +111,9 @@
   "catalogCardInLibrary": "En biblioteca",
 
   "detailLoadFailed": "No se pudo cargar la ficha",
+  "detailUnavailableTitle": "Este anime ya no está disponible",
+  "detailUnavailableInLibrary": "Ya no aparece en el catálogo. Puedes quitarlo de tu biblioteca.",
+  "detailRemoveFromLibrary": "Quitar de la biblioteca",
   "detailBack": "Volver",
   "detailRemove": "Eliminar",
   "detailRemoveTitle": "Eliminar de la biblioteca",

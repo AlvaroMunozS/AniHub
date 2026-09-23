@@ -69,9 +69,7 @@ class MalCatalog implements AnimeCatalog {
       'anime/$malId',
       <String, String>{'fields': _detailFields},
     );
-    if (body == null) {
-      throw CatalogResponseException('Anime $malId not found');
-    }
+    if (body == null) throw CatalogNotFoundException(malId);
     return _toCatalogAnime(body);
   }
 

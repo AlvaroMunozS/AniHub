@@ -135,14 +135,20 @@ void main() {
       );
     });
 
-    test('throws a response error for an unknown id', () async {
+    test('throws a not found error for an unknown id', () async {
       final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
         jsonResponse(<String, Object?>{'error': 'not_found'}, 404),
       ]);
 
       await expectLater(
         MalCatalog(server.client()).byId(999),
-        throwsA(isA<CatalogResponseException>()),
+        throwsA(
+          isA<CatalogNotFoundException>().having(
+            (CatalogNotFoundException e) => e.malId,
+            'malId',
+            999,
+          ),
+        ),
       );
     });
 

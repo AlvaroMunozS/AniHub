@@ -11,6 +11,7 @@ abstract interface class AnimeCatalog {
 
   /// Returns the anime with the given MyAnimeList id.
   ///
-  /// Throws a [CatalogException] if the id is unknown or the request fails.
+  /// Throws a [CatalogNotFoundException] if the catalog has no anime with
+  /// [malId], and another [CatalogException] if the request fails.
   Future<CatalogAnime> byId(int malId);
 }

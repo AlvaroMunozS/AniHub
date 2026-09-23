@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/entities/entry.dart';
+import '../../domain/errors/catalog_exception.dart';
 import '../../l10n/l10n.dart';
 import '../actions/entry_actions.dart';
 import '../catalog_messages.dart';
@@ -147,12 +150,29 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         ),
       ],
       error: (Object error, StackTrace _) {
+        // Retrying cannot bring back an anime the catalog no longer has, so
+        // a library entry is offered its removal instead.
+        final bool notFound = error is CatalogNotFoundException;
         final EmptyState notice = EmptyState(
           icon: catalogErrorIcon(error),
-          title: context.l10n.detailLoadFailed,
-          message: catalogErrorMessage(context.l10n, error),
-          actionLabel: context.l10n.commonRetry,
-          onAction: () => ref.invalidate(animeByIdProvider(widget.malId)),
+          title: notFound
+              ? context.l10n.detailUnavailableTitle
+              : context.l10n.detailLoadFailed,
+          message: notFound && entry != null
+              ? context.l10n.detailUnavailableInLibrary
+              : catalogErrorMessage(context.l10n, error),
+          actionLabel: switch ((notFound, entry)) {
+            (true, null) => null,
+            (true, _) => context.l10n.detailRemoveFromLibrary,
+            (false, _) => context.l10n.commonRetry,
+          },
+          onAction: switch ((notFound, entry)) {
+            (true, null) => null,
+            (true, final Entry entry) => () => unawaited(
+              _confirmAndRemove(entry),
+            ),
+            (false, _) => () => ref.invalidate(animeByIdProvider(widget.malId)),
+          },
         );
         if (entry == null) {
           return <Widget>[
@@ -165,9 +185,10 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             ),
           ];
         }
-        // A library entry keeps its controls offline, built from the data
-        // stored with the entry. The notice goes below them so the header
-        // still starts at the top, where the top bar fade is measured from.
+        // A library entry keeps its header offline, built from the data
+        // stored with the entry, and its controls unless the anime is gone.
+        // The notice goes below them so the header still starts at the top,
+        // where the top bar fade is measured from.
         final CatalogAnime fallback = CatalogAnime(
           malId: entry.malId,
           title: entry.title,
@@ -176,12 +197,18 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         );
         return <Widget>[
           SliverToBoxAdapter(
-            child: _HeaderAndActions(
-              key: _headerKey,
-              anime: fallback,
-              entry: entry,
-              topInset: topInset,
-            ),
+            child: notFound
+                ? DetailHeader(
+                    key: _headerKey,
+                    anime: fallback,
+                    topInset: topInset,
+                  )
+                : _HeaderAndActions(
+                    key: _headerKey,
+                    anime: fallback,
+                    entry: entry,
+                    topInset: topInset,
+                  ),
           ),
           SliverToBoxAdapter(child: _Readable(child: notice)),
         ];

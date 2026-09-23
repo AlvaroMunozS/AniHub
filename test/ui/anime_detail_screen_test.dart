@@ -12,11 +12,13 @@ import 'package:anihub/domain/values/watch_status.dart';
 
 import 'package:anihub/ui/router.dart';
 import 'package:anihub/ui/screens/anime_detail_screen.dart';
+import 'package:anihub/ui/screens/library_screen.dart';
 import 'package:anihub/ui/shell/content_column.dart';
 import 'package:anihub/ui/theme/app_theme.dart';
 import 'package:anihub/ui/widgets/detail/detail_action_row.dart';
 import 'package:anihub/ui/widgets/detail/detail_header.dart';
 import 'package:anihub/ui/widgets/detail/expandable_synopsis.dart';
+import 'package:anihub/ui/widgets/status_selector.dart';
 import 'package:flutter/foundation.dart' show FlutterExceptionHandler;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -225,9 +227,91 @@ void main() {
       initialLocation: RoutePaths.animeDetail(_anime.malId),
     );
 
-    expect(find.text('No se pudo cargar la ficha'), findsOneWidget);
+    expect(find.text(spanish.detailUnavailableTitle), findsOneWidget);
+    expect(find.text(spanish.catalogNotFound), findsOneWidget);
     expect(find.textContaining('Revisa la conexión'), findsNothing);
-    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(find.byIcon(Icons.search_off_outlined), findsOneWidget);
+  });
+
+  testWidgets('does not offer retry for an anime that no longer exists', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDetail(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_watching()]),
+      catalog: FakeAnimeCatalog(catalog: const <CatalogAnime>[]),
+    );
+
+    expect(find.text(spanish.detailUnavailableTitle), findsOneWidget);
+    expect(find.text(spanish.commonRetry), findsNothing);
+  });
+
+  testWidgets('offers to remove an anime that no longer exists', (
+    WidgetTester tester,
+  ) async {
+    final InMemoryEntryRepository repo = inMemoryLibrary(<Entry>[_watching()]);
+    await _pumpDetail(
+      tester,
+      repo: repo,
+      catalog: FakeAnimeCatalog(catalog: const <CatalogAnime>[]),
+    );
+
+    expect(find.text('Fullmetal Alchemist: Brotherhood'), findsOneWidget);
+    expect(find.text(spanish.detailUnavailableInLibrary), findsOneWidget);
+
+    await tester.tap(
+      find.widgetWithText(OutlinedButton, spanish.detailRemoveFromLibrary),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(spanish.detailRemoveMessage), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, spanish.detailRemove));
+    await tester.pumpAndSettle();
+
+    expect(await repo.findAll(), isEmpty);
+    expect(find.byType(AnimeDetailScreen), findsNothing);
+    expect(find.byType(LibraryScreen), findsOneWidget);
+    expect(find.text('Fullmetal Alchemist: Brotherhood'), findsNothing);
+  });
+
+  testWidgets('hides the library controls of an anime that no longer exists', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDetail(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_watching()]),
+      catalog: FakeAnimeCatalog(catalog: const <CatalogAnime>[]),
+    );
+
+    expect(find.text(spanish.detailUnavailableTitle), findsOneWidget);
+    expect(find.byType(StatusSelector), findsNothing);
+    expect(find.text(spanish.detailFavorite), findsNothing);
+  });
+
+  testWidgets('does not report an anime that no longer exists', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDetail(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_watching()]),
+      catalog: FakeAnimeCatalog(catalog: const <CatalogAnime>[]),
+    );
+
+    expect(find.text(spanish.detailUnavailableTitle), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('does not offer removal outside the library', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDetail(
+      tester,
+      catalog: FakeAnimeCatalog(catalog: const <CatalogAnime>[]),
+    );
+
+    expect(find.text(spanish.detailUnavailableTitle), findsOneWidget);
+    expect(find.text(spanish.detailRemoveFromLibrary), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
   });
 
   testWidgets('reports an unexpected failure loading the anime', (

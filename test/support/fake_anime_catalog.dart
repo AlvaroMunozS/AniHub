@@ -7,7 +7,8 @@ import 'sample_data.dart';
 /// Offline [AnimeCatalog] that matches titles by case-insensitive substring,
 /// over [sampleCatalog] by default.
 ///
-/// When [error] is set, every request throws it instead.
+/// An unknown id throws [CatalogNotFoundException]. When [error] is set, every
+/// request throws it instead.
 class FakeAnimeCatalog implements AnimeCatalog {
   FakeAnimeCatalog({List<CatalogAnime>? catalog, this.error})
     : _catalog = catalog ?? sampleCatalog;
@@ -32,7 +33,7 @@ class FakeAnimeCatalog implements AnimeCatalog {
     if (error case final Object error) throw error;
     return _catalog.firstWhere(
       (CatalogAnime a) => a.malId == malId,
-      orElse: () => throw CatalogResponseException('Anime $malId not found'),
+      orElse: () => throw CatalogNotFoundException(malId),
     );
   }
 }
