@@ -94,7 +94,7 @@
   },
   "libraryFilterAny": "Sin filtrar",
   "libraryFilterOnly": "Solo estos",
-  "libraryFilterExcluded": "Ocultos",
+  "libraryFilterExcluded": "Ocultando estos",
   "@libraryFilterExcluded": {
     "description": "State of a filter that hides the anime it names, read by screen readers."
   },

@@ -212,7 +212,7 @@ void main() {
     expect(tester.getSemantics(tile).value, 'Solo estos');
     await tester.tap(find.text('Sin empezar'));
     await tester.pumpAndSettle();
-    expect(tester.getSemantics(tile).value, 'Ocultos');
+    expect(tester.getSemantics(tile).value, 'Ocultando estos');
   });
 
   testWidgets('completing a season moves the next one out of the filter '

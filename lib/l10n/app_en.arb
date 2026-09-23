@@ -50,7 +50,7 @@
   "libraryOptionsNotStarted": "Not started",
   "libraryFilterAny": "Not filtered",
   "libraryFilterOnly": "Only these",
-  "libraryFilterExcluded": "Hidden",
+  "libraryFilterExcluded": "Hiding these",
   "libraryOptionsSortByTitle": "Title",
   "libraryOptionsSortByRecent": "Last modified",
   "libraryOptionsAscending": "Ascending",
