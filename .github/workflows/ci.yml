@@ -24,25 +24,59 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
+      # The required check must always report, so steps are skipped instead of the workflow.
+      - name: Detect changes
+        id: changes
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            base=HEAD^1
+          else
+            base="$BEFORE"
+          fi
+          if ! files="$(git diff --name-only "$base" HEAD 2>/dev/null)"; then
+            echo "check=true" >> "$GITHUB_OUTPUT"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          check=false
+          build=false
+          if grep -qE '^(lib|test|android|assets)/|^pubspec\.(yaml|lock)$|^analysis_options\.yaml$|^\.github/workflows/' <<< "$files"; then
+            check=true
+          fi
+          if grep -qE '^android/|^pubspec\.(yaml|lock)$|^\.github/workflows/ci\.yml$' <<< "$files"; then
+            build=true
+          fi
+          echo "check=$check" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        if: steps.changes.outputs.check == 'true'
         with:
           channel: stable
           flutter-version: 3.47.1
           cache: true
 
       - name: Install dependencies
+        if: steps.changes.outputs.check == 'true'
         run: flutter pub get --enforce-lockfile
 
       - name: Check formatting
+        if: steps.changes.outputs.check == 'true'
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
+        if: steps.changes.outputs.check == 'true'
         run: flutter analyze
 
       - name: Test
+        if: steps.changes.outputs.check == 'true'
         run: flutter test
 
       - name: Build
+        if: steps.changes.outputs.build == 'true'
         run: flutter build apk --debug

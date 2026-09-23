@@ -59,6 +59,9 @@ flutter analyze
 flutter test
 ```
 
+CI skips these checks when a change touches no code, build or workflow files,
+and builds a debug APK only when `android/` or `pubspec.*` change.
+
 ## Local storage
 
 The library is a SQLite database, `library.db`, in the app's private directory.
