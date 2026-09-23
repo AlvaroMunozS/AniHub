@@ -14,7 +14,9 @@ are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The release process is in
   adapters. Adapters are wired only in `lib/main.dart`.
 - Changing a port in `lib/domain/ports/` or adding, removing or upgrading a
   dependency in `pubspec.yaml` needs the maintainer's agreement first.
-- Everything is in English except user-facing strings, which are in Spanish.
+- Everything is in English. User-facing strings live in `lib/l10n/*.arb`,
+  with Spanish as the template and English as the translation; `lib/ui` has
+  no literal strings.
 - Follow the code style in `docs/DEVELOPMENT.md`. A comment explains why, not
   what, and never tells the history of the code.
 - `dart format lib test`, `flutter analyze` (no issues) and `flutter test`

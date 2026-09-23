@@ -23,7 +23,7 @@ AniHub keeps track of the anime you are watching, plan to watch and have
 completed. There is no account and no server: the library is stored on the
 device.
 
-The app is currently available in Spanish only.
+The app is available in Spanish and English.
 
 ## Features
 
@@ -34,7 +34,9 @@ The app is currently available in Spanish only.
 - Anime details with synopsis, genres, studio, season, prequel and sequel.
 - Catalog search powered by [MyAnimeList](https://myanimelist.net).
 - The library works offline, and cover images are cached on the device.
-- Library import from an `anihub-library` JSON file
+- Light, dark and pure black themes, with a choice of accent color.
+- Settings for the theme, the app language and the image cache.
+- Library import from an `anihub-library` JSON file in *Settings → Backup*
   ([format](docs/DEVELOPMENT.md#import-format)).
 
 AniHub deliberately has no scores, reviews, episode counters or statistics.
@@ -45,7 +47,7 @@ See the [project scope](CONTRIBUTING.md#scope).
 Read the [privacy policy](PRIVACY.md) before installing, then download the APK
 from the [latest release](https://github.com/AlvaroMunozS/AniHub/releases/latest).
 New versions install over the previous one and keep the library. To update,
-open *Más → Acerca de* and tap *Buscar actualizaciones*.
+open *More → About* and tap *Check for updates*.
 Requires Android 7.0 or later.
 
 AniHub has no backup or export of its own. If Android backup is enabled on

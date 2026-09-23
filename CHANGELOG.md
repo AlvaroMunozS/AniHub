@@ -6,6 +6,16 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- *Settings* in *More*, where you can pick a light, dark or system theme, pure black for OLED screens and an accent color.
+- The app is available in English, and follows the device language unless you pick one in *Settings → Appearance*.
+- The size of the image cache in *Settings → Storage*, where you can also clear it.
+
+### Changed
+
+- *Import library* moves to *Settings → Backup*.
+
 ## [1.1.0] - 2026-09-23
 
 ### Added
