@@ -19,7 +19,7 @@
 The code follows a light hexagonal layout:
 
 ```
-lib/domain          entities, value objects and ports
+lib/domain          entities, value objects, errors and ports
 lib/application     use cases
 lib/infrastructure  adapters: local/, mal/, backup/, cache/, images/,
                     github/, update/, links/
@@ -82,14 +82,19 @@ CREATE TABLE entries (
   cover_url TEXT,
   total_episodes INTEGER,              -- NULL while airing or when unknown
   status TEXT NOT NULL CHECK(status IN ('watching', 'planned', 'completed')),
-  is_favorite INTEGER NOT NULL DEFAULT 0,
-  updated_at TEXT NOT NULL             -- ISO-8601, UTC
+  is_favorite INTEGER NOT NULL DEFAULT 0
+    CHECK(is_favorite = 0 OR status = 'completed'),
+  updated_at INTEGER NOT NULL          -- microseconds since the epoch, UTC
 );
 CREATE INDEX idx_entries_updated_at ON entries (updated_at);
 ```
 
-Schema changes need an `onUpgrade` callback: bump `_schemaVersion` and add
-the migration step. The relation graph from MyAnimeList is cached separately in
+This is schema version 2. Schema changes go through `upgradeAniHubSchema`:
+bump `_schemaVersion` and add the migration step. Version 1 stored
+`updated_at` as ISO-8601 text; the upgrade rebuilds the table, converts each
+timestamp in Dart to keep its microseconds and drops the favorite of any entry
+that is not completed. There is no downgrade, since Android does not install
+an older version over a newer one. The relation graph from MyAnimeList is cached separately in
 `SharedPreferences`.
 
 ## Import format
@@ -195,12 +200,12 @@ tap installs it. Nothing is requested until the user taps.
 - **Narrow scope.** AniHub answers what you are watching and what you have
   finished, nothing more. [CONTRIBUTING.md](../CONTRIBUTING.md#scope) lists
   what is left out.
-- **Favorites imply completed.** Favoriting a series that is not completed
-  moves it to *completed* in the same write, and moving a favorite out of
-  *completed* removes the favorite. An import keeps the status of an entry and
-  drops the favorite if the entry is not completed. `Entry` enforces the rule:
-  its constructor rejects a favorite that is not completed, and status and
-  favorite change only through `withStatus` and `withFavorite`.
+- **Favorites imply completed.** Favoriting a series that is not completed moves
+  it to *completed* in the same write, and moving a favorite out of *completed*
+  removes the favorite. An import keeps the status of an entry and drops the
+  favorite if the entry is not completed. `Entry` enforces the rule: its
+  constructor rejects a favorite that is not completed, and status and favorite
+  change only through `withStatus` and `withFavorite`.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

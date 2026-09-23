@@ -110,6 +110,26 @@ void entryRepositoryContract(
     expect(await storedMalIds(), <int>[3, 2, 1]);
   });
 
+  test('findAll orders entries saved within the same millisecond', () async {
+    final DateTime start = DateTime.utc(2024, 3, 1, 12);
+    final List<DateTime> times = <DateTime>[
+      start,
+      start.add(const Duration(microseconds: 1)),
+      start.add(const Duration(microseconds: 2)),
+    ];
+    int saves = 0;
+    final EntryRepository sameMillisecond = await create(() => times[saves++]);
+
+    await sameMillisecond.save(_entry(malId: 1));
+    await sameMillisecond.save(_entry(malId: 2));
+    await sameMillisecond.save(_entry(malId: 3));
+
+    expect(
+      (await sameMillisecond.findAll()).map((Entry e) => e.updatedAt),
+      times.reversed,
+    );
+  });
+
   test('watchAll emits the library on subscribe', () async {
     final Entry saved = await repo.save(_entry(malId: 1));
 
