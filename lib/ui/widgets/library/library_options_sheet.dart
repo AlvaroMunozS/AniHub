@@ -128,7 +128,7 @@ class _SortOption extends ConsumerWidget {
         child: active
             ? Icon(
                 sort.reversed ? Icons.arrow_downward : Icons.arrow_upward,
-                color: AppColors.accent,
+                color: context.palette.accent,
                 size: AppSizes.iconMd,
                 semanticLabel: sort.reversed ? 'Descendente' : 'Ascendente',
               )
@@ -138,7 +138,7 @@ class _SortOption extends ConsumerWidget {
         label,
         style: active
             ? Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(color: AppColors.accent)
+                  ?.copyWith(color: context.palette.accent)
             : null,
       ),
       onTap: () => ref.read(libraryOrderProvider.notifier).select(order),

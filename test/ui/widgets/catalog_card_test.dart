@@ -31,7 +31,7 @@ final Finder _dimming = find.byWidgetPredicate(
   (Widget widget) =>
       widget is DecoratedBox &&
       widget.decoration is BoxDecoration &&
-      (widget.decoration as BoxDecoration).color == AppColors.dim,
+      (widget.decoration as BoxDecoration).color == AppOverlays.dim,
 );
 
 void main() {

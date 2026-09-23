@@ -1,4 +1,5 @@
 import 'package:anihub/domain/values/watch_status.dart';
+import 'package:anihub/ui/theme/app_theme.dart';
 import 'package:anihub/ui/widgets/status_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +13,11 @@ Widget _host({
   bool enabled = true,
 }) {
   return MaterialApp(
+    theme: buildTheme(
+      brightness: Brightness.dark,
+      pureBlack: false,
+      accent: AppAccent.indigo,
+    ),
     home: Scaffold(
       body: Column(
         children: <Widget>[

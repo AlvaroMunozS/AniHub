@@ -204,7 +204,7 @@ class _StaleLibraryNotice extends StatelessWidget {
       child: Text(
         'No se pudo actualizar la biblioteca; se muestra la última versión '
         'cargada.',
-        style: AppTypography.caption,
+        style: AppTypography.caption.copyWith(color: context.palette.textFaint),
       ),
     );
   }

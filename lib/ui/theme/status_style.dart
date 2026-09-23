@@ -15,14 +15,14 @@ String statusLabel(WatchStatus status) {
   }
 }
 
-Color statusColor(WatchStatus status) {
+Color statusColor(AppPalette palette, WatchStatus status) {
   switch (status) {
     case WatchStatus.watching:
-      return AppColors.statusWatching;
+      return palette.statusWatching;
     case WatchStatus.planned:
-      return AppColors.statusPlanned;
+      return palette.statusPlanned;
     case WatchStatus.completed:
-      return AppColors.statusCompleted;
+      return palette.statusCompleted;
   }
 }
 

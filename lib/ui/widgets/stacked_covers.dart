@@ -38,6 +38,7 @@ class StackedCovers extends StatelessWidget {
               _layer(
                 url: layers[depth],
                 isFront: depth == 0,
+                borderColor: context.palette.border,
                 shrink: _inset * (depthMax - depth),
                 boxWidth: constraints.maxWidth,
                 boxHeight: constraints.maxHeight,
@@ -51,6 +52,7 @@ class StackedCovers extends StatelessWidget {
   Widget _layer({
     required String? url,
     required bool isFront,
+    required Color borderColor,
     required double shrink,
     required double boxWidth,
     required double boxHeight,
@@ -67,9 +69,9 @@ class StackedCovers extends StatelessWidget {
           cover,
           DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColors.scrim,
+              color: AppOverlays.scrim,
               borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: borderColor),
             ),
           ),
         ],

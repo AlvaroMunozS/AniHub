@@ -122,7 +122,19 @@ class AniHubApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'AniHub',
       debugShowCheckedModeBanner: false,
-      theme: buildDarkTheme(),
+      theme: buildTheme(
+        brightness: Brightness.dark,
+        pureBlack: false,
+        accent: AppAccent.indigo,
+      ),
+      // Screens without an app bar would otherwise keep the launch window's
+      // status bar icons.
+      builder: (BuildContext context, Widget? child) {
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: systemOverlayStyleFor(Theme.of(context).brightness),
+          child: child!,
+        );
+      },
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const <Locale>[_locale],
       locale: _locale,

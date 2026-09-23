@@ -145,7 +145,7 @@ class _StatusSelectorState extends State<StatusSelector>
           child: StatusActionButton(
             icon: Icons.add_circle_outline,
             label: 'Añadir',
-            color: AppColors.textSecondary,
+            color: context.palette.textSecondary,
             onTap: _expand,
           ),
         ),
@@ -197,7 +197,9 @@ class _StatusSelectorState extends State<StatusSelector>
             child: StatusActionButton(
               icon: statusIcon(status, selected: isCurrent),
               label: statusLabel(status),
-              color: isCurrent ? statusColor(status) : AppColors.textSecondary,
+              color: isCurrent
+                  ? statusColor(context.palette, status)
+                  : context.palette.textSecondary,
               onTap: isCurrent
                   ? _handleCurrentTap
                   : () => _handleSelect(status),

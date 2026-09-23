@@ -37,11 +37,15 @@ class EmptyState extends StatelessWidget {
             Container(
               width: _badgeSize,
               height: _badgeSize,
-              decoration: const BoxDecoration(
-                color: AppColors.accentSoft,
+              decoration: BoxDecoration(
+                color: context.palette.accentSoft,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppColors.accent, size: AppSizes.iconLg),
+              child: Icon(
+                icon,
+                color: context.palette.accent,
+                size: AppSizes.iconLg,
+              ),
             ),
             const SizedBox(height: AppSpacing.s16),
             Text(title, style: text.titleMedium, textAlign: TextAlign.center),

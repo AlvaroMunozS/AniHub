@@ -32,7 +32,7 @@ class CatalogCard extends StatelessWidget {
             const DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.all(Radius.circular(AppRadius.sm)),
-                color: AppColors.dim,
+                color: AppOverlays.dim,
               ),
             ),
             Positioned(
@@ -40,7 +40,7 @@ class CatalogCard extends StatelessWidget {
               top: AppSpacing.s4,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: AppColors.accent,
+                  color: context.palette.accent,
                   borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
                 child: Padding(
@@ -51,7 +51,7 @@ class CatalogCard extends StatelessWidget {
                   child: Text(
                     'En biblioteca',
                     style: Theme.of(context).textTheme.labelSmall
-                        ?.copyWith(color: AppColors.onAccent),
+                        ?.copyWith(color: context.palette.onAccent),
                   ),
                 ),
               ),

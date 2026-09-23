@@ -64,25 +64,24 @@ class _PillSearchBarState extends State<PillSearchBar> {
   @override
   Widget build(BuildContext context) {
     final bool hasText = widget.controller.text.isNotEmpty;
-    final TextStyle textStyle = AppTypography.textTheme.bodyMedium!.copyWith(
-      fontSize: _fontSize,
-    );
+    final TextStyle textStyle = Theme.of(context).textTheme.bodyMedium!
+        .copyWith(fontSize: _fontSize);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
         vertical: AppSpacing.s8,
       ),
       child: Material(
-        color: AppColors.surfaceHigh,
+        color: context.palette.surfaceHigh,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: SizedBox(
           height: _height,
           child: Row(
             children: <Widget>[
               const SizedBox(width: AppSpacing.s16),
-              const Icon(
+              Icon(
                 Icons.search,
-                color: AppColors.textFaint,
+                color: context.palette.textFaint,
                 size: AppSizes.iconLg,
               ),
               const SizedBox(width: AppSpacing.s12),
@@ -93,7 +92,9 @@ class _PillSearchBarState extends State<PillSearchBar> {
                   style: textStyle,
                   decoration: InputDecoration.collapsed(
                     hintText: widget.hintText,
-                    hintStyle: textStyle.copyWith(color: AppColors.textFaint),
+                    hintStyle: textStyle.copyWith(
+                      color: context.palette.textFaint,
+                    ),
                   ),
                 ),
               ),
@@ -112,8 +113,8 @@ class _PillSearchBarState extends State<PillSearchBar> {
                   icon: Icon(
                     Icons.filter_list,
                     color: widget.filterActive
-                        ? AppColors.accent
-                        : AppColors.textSecondary,
+                        ? context.palette.accent
+                        : context.palette.textSecondary,
                   ),
                   onPressed: widget.onFilter,
                   visualDensity: VisualDensity.compact,

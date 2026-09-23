@@ -76,8 +76,8 @@ class _CoverFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.surfaceHigh,
-      child: Center(child: Icon(icon, color: AppColors.textFaint)),
+      color: context.palette.surfaceHigh,
+      child: Center(child: Icon(icon, color: context.palette.textFaint)),
     );
   }
 }

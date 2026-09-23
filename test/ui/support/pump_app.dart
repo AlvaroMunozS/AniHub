@@ -103,12 +103,15 @@ InMemoryEntryRepository inMemoryLibrary([
   return repo;
 }
 
-/// Pumps [child] alone inside the app theme and a [Scaffold], with covers
-/// served by [cacheManager].
+/// Pumps [child] alone inside the app theme of [brightness] and a
+/// [Scaffold], with covers served by [cacheManager] and the providers in
+/// [overrides].
 Future<void> pumpInScaffold(
   WidgetTester tester,
   Widget child, {
   BaseCacheManager? cacheManager,
+  Brightness brightness = Brightness.dark,
+  List<Override> overrides = const <Override>[],
 }) {
   return tester.pumpWidget(
     ProviderScope(
@@ -116,9 +119,14 @@ Future<void> pumpInScaffold(
         imageCacheManagerProvider.overrideWithValue(
           cacheManager ?? FakeCacheManager(),
         ),
+        ...overrides,
       ],
       child: MaterialApp(
-        theme: buildDarkTheme(),
+        theme: buildTheme(
+          brightness: brightness,
+          pureBlack: false,
+          accent: AppAccent.indigo,
+        ),
         home: Scaffold(body: child),
       ),
     ),

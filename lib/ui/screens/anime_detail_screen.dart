@@ -158,9 +158,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-      ),
+      value: systemOverlayStyleFor(Theme.of(context).brightness),
       child: Scaffold(
         body: Stack(
           children: <Widget>[
@@ -327,14 +325,14 @@ class _TopBar extends StatelessWidget {
         return Container(
           height: topInset + AppSizes.headerHeight,
           padding: EdgeInsets.only(top: topInset),
-          color: AppColors.background.withValues(alpha: t),
+          color: context.palette.background.withValues(alpha: t),
           child: Row(
             children: <Widget>[
               IconButton(
                 onPressed: () => _leaveDetail(context),
                 icon: const Icon(Icons.arrow_back, size: AppSizes.iconMd),
                 tooltip: 'Volver',
-                color: AppColors.textPrimary,
+                color: context.palette.textPrimary,
                 visualDensity: VisualDensity.compact,
               ),
               const Spacer(),
@@ -343,7 +341,7 @@ class _TopBar extends StatelessWidget {
                   onPressed: () => unawaited(_confirmAndRemove(context, entry)),
                   icon: const Icon(Icons.delete_outline, size: AppSizes.iconMd),
                   tooltip: 'Eliminar',
-                  color: AppColors.textPrimary,
+                  color: context.palette.textPrimary,
                   visualDensity: VisualDensity.compact,
                 ),
             ],
@@ -402,9 +400,9 @@ class _Header extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 stops: const <double>[0, 0.6, 1],
                 colors: <Color>[
-                  AppColors.background.withValues(alpha: 0.55),
-                  AppColors.background.withValues(alpha: 0.85),
-                  AppColors.background,
+                  context.palette.background.withValues(alpha: 0.55),
+                  context.palette.background.withValues(alpha: 0.85),
+                  context.palette.background,
                 ],
               ),
             ),
@@ -472,7 +470,11 @@ class _MetaRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpacing.s8),
       child: Row(
         children: <Widget>[
-          Icon(icon, size: AppSizes.iconSm, color: AppColors.textSecondary),
+          Icon(
+            icon,
+            size: AppSizes.iconSm,
+            color: context.palette.textSecondary,
+          ),
           const SizedBox(width: AppSpacing.s8),
           Expanded(
             child: Text(
@@ -596,7 +598,9 @@ class _FavoriteAction extends ConsumerWidget {
       child: StatusActionButton(
         icon: isFavorite ? Icons.favorite : Icons.favorite_border,
         label: 'Favorito',
-        color: isFavorite ? AppColors.accent : AppColors.textSecondary,
+        color: isFavorite
+            ? context.palette.accent
+            : context.palette.textSecondary,
         tooltip: isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
         onTap: !enabled
             ? null
@@ -720,7 +724,7 @@ class _ExpandableSynopsisState extends State<_ExpandableSynopsis> {
                 Center(
                   child: Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textFaint,
+                    color: context.palette.textFaint,
                   ),
                 ),
               ],
@@ -832,13 +836,15 @@ class _RelationRow extends StatelessWidget {
                     const SizedBox(height: AppSpacing.s2),
                     Text(
                       '${relation.seasonYear}',
-                      style: AppTypography.caption,
+                      style: AppTypography.caption.copyWith(
+                        color: context.palette.textFaint,
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textFaint),
+            Icon(Icons.chevron_right, color: context.palette.textFaint),
           ],
         ),
       ),

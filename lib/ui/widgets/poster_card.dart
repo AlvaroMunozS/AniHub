@@ -50,7 +50,7 @@ class PosterCard extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.center,
                         end: Alignment.bottomCenter,
-                        colors: <Color>[Colors.transparent, AppColors.scrim],
+                        colors: <Color>[Colors.transparent, AppOverlays.scrim],
                       ),
                     ),
                   ),
