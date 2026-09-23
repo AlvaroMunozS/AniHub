@@ -1,0 +1,171 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Holds the secrets with a read-only token; publish runs no project code.
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 30
+    env:
+      APK: anihub-${{ github.ref_name }}.apk
+      CERT_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check that the tag is on main
+        run: |
+          commit="$(git rev-parse "$GITHUB_REF^{commit}")"
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "::error::$GITHUB_REF_NAME is not on main."
+            exit 1
+          fi
+
+      - name: Check version and changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          pubspec_version="$(sed -n 's/^version: \([^+]*\)+.*$/\1/p' pubspec.yaml)"
+          if [ "$version" != "$pubspec_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml version $pubspec_version."
+            exit 1
+          fi
+          awk -v heading="## [$version]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && (/^## \[/ || /^\[[^]]*\]: /) { exit }
+            found { print }
+          ' CHANGELOG.md | sed '/./,$!d' > "$RUNNER_TEMP/changelog.md"
+          if [ ! -s "$RUNNER_TEMP/changelog.md" ]; then
+            echo "::error::CHANGELOG.md has no entry for $version."
+            exit 1
+          fi
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          # Caches written by pull request runs must not reach the signed build.
+          cache: false
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Set up signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          keystore="$RUNNER_TEMP/upload.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          if ! keytool -list -keystore "$keystore" -storepass:env STORE_PASSWORD \
+            -alias "$KEY_ALIAS" > /dev/null 2>&1; then
+            echo "::error::Invalid keystore, store password or key alias."
+            exit 1
+          fi
+          {
+            echo "storeFile=$keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: Build APK
+        env:
+          MAL_CLIENT_ID: ${{ secrets.MAL_CLIENT_ID }}
+        run: |
+          if [ -z "$MAL_CLIENT_ID" ]; then
+            echo "::error::MAL_CLIENT_ID is not set."
+            exit 1
+          fi
+          flutter build apk --release --dart-define=MAL_CLIENT_ID="$MAL_CLIENT_ID"
+
+      - name: Verify signing certificate
+        run: |
+          apksigner="$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          digests="$("$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk \
+            | sed -n 's/.*certificate SHA-256 digest: //p' | sort -u)"
+          if [ -z "$CERT_SHA256" ] || [ "$digests" != "$CERT_SHA256" ]; then
+            echo "::error::APK signing certificate does not match ANDROID_CERT_SHA256."
+            exit 1
+          fi
+
+      - name: Remove signing files
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/upload.jks"
+
+      - name: Package
+        run: |
+          mkdir dist
+          mv build/app/outputs/flutter-apk/app-release.apk "dist/$APK"
+          (cd dist && sha256sum "$APK" > "$APK.sha256")
+          {
+            cat "$RUNNER_TEMP/changelog.md"
+            echo
+            echo '### Verification'
+            echo
+            echo "- APK SHA-256: \`$(cut -d ' ' -f 1 "dist/$APK.sha256")\`"
+            echo "- Signing certificate SHA-256: \`$CERT_SHA256\`"
+            echo
+            echo "By installing the APK you accept the [privacy policy](https://github.com/AlvaroMunozS/AniHub/blob/main/PRIVACY.md)."
+          } > dist/release-notes.md
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      APK: anihub-${{ github.ref_name }}.apk
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ env.APK }}
+
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          name: AniHub ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: |
+            ${{ env.APK }}
+            ${{ env.APK }}.sha256
+          fail_on_unmatched_files: true

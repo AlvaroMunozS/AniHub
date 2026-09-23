@@ -1,0 +1,55 @@
+name: Bug report
+description: Report something that does not work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include screenshots or a screen recording if they help.
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: AniHub version
+      description: Shown in **Más → Acerca de**.
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      placeholder: Android 15
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: Pixel 8
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: I am using the latest release.
+          required: true

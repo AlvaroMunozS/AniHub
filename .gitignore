@@ -1,0 +1,41 @@
+# Editors and OS
+*.iml
+*.ipr
+*.iws
+.idea/
+.DS_Store
+*.swp
+
+# Flutter and Dart
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+.widget_preview/
+migrate_working_dir/
+*.log
+
+# Android build output
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Symbols and obfuscation maps
+app.*.symbols
+app.*.map.json
+
+# Secrets and signing
+.env
+*.env
+env.json
+*.keystore
+*.jks
+key.properties
+
+# Local working files
+.claude/
+CLAUDE.local.md
+PLAN-*.md
+*.bundle
