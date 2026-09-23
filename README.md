@@ -44,7 +44,8 @@ See the [project scope](CONTRIBUTING.md#scope).
 
 Read the [privacy policy](PRIVACY.md) before installing, then download the APK
 from the [latest release](https://github.com/AlvaroMunozS/AniHub/releases/latest).
-New versions install over the previous one and keep the library.
+New versions install over the previous one and keep the library. To update,
+open *Más → Acerca de* and tap *Buscar actualizaciones*.
 Requires Android 7.0 or later.
 
 AniHub has no backup or export of its own. If Android backup is enabled on

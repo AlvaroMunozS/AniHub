@@ -47,13 +47,18 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml version $pubspec_version."
             exit 1
           fi
-          awk -v heading="## [$version]" '
+          # Pre-releases have no changelog section of their own.
+          section="$version"
+          if [[ "$version" == *-* ]]; then
+            section="Unreleased"
+          fi
+          awk -v heading="## [$section]" '
             index($0, heading) == 1 { found = 1; next }
             found && (/^## \[/ || /^\[[^]]*\]: /) { exit }
             found { print }
           ' CHANGELOG.md | sed '/./,$!d' > "$RUNNER_TEMP/changelog.md"
           if [ ! -s "$RUNNER_TEMP/changelog.md" ]; then
-            echo "::error::CHANGELOG.md has no entry for $version."
+            echo "::error::CHANGELOG.md has no entry under [$section]."
             exit 1
           fi
 
@@ -165,6 +170,8 @@ jobs:
         with:
           name: AniHub ${{ github.ref_name }}
           body_path: release-notes.md
+          # The in-app updater offers pre-releases only to those who opt in.
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             ${{ env.APK }}
             ${{ env.APK }}.sha256

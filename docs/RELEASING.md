@@ -33,6 +33,19 @@ The workflow fails before building if the tag does not match the `pubspec.yaml`
 version or if `CHANGELOG.md` has no section for it. It also fails if the APK is
 not signed with the certificate in `ANDROID_CERT_SHA256`.
 
+## Pre-releases
+
+A tag with a suffix, such as `vX.Y.Z-beta.N`, is published as a pre-release.
+The app offers it only to users who turn on *Recibir versiones preliminares*.
+
+1. Open a pull request titled `chore: release X.Y.Z-beta.N` that bumps
+   `version` in `pubspec.yaml` to `X.Y.Z-beta.N+B`. Leave `CHANGELOG.md` as
+   it is: the notes come from `## [Unreleased]`, which must not be empty.
+2. Merge, tag and approve as in the steps above.
+
+The build number still increases with every release, pre-release or not, and
+the stable `X.Y.Z` gets a higher one than its pre-releases.
+
 ## Versioning
 
 - Patch: bug fixes.
@@ -70,6 +83,8 @@ Repository settings the pipeline relies on:
   accepts deployments from `v*` tags.
 - A tag ruleset lets only the maintainer create, move or delete `v*` tags.
 - Releases are immutable, so a published APK cannot be replaced.
+- The in-app updater needs exactly one `.apk` asset per release and uses the
+  SHA-256 `digest` GitHub computes for it.
 
 Changing the signing key breaks updates for every installed copy. Keep the
 keystore and its passwords backed up outside the repository.

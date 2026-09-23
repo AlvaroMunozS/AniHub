@@ -6,6 +6,11 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- *Acerca de* is now its own screen, where you can check for a new version and install it, with pre-releases as an option.
+- Links to the release notes, the source code, the privacy policy and the open source licenses in *Acerca de*.
+
 ## [1.0.0] - 2026-09-23
 
 First public release.

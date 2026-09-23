@@ -10,6 +10,7 @@
 | Library storage | SQLite through sqflite |
 | Metadata | MyAnimeList API v2 over plain `http`, public endpoints only |
 | Images | `cached_network_image` with a long-lived disk cache |
+| Updates | GitHub Releases, installed with Android's `PackageInstaller` |
 
 ## Architecture
 
@@ -18,7 +19,8 @@ The code follows a light hexagonal layout:
 ```
 lib/domain          entities, value objects and ports
 lib/application     use cases
-lib/infrastructure  adapters: local/, mal/, backup/, cache/, images/
+lib/infrastructure  adapters: local/, mal/, backup/, cache/, images/,
+                    github/, update/, links/
 lib/ui              screens, widgets, state, theme
 lib/main.dart       composition root
 ```
@@ -154,6 +156,31 @@ installation ([PRIVACY.md](../PRIVACY.md)) and notifying MyAnimeList of
 releases with substantially new functionality ([RELEASING.md](RELEASING.md)).
 The app credits it in *Más → Acerca de*.
 
+## Updates
+
+*Más → Acerca de → Buscar actualizaciones* checks for a newer release and a
+second tap installs it. Nothing is requested until the user taps.
+
+- `lib/infrastructure/github/` reads
+  `GET /repos/AlvaroMunozS/AniHub/releases/latest`, which never returns drafts
+  or pre-releases. With *Recibir versiones preliminares* on, it reads
+  `GET /releases?per_page=30` instead and picks the highest semantic version,
+  skipping drafts and tags that are not versions.
+- A release must have exactly one `.apk` asset with a `sha256:` `digest`,
+  which GitHub computes on upload. Without one the check fails: nothing is
+  installed unverified.
+- Versions compare by semantic versioning, so `1.1.0-beta.1` is older than
+  `1.1.0`. An installed pre-release is kept until a newer stable version
+  exists, even with the switch off.
+- `lib/infrastructure/update/` downloads the APK to the app's cache, checks
+  its SHA-256 and hands it through the `anihub/installer` channel to
+  `ApkInstaller.kt`, which copies it into a `PackageInstaller` session and
+  deletes the file. The first update shows the system dialogs for unknown
+  sources and confirmation. On Android 12 and later, once AniHub is the
+  installer of record, later updates install without a dialog.
+- Unauthenticated API requests are limited to 60 per hour and IP; the app
+  says so when GitHub refuses one.
+
 ## Design decisions
 
 - **Local only.** No account and no server: the app works offline and there is
@@ -172,6 +199,8 @@ The app credits it in *Más → Acerca de*.
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on
   tablets.
+- **Manual updates.** The app looks for a new version only when asked, so it
+  makes no request the user did not expect and needs no background work.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so
   images are cached for a year (up to 3000 files) and load offline.
 - **Few dependencies.** UUIDs come from a small helper over `Random.secure()`

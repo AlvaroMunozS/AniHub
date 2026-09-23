@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../domain/values/watch_status.dart';
+import 'screens/about_screen.dart';
 import 'screens/anime_detail_screen.dart';
 import 'screens/library_screen.dart';
 import 'screens/more_screen.dart';
@@ -48,6 +49,7 @@ class RoutePaths {
 
   static const String search = '/search';
   static const String more = '/more';
+  static const String about = '/more/about';
 
   static const String libraryRoot = '/library';
 
@@ -115,6 +117,13 @@ GoRouter buildRouter({String? initialLocation}) {
             path: RoutePaths.more,
             builder: (BuildContext context, GoRouterState state) =>
                 const MoreScreen(),
+            routes: <RouteBase>[
+              GoRoute(
+                path: 'about',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const AboutScreen(),
+              ),
+            ],
           ),
           GoRoute(
             path: RoutePaths.animeDetailPattern,

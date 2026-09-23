@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../application/updates/check_for_update.dart';
 import '../application/usecases/usecases.dart';
 import '../domain/ports/anime_catalog.dart';
 import '../domain/ports/anime_relations.dart';
+import '../domain/ports/app_installer.dart';
 import '../domain/ports/entry_repository.dart';
+import '../domain/ports/external_links.dart';
 import '../domain/ports/library_backup_source.dart';
+import '../domain/ports/release_source.dart';
 
 // Providers that throw have no default implementation, so `lib/ui` never
 // depends on adapters; `main()` and tests supply them through
@@ -47,6 +51,23 @@ final Provider<LibraryBackupSource> libraryBackupSourceProvider =
 final Provider<BaseCacheManager> imageCacheManagerProvider =
     Provider<BaseCacheManager>(
       (Ref ref) => _notOverridden('imageCacheManagerProvider'),
+    );
+
+final Provider<ReleaseSource> releaseSourceProvider = Provider<ReleaseSource>(
+  (Ref ref) => _notOverridden('releaseSourceProvider'),
+);
+
+final Provider<AppInstaller> appInstallerProvider = Provider<AppInstaller>(
+  (Ref ref) => _notOverridden('appInstallerProvider'),
+);
+
+final Provider<ExternalLinks> externalLinksProvider = Provider<ExternalLinks>(
+  (Ref ref) => _notOverridden('externalLinksProvider'),
+);
+
+final Provider<CheckForUpdate> checkForUpdateProvider =
+    Provider<CheckForUpdate>(
+      (Ref ref) => CheckForUpdate(ref.watch(releaseSourceProvider)),
     );
 
 final Provider<ImportLibrary> importLibraryProvider = Provider<ImportLibrary>(

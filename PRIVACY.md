@@ -9,7 +9,7 @@ the developer receives no data from the app.
 
 ## Network requests
 
-The app only connects to MyAnimeList:
+The app connects to MyAnimeList:
 
 - `api.myanimelist.net`, to search anime and load their details;
 - `cdn.myanimelist.net`, to load cover images.
@@ -20,10 +20,23 @@ client id, and are handled under
 Covers of an imported library are loaded from the addresses in the imported
 file.
 
+The app connects to GitHub only when you tap *Buscar actualizaciones* in
+*Más → Acerca de*, or install the update it finds:
+
+- `api.github.com`, to look up the latest release;
+- `github.com` and `release-assets.githubusercontent.com`, to download its
+  APK.
+
+These requests include the device's IP address and a user agent naming AniHub,
+and are handled under
+[GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
+The links in *Acerca de* open in your browser.
+
 ## Data on the device
 
-The library, the sort preference and the cached anime data and covers are
-stored in the app's private storage. They are included in Android's system
+The library, the sort and pre-release preferences and the cached anime data
+and covers are stored in the app's private storage. A downloaded update is kept
+in the app's cache only until it is handed to the system installer. They are included in Android's system
 backup when it is enabled on the device. Uninstalling the app deletes them.
 
 ## Changes
