@@ -148,6 +148,7 @@
   "metaFall": "Otoño",
 
   "importLibrary": "Importar biblioteca",
+  "importLibrarySubtitle": "Añade o actualiza entradas desde un fichero .json de AniHub",
   "importInvalidFile": "El fichero no es una biblioteca de AniHub válida",
   "importFailed": "No se pudo importar la biblioteca",
   "importSummary": "Biblioteca importada: {added, plural, =1{1 nueva} other{{added} nuevas}}, {updated, plural, =1{1 actualizada} other{{updated} actualizadas}}, {unchanged} sin cambios",
@@ -158,6 +159,49 @@
       "unchanged": {"type": "int"}
     }
   },
+
+  "settingsTitle": "Configuración",
+  "settingsAppearance": "Apariencia",
+  "settingsBackup": "Copia de seguridad",
+  "settingsStorage": "Almacenamiento",
+
+  "appearanceTheme": "Tema",
+  "appearanceSystem": "Sistema",
+  "@appearanceSystem": {
+    "description": "Follow the device setting, for the theme and for the language."
+  },
+  "appearanceLight": "Claro",
+  "appearanceDark": "Oscuro",
+  "appearancePureBlack": "Negro puro",
+  "appearancePureBlackSubtitle": "Fondo negro en modo oscuro, para pantallas OLED",
+  "appearanceAccent": "Color de acento",
+  "appearanceAccentIndigo": "Índigo",
+  "appearanceAccentTeal": "Turquesa",
+  "appearanceAccentGreen": "Verde",
+  "appearanceAccentAmber": "Ámbar",
+  "appearanceAccentOrange": "Naranja",
+  "appearanceAccentPink": "Rosa",
+  "appearanceDisplay": "Visualización",
+  "appearanceLanguage": "Idioma de la aplicación",
+
+  "backupRestore": "Restaurar",
+
+  "storageCache": "Caché",
+  "storageImageCache": "Caché de imágenes",
+  "storageImageCacheCalculating": "Calculando…",
+  "storageImageCacheSize": "Portadas: {size}",
+  "@storageImageCacheSize": {
+    "description": "size is already formatted with its unit, as in 12,4 MB.",
+    "placeholders": {
+      "size": {"type": "String"}
+    }
+  },
+  "storageImageCacheSizeFailed": "No se pudo calcular el tamaño",
+  "storageClearTitle": "¿Borrar la caché de imágenes?",
+  "storageClearMessage": "Las portadas se volverán a descargar cuando hagan falta.",
+  "storageClear": "Borrar",
+  "storageCleared": "Caché de imágenes borrada",
+  "storageClearFailed": "No se pudo borrar la caché de imágenes",
 
   "aboutTitle": "Acerca de",
   "aboutOpenLinkFailed": "No se pudo abrir el enlace",

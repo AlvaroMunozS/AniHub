@@ -10,6 +10,7 @@ import '../domain/ports/anime_relations.dart';
 import '../domain/ports/app_installer.dart';
 import '../domain/ports/entry_repository.dart';
 import '../domain/ports/external_links.dart';
+import '../domain/ports/image_cache_storage.dart';
 import '../domain/ports/library_backup_source.dart';
 import '../domain/ports/release_source.dart';
 
@@ -51,6 +52,11 @@ final Provider<LibraryBackupSource> libraryBackupSourceProvider =
 final Provider<BaseCacheManager> imageCacheManagerProvider =
     Provider<BaseCacheManager>(
       (Ref ref) => _notOverridden('imageCacheManagerProvider'),
+    );
+
+final Provider<ImageCacheStorage> imageCacheStorageProvider =
+    Provider<ImageCacheStorage>(
+      (Ref ref) => _notOverridden('imageCacheStorageProvider'),
     );
 
 final Provider<ReleaseSource> releaseSourceProvider = Provider<ReleaseSource>(

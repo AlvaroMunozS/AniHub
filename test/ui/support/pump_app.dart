@@ -4,6 +4,7 @@ import 'package:anihub/domain/ports/anime_relations.dart';
 import 'package:anihub/domain/ports/app_installer.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/ports/external_links.dart';
+import 'package:anihub/domain/ports/image_cache_storage.dart';
 import 'package:anihub/domain/ports/library_backup_source.dart';
 import 'package:anihub/domain/ports/release_source.dart';
 import 'package:anihub/l10n/l10n.dart';
@@ -23,6 +24,7 @@ import '../../support/fake_anime_catalog.dart';
 import '../../support/fake_anime_relations.dart';
 import '../../support/fake_app_installer.dart';
 import '../../support/fake_external_links.dart';
+import '../../support/fake_image_cache_storage.dart';
 import '../../support/fake_release_source.dart';
 import '../../support/in_memory_entry_repository.dart';
 import 'fake_cache_manager.dart';
@@ -43,7 +45,8 @@ final AppLocalizations spanish = lookupAppLocalizations(_testLocale);
 /// Every port gets a fake: [repo] defaults to an empty library, [catalog] to
 /// [FakeAnimeCatalog], [relations] to a graph without relations and
 /// [backupSource] to a cancelled file pick, [releaseSource] to no releases,
-/// [installer] to one that never finishes and [links] to links that open.
+/// [installer] to one that never finishes, [links] to links that open and
+/// [imageCacheStorage] to an empty cache.
 /// Preferences start as [prefs] and the device languages are
 /// [deviceLocales]. The app starts at [initialLocation], or on the library
 /// through the app's own [routerProvider].
@@ -56,6 +59,7 @@ Future<GoRouter> pumpApp(
   ReleaseSource? releaseSource,
   AppInstaller? installer,
   ExternalLinks? links,
+  ImageCacheStorage? imageCacheStorage,
   Map<String, Object> prefs = const <String, Object>{},
   List<Locale> deviceLocales = const <Locale>[_testLocale],
   String? initialLocation,
@@ -88,6 +92,9 @@ Future<GoRouter> pumpApp(
           backupSource ?? const FakeLibraryBackupSource(),
         ),
         imageCacheManagerProvider.overrideWithValue(FakeCacheManager()),
+        imageCacheStorageProvider.overrideWithValue(
+          imageCacheStorage ?? FakeImageCacheStorage(),
+        ),
         releaseSourceProvider.overrideWithValue(
           releaseSource ?? FakeReleaseSource(),
         ),
