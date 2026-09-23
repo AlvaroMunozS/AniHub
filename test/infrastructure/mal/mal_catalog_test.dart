@@ -188,7 +188,36 @@ void main() {
       expect(request.path, '/v2/anime');
       expect(request.queryParameters['q'], 'fullmetal');
       expect(request.queryParameters['limit'], '5');
+      expect(request.queryParameters['nsfw'], 'true');
+      expect(request.queryParameters['fields']!.split(','), contains('nsfw'));
     });
+
+    test(
+      'keeps anime rated white or gray and skips those rated black',
+      () async {
+        final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
+          _page(<Map<String, Object?>>[
+            <String, Object?>{
+              'id': 1,
+              'title': 'Cowboy Bebop',
+              'nsfw': 'white',
+            },
+            <String, Object?>{
+              'id': 50594,
+              'title': 'Suzume no Tojimari',
+              'nsfw': 'gray',
+            },
+            <String, Object?>{'id': 3, 'title': 'Hentai', 'nsfw': 'black'},
+            <String, Object?>{'id': 4, 'title': 'Unrated'},
+          ]),
+        ]);
+
+        final List<CatalogAnime> results = await MalCatalog(server.client())
+            .search('anime');
+
+        expect(results.map((CatalogAnime a) => a.malId), <int>[1, 50594, 4]);
+      },
+    );
 
     test('caps the page size at 100', () async {
       final FakeMalApi server = FakeMalApi.sequence(<http.Response>[

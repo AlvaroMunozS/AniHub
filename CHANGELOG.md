@@ -6,6 +6,10 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Search finds anime that MyAnimeList does not rate as suitable for all audiences, such as *Suzume*.
+
 ## [1.2.0] - 2026-09-23
 
 ### Added
