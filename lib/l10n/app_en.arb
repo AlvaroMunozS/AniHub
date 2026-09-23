@@ -59,7 +59,7 @@
   "searchHint": "Search MyAnimeList",
   "searchFailed": "Could not search",
   "searchPromptTitle": "Search the catalog",
-  "searchPromptMessage": "Type at least three letters of an anime title.",
+  "searchPromptMessage": "{count, plural, =1{Type at least one letter of an anime title.} other{Type at least {count} letters of an anime title.}}",
   "searchNothingMatching": "Nothing matches “{query}”.",
 
   "catalogCardInLibrary": "In library",

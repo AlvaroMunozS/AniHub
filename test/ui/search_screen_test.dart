@@ -188,7 +188,24 @@ void main() {
     await _search(tester, 'Fr');
 
     expect(find.text('No se pudo buscar'), findsNothing);
-    expect(find.textContaining('al menos tres letras'), findsOneWidget);
+    expect(find.text(spanish.searchPromptMessage(3)), findsOneWidget);
+  });
+
+  testWidgets('searches from the minimum length of the catalog', (
+    WidgetTester tester,
+  ) async {
+    await _pumpSearch(tester, catalog: FakeAnimeCatalog(minQueryLength: 2));
+
+    await _search(tester, 'O');
+    expect(find.text(spanish.searchPromptMessage(2)), findsOneWidget);
+    expect(
+      find.text('Escribe al menos 2 letras del título de un anime.'),
+      findsOneWidget,
+    );
+
+    await _search(tester, 'On');
+
+    expect(find.widgetWithText(CatalogCard, 'One Piece'), findsOneWidget);
   });
 
   testWidgets('keeps the search bar within the content width', (

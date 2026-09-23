@@ -8,14 +8,16 @@ import 'mal_mapping.dart';
 
 /// [AnimeCatalog] backed by the MyAnimeList API.
 ///
-/// Queries shorter than three characters return no results without a request,
+/// Queries shorter than [minQueryLength] return no results without a request,
 /// because MyAnimeList rejects them. MyAnimeList leaves anime rated not safe
 /// for work out of search results because `nsfw=true` is never sent. A search
 /// result without an id or a title is skipped.
 class MalCatalog implements AnimeCatalog {
   MalCatalog(this._client);
 
-  static const int _minQueryLength = 3;
+  // MyAnimeList rejects shorter queries with HTTP 400.
+  @override
+  int get minQueryLength => 3;
 
   static const int _maxLimit = 100;
 
@@ -33,7 +35,7 @@ class MalCatalog implements AnimeCatalog {
   @override
   Future<List<CatalogAnime>> search(String query, {int limit = 20}) async {
     final String term = query.trim();
-    if (term.length < _minQueryLength) return const <CatalogAnime>[];
+    if (term.length < minQueryLength) return const <CatalogAnime>[];
 
     final String cacheKey = '${term.toLowerCase()}#$limit';
     if (_searchCache[cacheKey] case final List<CatalogAnime> cached) {
