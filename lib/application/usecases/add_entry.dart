@@ -1,8 +1,8 @@
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/entities/entry.dart';
+import '../../domain/errors/duplicate_entry_exception.dart';
 import '../../domain/ports/entry_repository.dart';
 import '../../domain/values/watch_status.dart';
-import 'duplicate_entry_exception.dart';
 
 /// Adds a catalog anime to the library.
 ///
@@ -10,9 +10,8 @@ import 'duplicate_entry_exception.dart';
 /// is passed (see [Entry.withFavorite]).
 ///
 /// Throws a [DuplicateEntryException] without writing anything if an entry
-/// with the same `malId` already exists. The check is done here rather
-/// than left to a storage constraint so that every [EntryRepository] reports
-/// duplicates the same way.
+/// with the same `malId` already exists, as reported by
+/// [EntryRepository.save].
 class AddEntry {
   const AddEntry(this._repository);
 
@@ -22,15 +21,7 @@ class AddEntry {
     CatalogAnime anime, {
     WatchStatus status = WatchStatus.planned,
     bool isFavorite = false,
-  }) async {
-    final List<Entry> existing = await _repository.findAll();
-    final bool alreadyInLibrary = existing.any(
-      (Entry entry) => entry.malId == anime.malId,
-    );
-    if (alreadyInLibrary) {
-      throw DuplicateEntryException(anime.malId);
-    }
-
+  }) {
     final Entry entry = Entry(
       malId: anime.malId,
       title: anime.title,

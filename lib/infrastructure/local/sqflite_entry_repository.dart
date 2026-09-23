@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../../domain/entities/entry.dart';
+import '../../domain/errors/duplicate_entry_exception.dart';
 import '../../domain/ports/entry_repository.dart';
 import '../../domain/values/watch_status.dart';
 import 'uuid.dart';
@@ -121,7 +122,10 @@ class SqfliteEntryRepository implements EntryRepository {
   Future<List<Entry>> findAll() => _fetchAll();
 
   /// Throws a [StateError] if [entry] has an id that is not stored, and a
-  /// [DatabaseException] if another entry has the same `malId`.
+  /// [DuplicateEntryException] if another entry has the same `malId`.
+  ///
+  /// Duplicates are caught by the `mal_id` unique constraint rather than
+  /// looked up first, so two concurrent inserts cannot both pass the check.
   @override
   Future<Entry> save(Entry entry) async {
     final String? existingId = entry.id;
@@ -129,16 +133,23 @@ class SqfliteEntryRepository implements EntryRepository {
     final Entry saved = entry.copyWith(id: id, updatedAt: now().toUtc());
     final Map<String, Object?> row = _toRow(id, saved);
 
-    if (existingId == null) {
-      await _db.insert(_entries, row);
-    } else {
-      final int updated = await _db.update(
-        _entries,
-        row,
-        where: 'id = ?',
-        whereArgs: <Object?>[id],
-      );
-      if (updated == 0) throw StateError('No entry with id $id');
+    try {
+      if (existingId == null) {
+        await _db.insert(_entries, row);
+      } else {
+        final int updated = await _db.update(
+          _entries,
+          row,
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+        if (updated == 0) throw StateError('No entry with id $id');
+      }
+    } on DatabaseException catch (error) {
+      if (error.isUniqueConstraintError('$_entries.mal_id')) {
+        throw DuplicateEntryException(entry.malId);
+      }
+      rethrow;
     }
 
     await _notifyChange();

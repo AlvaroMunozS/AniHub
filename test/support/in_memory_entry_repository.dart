@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:anihub/domain/entities/entry.dart';
+import 'package:anihub/domain/errors/duplicate_entry_exception.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
 
 /// [EntryRepository] held in memory that behaves like the SQLite one.
 ///
-/// Writes that the database would reject, such as a duplicate `malId` or a
-/// [save] with an unknown id, throw a [StateError].
+/// Like the database, [save] throws a [DuplicateEntryException] for a
+/// duplicate `malId`; other writes it would reject, such as a [save] with an
+/// unknown id, throw a [StateError].
 class InMemoryEntryRepository implements EntryRepository {
   InMemoryEntryRepository({
     List<Entry> seed = const <Entry>[],
@@ -47,7 +49,7 @@ class InMemoryEntryRepository implements EntryRepository {
     if (_entries.values.any(
       (Entry other) => other.malId == entry.malId && other.id != existingId,
     )) {
-      throw StateError('An entry with malId ${entry.malId} already exists');
+      throw DuplicateEntryException(entry.malId);
     }
 
     final String id = existingId ?? _newId();

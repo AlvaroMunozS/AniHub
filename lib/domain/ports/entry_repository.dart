@@ -1,4 +1,5 @@
 import '../entities/entry.dart';
+import '../errors/duplicate_entry_exception.dart';
 
 /// Persistence for the user's library.
 abstract interface class EntryRepository {
@@ -9,6 +10,10 @@ abstract interface class EntryRepository {
   ///
   /// Returns the persisted entry, with `id` and `updatedAt` assigned by the
   /// repository.
+  ///
+  /// Throws a [DuplicateEntryException], writing nothing, if another entry
+  /// already has the same `malId`. The check and the write are one atomic
+  /// step, so two concurrent inserts of the same anime store only one.
   Future<Entry> save(Entry entry);
 
   /// Deletes the entry with [id]. Does nothing if there is none.

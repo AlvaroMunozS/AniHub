@@ -7,7 +7,6 @@ library;
 
 export 'add_entry.dart';
 export 'change_status.dart';
-export 'duplicate_entry_exception.dart';
 export 'filter_library.dart';
 export 'group_library.dart';
 export 'import_library.dart';

@@ -1,6 +1,7 @@
 import 'package:anihub/application/usecases/usecases.dart';
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/entities/entry.dart';
+import 'package:anihub/domain/errors/duplicate_entry_exception.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
