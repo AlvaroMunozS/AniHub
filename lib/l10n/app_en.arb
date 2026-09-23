@@ -21,6 +21,7 @@
   "catalogRateLimited": "Too many requests to MyAnimeList; wait a few seconds.",
   "catalogRateLimitedFor": "Too many requests to MyAnimeList; wait about {seconds} seconds.",
   "catalogInvalidResponse": "MyAnimeList did not return valid data. Try again in a few seconds.",
+  "catalogNotFound": "It is no longer in the catalog.",
 
   "entryAdded": "Added to “{status}”",
   "entryAddedAsFavorite": "Added to “{status}” and to favorites",
@@ -58,12 +59,15 @@
   "searchHint": "Search MyAnimeList",
   "searchFailed": "Could not search",
   "searchPromptTitle": "Search the catalog",
-  "searchPromptMessage": "Type at least three letters of an anime title.",
+  "searchPromptMessage": "{count, plural, =1{Type at least one letter of an anime title.} other{Type at least {count} letters of an anime title.}}",
   "searchNothingMatching": "Nothing matches “{query}”.",
 
   "catalogCardInLibrary": "In library",
 
   "detailLoadFailed": "Could not load the details",
+  "detailUnavailableTitle": "This anime is no longer available",
+  "detailUnavailableInLibrary": "It is no longer in the catalog. You can remove it from your library.",
+  "detailRemoveFromLibrary": "Remove from library",
   "detailBack": "Back",
   "detailRemove": "Remove",
   "detailRemoveTitle": "Remove from library",

@@ -7,8 +7,9 @@ import '../l10n/l10n.dart';
 ///
 /// [error] is usually a [CatalogException]; anything else is a bug, which
 /// gets [AppLocalizations.catalogRetryLater] and must be reported by whoever
-/// caught it. A missing client id gets its own message instead of a
-/// connection error, since retrying cannot help.
+/// caught it. A missing client id and an anime that no longer exists get
+/// their own messages instead of a connection error, since retrying cannot
+/// help.
 String catalogErrorMessage(AppLocalizations l10n, Object error) {
   return switch (error) {
     CatalogRateLimitException(:final Duration? retryAfter)
@@ -18,6 +19,7 @@ String catalogErrorMessage(AppLocalizations l10n, Object error) {
     CatalogTimeoutException() ||
     CatalogNetworkException() => l10n.catalogNetwork,
     CatalogUnauthorizedException() => l10n.catalogUnauthorized,
+    CatalogNotFoundException() => l10n.catalogNotFound,
     CatalogResponseException() => l10n.catalogInvalidResponse,
     _ => l10n.catalogRetryLater,
   };
@@ -29,6 +31,7 @@ IconData catalogErrorIcon(Object error) {
   return switch (error) {
     CatalogTimeoutException() ||
     CatalogNetworkException() => Icons.cloud_off_outlined,
+    CatalogNotFoundException() => Icons.search_off_outlined,
     _ => Icons.error_outline,
   };
 }

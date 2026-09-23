@@ -30,6 +30,7 @@
     }
   },
   "catalogInvalidResponse": "MyAnimeList no devolvió datos válidos. Inténtalo de nuevo en unos segundos.",
+  "catalogNotFound": "Ya no aparece en el catálogo.",
 
   "entryAdded": "Añadido a «{status}»",
   "@entryAdded": {
@@ -99,7 +100,13 @@
   "searchHint": "Buscar en MyAnimeList",
   "searchFailed": "No se pudo buscar",
   "searchPromptTitle": "Busca en el catálogo",
-  "searchPromptMessage": "Escribe al menos tres letras del título de un anime.",
+  "searchPromptMessage": "{count, plural, =1{Escribe al menos una letra del título de un anime.} other{Escribe al menos {count} letras del título de un anime.}}",
+  "@searchPromptMessage": {
+    "description": "count is the shortest query the catalog searches.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "searchNothingMatching": "No hay nada para «{query}».",
   "@searchNothingMatching": {
     "placeholders": {
@@ -110,6 +117,9 @@
   "catalogCardInLibrary": "En biblioteca",
 
   "detailLoadFailed": "No se pudo cargar la ficha",
+  "detailUnavailableTitle": "Este anime ya no está disponible",
+  "detailUnavailableInLibrary": "Ya no aparece en el catálogo. Puedes quitarlo de tu biblioteca.",
+  "detailRemoveFromLibrary": "Quitar de la biblioteca",
   "detailBack": "Volver",
   "detailRemove": "Eliminar",
   "detailRemoveTitle": "Eliminar de la biblioteca",

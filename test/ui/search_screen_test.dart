@@ -6,7 +6,10 @@ import 'package:anihub/domain/values/watch_status.dart';
 
 import 'package:anihub/ui/router.dart';
 import 'package:anihub/ui/screens/anime_detail_screen.dart';
+import 'package:anihub/ui/shell/content_column.dart';
+import 'package:anihub/ui/theme/app_theme.dart';
 import 'package:anihub/ui/widgets/catalog_card.dart';
+import 'package:anihub/ui/widgets/pill_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -185,6 +188,39 @@ void main() {
     await _search(tester, 'Fr');
 
     expect(find.text('No se pudo buscar'), findsNothing);
-    expect(find.textContaining('al menos tres letras'), findsOneWidget);
+    expect(find.text(spanish.searchPromptMessage(3)), findsOneWidget);
+  });
+
+  testWidgets('searches from the minimum length of the catalog', (
+    WidgetTester tester,
+  ) async {
+    await _pumpSearch(tester, catalog: FakeAnimeCatalog(minQueryLength: 2));
+
+    await _search(tester, 'O');
+    expect(find.text(spanish.searchPromptMessage(2)), findsOneWidget);
+    expect(
+      find.text('Escribe al menos 2 letras del título de un anime.'),
+      findsOneWidget,
+    );
+
+    await _search(tester, 'On');
+
+    expect(find.widgetWithText(CatalogCard, 'One Piece'), findsOneWidget);
+  });
+
+  testWidgets('keeps the search bar within the content width', (
+    WidgetTester tester,
+  ) async {
+    await _pumpSearch(tester, catalog: FakeAnimeCatalog());
+    tester.view.physicalSize =
+        const Size(1600, 900) * tester.view.devicePixelRatio;
+    await tester.pumpAndSettle();
+
+    final Rect bar = tester.getRect(find.byType(PillSearchBar));
+    expect(
+      bar.width,
+      lessThanOrEqualTo(AppLayout.contentMaxWidth + ContentColumn.gutter * 2),
+    );
+    expect(bar.center.dx, moreOrLessEquals(800));
   });
 }

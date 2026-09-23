@@ -29,6 +29,14 @@ class CatalogTimeoutException extends CatalogException {
   final Duration timeout;
 }
 
+/// The catalog has no anime with [malId], for example because it was
+/// removed after the user saved or opened it.
+class CatalogNotFoundException extends CatalogException {
+  const CatalogNotFoundException(this.malId) : super('Anime $malId not found');
+
+  final int malId;
+}
+
 /// The response had an unexpected status, an unreadable body or malformed
 /// data.
 class CatalogResponseException extends CatalogException {

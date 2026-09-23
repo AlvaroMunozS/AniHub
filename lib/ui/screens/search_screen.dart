@@ -32,9 +32,6 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   static const Duration _debounceDelay = Duration(milliseconds: 350);
 
-  // MyAnimeList does not search shorter queries.
-  static const int _minQueryLength = 3;
-
   final TextEditingController _query = TextEditingController();
   Timer? _debounce;
   bool _loading = false;
@@ -59,7 +56,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Future<void> _search(String value) async {
     final String term = value.trim();
     final int id = ++_requestId;
-    if (term.length < _minQueryLength) {
+    if (term.length < ref.read(animeCatalogProvider).minQueryLength) {
       setState(() {
         _loading = false;
         _results = <CatalogAnime>[];
@@ -123,11 +120,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          PillSearchBar(
-            controller: _query,
-            hintText: context.l10n.searchHint,
-            onChanged: _onQueryChanged,
-            onClear: _clear,
+          ContentColumn(
+            padded: false,
+            child: PillSearchBar(
+              controller: _query,
+              hintText: context.l10n.searchHint,
+              onChanged: _onQueryChanged,
+              onClear: _clear,
+            ),
           ),
           _LoadingLine(loading: _loading),
           Expanded(
@@ -157,11 +157,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
     final String term = _query.text.trim();
     if (_results.isEmpty) {
-      if (term.length < _minQueryLength) {
+      final int minQueryLength = ref.read(animeCatalogProvider).minQueryLength;
+      if (term.length < minQueryLength) {
         return EmptyState(
           icon: Icons.search,
           title: context.l10n.searchPromptTitle,
-          message: context.l10n.searchPromptMessage,
+          message: context.l10n.searchPromptMessage(minQueryLength),
         );
       }
       return EmptyState(

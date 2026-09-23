@@ -171,7 +171,9 @@ an incompatible change may simply empty the table. On its first load,
   Results are refreshed after 30 days, and older copies are kept for up to 90
   days as an offline fallback.
 - An unknown id answers HTTP 404, and an invalid client id HTTP 400 with the
-  message `Invalid client id`.
+  message `Invalid client id`. The details screen shows a 404 as an anime
+  that is no longer available, and offers to remove it from the library
+  instead of retrying.
 - The rate limit is not documented. HTTP 429 is handled, honoring
   `Retry-After` in seconds.
 
@@ -227,7 +229,8 @@ tap installs it. Nothing is requested until the user taps.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on
-  tablets.
+  tablets, where content is capped in width and centered instead of
+  stretching (`ContentColumn`).
 - **Manual updates.** The app looks for a new version only when asked, so it
   makes no request the user did not expect and needs no background work.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so

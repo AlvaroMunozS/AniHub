@@ -98,27 +98,37 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       bottom: false,
       child: Column(
         children: <Widget>[
-          PillSearchBar(
-            controller: _searchController,
-            hintText: context.l10n.librarySearchHint,
-            onChanged: (String value) =>
-                ref.read(libraryFilterProvider.notifier).setQuery(value),
-            onClear: () =>
-                ref.read(libraryFilterProvider.notifier).clearQuery(),
-            onFilter: () => showLibraryOptionsSheet(
-              context,
-              withFavoritesFilter: widget.status == WatchStatus.completed,
+          // Both already inset their content by the gutter, which lines it
+          // up with the grid below.
+          ContentColumn(
+            padded: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                PillSearchBar(
+                  controller: _searchController,
+                  hintText: context.l10n.librarySearchHint,
+                  onChanged: (String value) =>
+                      ref.read(libraryFilterProvider.notifier).setQuery(value),
+                  onClear: () =>
+                      ref.read(libraryFilterProvider.notifier).clearQuery(),
+                  onFilter: () => showLibraryOptionsSheet(
+                    context,
+                    withFavoritesFilter: widget.status == WatchStatus.completed,
+                  ),
+                  filterActive: onlyFavorites,
+                ),
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  tabs: <Widget>[
+                    for (final WatchStatus status in WatchStatus.values)
+                      Tab(text: statusLabel(context.l10n, status)),
+                  ],
+                ),
+              ],
             ),
-            filterActive: onlyFavorites,
-          ),
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: <Widget>[
-              for (final WatchStatus status in WatchStatus.values)
-                Tab(text: statusLabel(context.l10n, status)),
-            ],
           ),
           const SizedBox(height: AppSpacing.s16),
           if (entries.hasError && entries.hasValue) const _StaleLibraryNotice(),

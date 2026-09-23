@@ -9,6 +9,7 @@ class ContentColumn extends StatelessWidget {
     required this.child,
     this.maxWidth = AppLayout.contentMaxWidth,
     this.alignment = Alignment.center,
+    this.padded = true,
     super.key,
   });
 
@@ -20,6 +21,11 @@ class ContentColumn extends StatelessWidget {
   /// middle of the screen.
   final Alignment alignment;
 
+  /// Whether to pad [child] by [gutter] on each side. Children that already
+  /// have that padding, such as `PillSearchBar`, pass `false` so their edges
+  /// line up with padded content instead of adding a second gutter.
+  final bool padded;
+
   /// Fixed at any screen width; [maxWidth] handles wide screens.
   static const double gutter = AppSpacing.s16;
 
@@ -29,10 +35,12 @@ class ContentColumn extends StatelessWidget {
       alignment: alignment,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth + gutter * 2),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: gutter),
-          child: child,
-        ),
+        child: padded
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: gutter),
+                child: child,
+              )
+            : child,
       ),
     );
   }
