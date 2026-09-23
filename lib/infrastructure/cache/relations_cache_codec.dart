@@ -5,8 +5,8 @@ import '../../domain/entities/anime_relation_node.dart';
 import '../../domain/values/relation_kind.dart';
 import '../../domain/values/release_date.dart';
 
-// Bump on any incompatible change to the JSON shape: caches written with
-// another version are discarded.
+// Version of the snapshot format read by [decodeRelationsCache]; snapshots
+// with another version are discarded.
 const int _formatVersion = 1;
 
 /// An [AnimeRelationNode] stamped with the time it was cached.
@@ -29,31 +29,31 @@ class CachedRelationNode {
   String toString() => 'CachedRelationNode($savedAt, $node)';
 }
 
-/// Encodes the relation cache as JSON readable by [decodeRelationsCache].
-String encodeRelationsCache(Map<int, CachedRelationNode> nodes) {
-  return jsonEncode(<String, Object?>{
-    'v': _formatVersion,
-    'nodes': <String, Object?>{
-      for (final MapEntry<int, CachedRelationNode>(:int key, :value)
-          in nodes.entries)
-        '$key': <String, Object?>{
-          'savedAt': value.savedAt.toIso8601String(),
-          'node': _nodeToJson(value.node),
-        },
-    },
-  });
+/// Encodes [node] as the JSON read by [decodeRelationNode].
+String encodeRelationNode(AnimeRelationNode node) =>
+    jsonEncode(_nodeToJson(node));
+
+/// Decodes a node written by [encodeRelationNode], or returns null if [json]
+/// is unreadable or lacks a valid `malId` or `title`.
+///
+/// A relation without a `malId`, a `title` or a known `kind` is skipped.
+/// Optional fields of the wrong type are read as absent.
+AnimeRelationNode? decodeRelationNode(String json) {
+  try {
+    return _nodeFromJson(jsonDecode(json));
+  } on FormatException {
+    return null;
+  }
 }
 
-/// Decodes a cache written by [encodeRelationsCache], or returns null if
-/// there is none.
+/// Decodes a whole relation graph snapshot, the format of the preferences
+/// key that `SqfliteRelationsStore` migrates.
 ///
 /// Unreadable JSON, an unexpected root shape or a different format version
 /// yield null. A node without a valid `savedAt`, `malId` or `title` is
 /// skipped, and so is a relation without a `malId`, a `title` or a known
 /// `kind`. Optional fields of the wrong type are read as absent.
-Map<int, CachedRelationNode>? decodeRelationsCache(String? json) {
-  if (json == null || json.isEmpty) return null;
-
+Map<int, CachedRelationNode>? decodeRelationsCache(String json) {
   final Object? root;
   try {
     root = jsonDecode(json);
@@ -108,35 +108,42 @@ Map<String, Object?> _nodeToJson(AnimeRelationNode node) {
 CachedRelationNode? _cachedNodeFromJson(Object? json) {
   if (json case {
     'savedAt': final String rawSavedAt,
-    'node':
-        {'malId': final int malId, 'title': final String title} &&
-        final Map<String, Object?> node,
+    'node': final Object? raw,
   }) {
-    if (DateTime.tryParse(rawSavedAt) case final DateTime savedAt) {
-      return CachedRelationNode(
-        savedAt: savedAt,
-        node: AnimeRelationNode(
-          malId: malId,
-          title: title,
-          coverUrl: _optional<String>(node['coverUrl']),
-          seasonYear: _optional<int>(node['seasonYear']),
-          startDate: switch (node['startDate']) {
-            final Map<String, Object?> date => ReleaseDate(
-              year: _optional<int>(date['year']),
-              month: _optional<int>(date['month']),
-              day: _optional<int>(date['day']),
-            ),
-            _ => null,
-          },
-          relations: List<AnimeRelation>.unmodifiable(<AnimeRelation>[
-            if (node['relations'] case final List<Object?> relations)
-              for (final Object? relation in relations)
-                if (_relationFromJson(relation) case final AnimeRelation parsed)
-                  parsed,
-          ]),
-        ),
-      );
+    if ((DateTime.tryParse(rawSavedAt), _nodeFromJson(raw)) case (
+      final DateTime savedAt,
+      final AnimeRelationNode node,
+    )) {
+      return CachedRelationNode(savedAt: savedAt, node: node);
     }
+  }
+  return null;
+}
+
+AnimeRelationNode? _nodeFromJson(Object? json) {
+  if (json
+      case {'malId': final int malId, 'title': final String title} &&
+          final Map<String, Object?> node) {
+    return AnimeRelationNode(
+      malId: malId,
+      title: title,
+      coverUrl: _optional<String>(node['coverUrl']),
+      seasonYear: _optional<int>(node['seasonYear']),
+      startDate: switch (node['startDate']) {
+        final Map<String, Object?> date => ReleaseDate(
+          year: _optional<int>(date['year']),
+          month: _optional<int>(date['month']),
+          day: _optional<int>(date['day']),
+        ),
+        _ => null,
+      },
+      relations: List<AnimeRelation>.unmodifiable(<AnimeRelation>[
+        if (node['relations'] case final List<Object?> relations)
+          for (final Object? relation in relations)
+            if (_relationFromJson(relation) case final AnimeRelation parsed)
+              parsed,
+      ]),
+    );
   }
   return null;
 }

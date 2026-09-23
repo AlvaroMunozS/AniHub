@@ -94,8 +94,26 @@ bump `_schemaVersion` and add the migration step. Version 1 stored
 `updated_at` as ISO-8601 text; the upgrade rebuilds the table, converts each
 timestamp in Dart to keep its microseconds and drops the favorite of any entry
 that is not completed. There is no downgrade, since Android does not install
-an older version over a newer one. The relation graph from MyAnimeList is cached separately in
-`SharedPreferences`.
+an older version over a newer one.
+
+The relation graph from MyAnimeList is cached in a second database,
+`cache.db`, opened by `openRelationsCacheDatabase()` in
+`lib/infrastructure/cache/relations_cache_database.dart`. It holds one row per
+anime, so each fetched chunk writes only its own nodes:
+
+```sql
+CREATE TABLE relation_nodes (
+  mal_id INTEGER PRIMARY KEY,
+  saved_at INTEGER NOT NULL,           -- microseconds since the epoch, UTC
+  node TEXT NOT NULL                   -- JSON of the node and its relations
+);
+CREATE INDEX idx_relation_nodes_saved_at ON relation_nodes (saved_at);
+```
+
+Everything in it can be fetched again, so it is not part of the library and
+an incompatible change may simply empty the table. On its first load,
+`SqfliteRelationsStore` moves the snapshot that older versions kept under the
+`anihub.relations.cache` preferences key into the table and removes the key.
 
 ## Import format
 

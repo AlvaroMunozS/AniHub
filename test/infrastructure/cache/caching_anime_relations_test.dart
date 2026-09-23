@@ -5,34 +5,52 @@ import 'package:anihub/domain/errors/catalog_exception.dart';
 import 'package:anihub/domain/ports/anime_relations.dart';
 import 'package:anihub/infrastructure/cache/caching_anime_relations.dart';
 import 'package:anihub/infrastructure/cache/relations_cache_codec.dart';
-import 'package:anihub/infrastructure/cache/snapshot_store.dart';
+import 'package:anihub/infrastructure/cache/relations_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_anime_relations.dart';
 
-class _MemoryStore implements SnapshotStore {
-  _MemoryStore([this._value]);
+class _MemoryStore implements RelationsStore {
+  _MemoryStore([Map<int, CachedRelationNode>? nodes])
+    : nodes = <int, CachedRelationNode>{...?nodes};
 
-  String? _value;
-  int writes = 0;
+  final Map<int, CachedRelationNode> nodes;
+  final List<Map<int, CachedRelationNode>> saves =
+      <Map<int, CachedRelationNode>>[];
+  int loads = 0;
+
+  /// Thrown by the next load only.
+  Object? loadError;
   bool failOnWrite = false;
 
   /// When set, every write waits for it, so tests can force overlapping
   /// writes.
   Completer<void>? writeGate;
 
-  Map<int, CachedRelationNode>? get decoded => decodeRelationsCache(_value);
+  @override
+  Future<Map<int, CachedRelationNode>> loadAll() async {
+    loads++;
+    if (loadError case final Object error) {
+      loadError = null;
+      throw error;
+    }
+    return <int, CachedRelationNode>{...nodes};
+  }
 
   @override
-  String? read() => _value;
-
-  @override
-  Future<void> write(String json) async {
+  Future<void> saveAll(Map<int, CachedRelationNode> saved) async {
     if (writeGate != null) await writeGate!.future;
     if (failOnWrite) throw Exception('disk full');
-    writes++;
-    _value = json;
+    saves.add(saved);
+    nodes.addAll(saved);
+  }
+
+  @override
+  Future<void> deleteSavedBefore(DateTime cutoff) async {
+    nodes.removeWhere(
+      (int _, CachedRelationNode cached) => cached.savedAt.isBefore(cutoff),
+    );
   }
 }
 
@@ -74,13 +92,10 @@ AnimeRelationNode _node(int id, {String title = 'Cached'}) =>
     AnimeRelationNode(malId: id, title: title);
 
 _MemoryStore _storeWith(Map<int, DateTime> savedAtById) {
-  return _MemoryStore(
-    encodeRelationsCache(<int, CachedRelationNode>{
-      for (final MapEntry<int, DateTime>(:int key, :value)
-          in savedAtById.entries)
-        key: CachedRelationNode(savedAt: value, node: _node(key)),
-    }),
-  );
+  return _MemoryStore(<int, CachedRelationNode>{
+    for (final MapEntry<int, DateTime>(:int key, :value) in savedAtById.entries)
+      key: CachedRelationNode(savedAt: value, node: _node(key)),
+  });
 }
 
 void main() {
@@ -143,7 +158,7 @@ void main() {
 
     await relations.forIds(<int>[21]);
 
-    expect(store.decoded, <int, CachedRelationNode>{
+    expect(store.nodes, <int, CachedRelationNode>{
       21: CachedRelationNode(savedAt: _savedAt, node: _node(21)),
     });
   });
@@ -167,7 +182,7 @@ void main() {
     final CachingAnimeRelations relations = CachingAnimeRelations(
       FakeAnimeRelations(error: _offline),
       _storeWith(<int, DateTime>{21: _savedAt}),
-      now: () => _savedAt.add(const Duration(days: 365)),
+      now: () => _savedAt.add(const Duration(days: 60)),
     );
 
     expect(await relations.forIds(<int>[21]), <int, AnimeRelationNode>{
@@ -214,7 +229,7 @@ void main() {
 
     await relations.forIds(<int>[2]);
 
-    expect(store.decoded!.keys, <int>[2]);
+    expect(store.nodes.keys, <int>[2]);
   });
 
   test('keeps the results of concurrent calls', () async {
@@ -235,7 +250,7 @@ void main() {
     store.writeGate!.complete();
     await Future.wait(<Future<Map<int, AnimeRelationNode>>>[first, second]);
 
-    expect(store.decoded!.keys, unorderedEquals(<int>[1, 2]));
+    expect(store.nodes.keys, unorderedEquals(<int>[1, 2]));
   });
 
   test('returns fetched nodes and reports it when the store write '
@@ -253,7 +268,7 @@ void main() {
     expect(await relations.forIds(<int>[21]), <int, AnimeRelationNode>{
       21: _node(21),
     });
-    expect(store.writes, 0);
+    expect(store.saves, isEmpty);
     expect(logs, <Object>[contains('disk full')]);
   });
 
@@ -283,7 +298,7 @@ void main() {
         <int>[5],
       ]);
       expect(result.keys, <int>[1, 2, 3, 4]);
-      expect(store.decoded!.keys, <int>[1, 2, 3, 4]);
+      expect(store.nodes.keys, <int>[1, 2, 3, 4]);
     },
   );
 
@@ -337,5 +352,106 @@ void main() {
 
       await expectLater(relations.forIds(<int>[1]), throwsA(same(inner.error)));
     }
+  });
+
+  test('writes only the nodes fetched in each chunk', () async {
+    final _MemoryStore store = _storeWith(<int, DateTime>{9: _savedAt});
+    final CachingAnimeRelations relations = CachingAnimeRelations(
+      FakeAnimeRelations(
+        graph: <int, AnimeRelationNode>{1: _node(1), 2: _node(2), 3: _node(3)},
+      ),
+      store,
+      now: () => _savedAt,
+      chunkSize: 2,
+    );
+
+    await relations.forIds(<int>[1, 2, 3, 9]);
+
+    expect(
+      store.saves.map((Map<int, CachedRelationNode> s) => s.keys),
+      <Iterable<int>>[
+        <int>[1, 2],
+        <int>[3],
+      ],
+    );
+  });
+
+  test('loads the store once for concurrent calls', () async {
+    final _MemoryStore store = _storeWith(<int, DateTime>{1: _savedAt});
+    final CachingAnimeRelations relations = CachingAnimeRelations(
+      FakeAnimeRelations(),
+      store,
+      now: () => _savedAt,
+    );
+
+    await Future.wait(<Future<Map<int, AnimeRelationNode>>>[
+      relations.forIds(<int>[1]),
+      relations.forIds(<int>[1]),
+    ]);
+    await relations.forIds(<int>[1]);
+
+    expect(store.loads, 1);
+  });
+
+  test('fetches every id and reports it when the store cannot be '
+      'loaded', () async {
+    final List<String?> logs = <String?>[];
+    final DebugPrintCallback originalDebugPrint = debugPrint;
+    debugPrint = (String? message, {int? wrapWidth}) => logs.add(message);
+    addTearDown(() => debugPrint = originalDebugPrint);
+    final FakeAnimeRelations inner = FakeAnimeRelations(
+      graph: <int, AnimeRelationNode>{21: _node(21)},
+    );
+    final CachingAnimeRelations relations = CachingAnimeRelations(
+      inner,
+      _storeWith(<int, DateTime>{21: _savedAt})
+        ..loadError = Exception('disk unreadable'),
+      now: () => _savedAt,
+    );
+
+    expect(await relations.forIds(<int>[21]), <int, AnimeRelationNode>{
+      21: _node(21),
+    });
+    expect(inner.lastRequestedIds, <int>[21]);
+    expect(logs, <Object>[contains('disk unreadable')]);
+  });
+
+  test('loads the store again after a failed load', () async {
+    final FakeAnimeRelations inner = FakeAnimeRelations(
+      graph: const <int, AnimeRelationNode>{},
+    );
+    final _MemoryStore store = _storeWith(<int, DateTime>{21: _savedAt})
+      ..loadError = StateError('database closed');
+    final CachingAnimeRelations relations = CachingAnimeRelations(
+      inner,
+      store,
+      now: () => _savedAt,
+    );
+
+    expect(await relations.forIds(<int>[21]), isEmpty);
+    expect(await relations.forIds(<int>[21]), <int, AnimeRelationNode>{
+      21: _node(21),
+    });
+    expect(store.loads, 2);
+    expect(inner.callCount, 1);
+  });
+
+  test('drops nodes older than maxAge when the store is loaded', () async {
+    final FakeAnimeRelations inner = FakeAnimeRelations(error: _offline);
+    final _MemoryStore store = _storeWith(<int, DateTime>{
+      1: DateTime.utc(2020),
+      2: _savedAt,
+    });
+    final CachingAnimeRelations relations = CachingAnimeRelations(
+      inner,
+      store,
+      now: () => _savedAt,
+    );
+
+    await expectLater(relations.forIds(<int>[1]), throwsA(_offline));
+    expect(await relations.forIds(<int>[2]), <int, AnimeRelationNode>{
+      2: _node(2),
+    });
+    expect(store.nodes.keys, <int>[2]);
   });
 }

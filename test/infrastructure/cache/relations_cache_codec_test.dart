@@ -21,8 +21,47 @@ void main() {
     );
   }
 
-  test('round-trips nodes and relations', () {
-    final Map<int, CachedRelationNode> original = <int, CachedRelationNode>{
+  test('round-trips a node and its relations', () {
+    final AnimeRelationNode original = node(
+      relations: const <AnimeRelation>[
+        AnimeRelation(
+          malId: 5114,
+          kind: RelationKind.sequel,
+          title: 'FMA',
+          coverUrl: 'https://example.test/fma.jpg',
+          seasonYear: 2009,
+        ),
+      ],
+    );
+
+    expect(decodeRelationNode(encodeRelationNode(original)), original);
+  });
+
+  test('round-trips a node without start date or relations', () {
+    const AnimeRelationNode original = AnimeRelationNode(
+      malId: 5114,
+      title: 'FMA',
+    );
+
+    expect(decodeRelationNode(encodeRelationNode(original)), original);
+  });
+
+  test('decodes no node from corrupt JSON or a node without an id', () {
+    expect(decodeRelationNode('{not json'), isNull);
+    expect(decodeRelationNode('[1, 2, 3]'), isNull);
+    expect(decodeRelationNode('{"title":"FMA"}'), isNull);
+  });
+
+  test('reads the snapshot format of the preferences key', () {
+    const String json =
+        '{"v":1,"nodes":{"21":{"savedAt":"2024-05-06T00:00:00.000Z",'
+        '"node":{"malId":21,"title":"One Piece",'
+        '"coverUrl":"https://example.test/op.jpg","seasonYear":1999,'
+        '"startDate":{"year":1999,"month":10,"day":20},'
+        '"relations":[{"malId":5114,"kind":"sequel","title":"FMA",'
+        '"coverUrl":null,"seasonYear":2009}]}}}}';
+
+    expect(decodeRelationsCache(json), <int, CachedRelationNode>{
       21: CachedRelationNode(
         savedAt: DateTime.utc(2024, 5, 6),
         node: node(
@@ -31,33 +70,12 @@ void main() {
               malId: 5114,
               kind: RelationKind.sequel,
               title: 'FMA',
-              coverUrl: 'https://example.test/fma.jpg',
               seasonYear: 2009,
             ),
           ],
         ),
       ),
-    };
-
-    final Map<int, CachedRelationNode>? decoded = decodeRelationsCache(
-      encodeRelationsCache(original),
-    );
-
-    expect(decoded, equals(original));
-  });
-
-  test('round-trips a node without start date or relations', () {
-    final Map<int, CachedRelationNode> original = <int, CachedRelationNode>{
-      5114: CachedRelationNode(
-        savedAt: DateTime.utc(2024),
-        node: const AnimeRelationNode(malId: 5114, title: 'FMA'),
-      ),
-    };
-
-    expect(
-      decodeRelationsCache(encodeRelationsCache(original)),
-      equals(original),
-    );
+    });
   });
 
   test('returns null for a missing or different format version', () {
@@ -71,8 +89,7 @@ void main() {
     expect(decodeRelationsCache('42'), isNull);
   });
 
-  test('returns null for null or empty input', () {
-    expect(decodeRelationsCache(null), isNull);
+  test('returns null for empty input', () {
     expect(decodeRelationsCache(''), isNull);
   });
 
