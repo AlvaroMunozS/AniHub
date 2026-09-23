@@ -60,7 +60,8 @@ flutter test
 ```
 
 CI skips these checks when a change touches no code, build or workflow files,
-and builds a debug APK only when `android/` or `pubspec.*` change.
+and builds a debug APK only when `android/`, `assets/`, `pubspec.*` or the CI
+workflow change.
 
 ## Local storage
 
