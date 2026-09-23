@@ -128,3 +128,8 @@ final Provider<FilterLibrary> filterLibraryProvider = Provider<FilterLibrary>((
 ) {
   return const FilterLibrary();
 });
+
+final Provider<FindStartedEntries> findStartedEntriesProvider =
+    Provider<FindStartedEntries>((Ref ref) {
+      return const FindStartedEntries();
+    });

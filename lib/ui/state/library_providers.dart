@@ -422,47 +422,74 @@ final NotifierProvider<LibraryOrderNotifier, LibrarySort> libraryOrderProvider =
     );
 
 class LibraryFilter {
-  const LibraryFilter({this.query = '', this.onlyFavorites = false});
+  const LibraryFilter({
+    this.query = '',
+    this.favorites = FilterMode.any,
+    this.notStarted = FilterMode.any,
+  });
 
   final String query;
-  final bool onlyFavorites;
+  final FilterMode favorites;
+  final FilterMode notStarted;
+
+  /// Whether a filter other than the query narrows the tab.
+  bool get isNarrowed =>
+      favorites != FilterMode.any || notStarted != FilterMode.any;
 
   /// The filter as applied to the [status] tab.
   ///
-  /// Only completed entries can be favorites, so the favorites filter
-  /// applies to the completed tab alone.
+  /// Only completed entries can be favorites, and every franchise with an
+  /// entry being watched or completed is started, so each of these filters
+  /// narrows a single tab.
   LibraryFilter appliedTo(WatchStatus status) {
-    if (!onlyFavorites || status == WatchStatus.completed) return this;
-    return LibraryFilter(query: query);
+    return LibraryFilter(
+      query: query,
+      favorites: status == WatchStatus.completed ? favorites : FilterMode.any,
+      notStarted: status == WatchStatus.planned ? notStarted : FilterMode.any,
+    );
+  }
+
+  LibraryFilter copyWith({
+    String? query,
+    FilterMode? favorites,
+    FilterMode? notStarted,
+  }) {
+    return LibraryFilter(
+      query: query ?? this.query,
+      favorites: favorites ?? this.favorites,
+      notStarted: notStarted ?? this.notStarted,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
       other is LibraryFilter &&
       other.query == query &&
-      other.onlyFavorites == onlyFavorites;
+      other.favorites == favorites &&
+      other.notStarted == notStarted;
 
   @override
-  int get hashCode => Object.hash(query, onlyFavorites);
+  int get hashCode => Object.hash(query, favorites, notStarted);
 }
 
-/// Holds the library query and favorites filter for the session; never
-/// persisted, so the library opens unfiltered.
+/// Holds the library query and filters for the session; never persisted, so
+/// the library opens unfiltered.
 class LibraryFilterNotifier extends Notifier<LibraryFilter> {
   @override
   LibraryFilter build() => const LibraryFilter();
 
   void setQuery(String query) {
-    state = LibraryFilter(query: query, onlyFavorites: state.onlyFavorites);
+    state = state.copyWith(query: query);
   }
 
   void clearQuery() => setQuery('');
 
-  void toggleOnlyFavorites() {
-    state = LibraryFilter(
-      query: state.query,
-      onlyFavorites: !state.onlyFavorites,
-    );
+  void cycleFavorites() {
+    state = state.copyWith(favorites: state.favorites.next);
+  }
+
+  void cycleNotStarted() {
+    state = state.copyWith(notStarted: state.notStarted.next);
   }
 }
 
@@ -474,9 +501,12 @@ libraryFilterProvider = NotifierProvider<LibraryFilterNotifier, LibraryFilter>(
 /// Items of one library tab: filtered, grouped by franchise and sorted.
 ///
 /// Filtering runs before grouping so that a group with one matching member
-/// does not drag its other members along. Sorting runs after grouping
-/// because alphabetical order uses the group label. While the relation graph
-/// is loading or unavailable, entries are shown ungrouped.
+/// does not drag its other members along. Whether a franchise is started is
+/// judged on the whole library with its pending changes, so completing a
+/// season moves the next one out of the not-started filter at once. Sorting
+/// runs after grouping because alphabetical order uses the group label.
+/// While the relation graph is loading or unavailable, entries are shown
+/// ungrouped and each is judged started on its own status.
 final ProviderFamily<List<LibraryItem>, WatchStatus> libraryGroupsProvider =
     Provider.family<List<LibraryItem>, WatchStatus>((
       Ref ref,
@@ -490,14 +520,19 @@ final ProviderFamily<List<LibraryItem>, WatchStatus> libraryGroupsProvider =
       final LibraryFilter filter = ref
           .watch(libraryFilterProvider)
           .appliedTo(status);
-      final List<Entry> filtered = ref.watch(filterLibraryProvider)(
-        ofStatus,
-        query: filter.query,
-        onlyFavorites: filter.onlyFavorites,
-      );
       final Map<int, AnimeRelationNode> relations =
           ref.watch(libraryRelationsProvider).value ??
           const <int, AnimeRelationNode>{};
+      final Set<int> started = filter.notStarted == FilterMode.any
+          ? const <int>{}
+          : ref.watch(findStartedEntriesProvider)(entries, relations);
+      final List<Entry> filtered = ref.watch(filterLibraryProvider)(
+        ofStatus,
+        query: filter.query,
+        favorites: filter.favorites,
+        notStarted: filter.notStarted,
+        started: started,
+      );
       final List<LibraryItem> grouped = ref.watch(groupLibraryProvider)(
         filtered,
         relations,

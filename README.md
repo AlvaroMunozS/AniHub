@@ -29,6 +29,8 @@ The app is available in Spanish and English.
 
 - Three lists: *Watching*, *Planned* and *Completed*.
 - Favorites, with their own filter in the Completed list.
+- A *Not started* filter in the Planned list that tells new series apart from
+  the next seasons of the ones you follow.
 - Seasons of the same franchise grouped into one expandable poster.
 - Library search, filtering and sorting.
 - Anime details with synopsis, genres, studio, season, prequel and sequel.

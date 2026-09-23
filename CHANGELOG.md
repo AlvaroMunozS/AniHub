@@ -6,6 +6,14 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- In *Planned*, the *Not started* filter shows only anime from series you have not started, or hides them to leave the next seasons of series you follow.
+
+### Changed
+
+- The *Favorites* filter can also hide your favorites.
+
 ## [1.2.1] - 2026-09-23
 
 ### Fixed

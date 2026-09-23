@@ -61,14 +61,6 @@
   "libraryEmptyPlannedMessage": "Guarda aquí los animes que quieras ver más adelante.",
   "libraryEmptyCompletedTitle": "Aún no has completado nada",
   "libraryEmptyCompletedMessage": "Los animes que termines aparecerán aquí.",
-  "libraryNoFavoritesMatching": "No hay favoritos que coincidan con «{query}» en {status}.",
-  "@libraryNoFavoritesMatching": {
-    "description": "status is the label of the library tab.",
-    "placeholders": {
-      "query": {"type": "String"},
-      "status": {"type": "String"}
-    }
-  },
   "libraryNothingMatching": "No hay nada para «{query}» en {status}.",
   "@libraryNothingMatching": {
     "description": "status is the label of the library tab.",
@@ -77,17 +69,35 @@
       "status": {"type": "String"}
     }
   },
-  "libraryNoFavorites": "No tienes favoritos en {status}.",
-  "@libraryNoFavorites": {
+  "libraryNothingMatchingFilters": "Nada coincide con los filtros en {status}.",
+  "@libraryNothingMatchingFilters": {
     "description": "status is the label of the library tab.",
     "placeholders": {
+      "status": {"type": "String"}
+    }
+  },
+  "libraryNothingMatchingQueryAndFilters": "Nada coincide con «{query}» y los filtros en {status}.",
+  "@libraryNothingMatchingQueryAndFilters": {
+    "description": "status is the label of the library tab.",
+    "placeholders": {
+      "query": {"type": "String"},
       "status": {"type": "String"}
     }
   },
 
   "libraryOptionsFilter": "Filtrar",
   "libraryOptionsSort": "Ordenar",
-  "libraryOptionsOnlyFavorites": "Solo favoritos",
+  "libraryOptionsFavorites": "Favoritos",
+  "libraryOptionsNotStarted": "Sin empezar",
+  "@libraryOptionsNotStarted": {
+    "description": "Filter of the Planned tab for anime of series with no season being watched or completed."
+  },
+  "libraryFilterAny": "Sin filtrar",
+  "libraryFilterOnly": "Solo estos",
+  "libraryFilterExcluded": "Ocultos",
+  "@libraryFilterExcluded": {
+    "description": "State of a filter that hides the anime it names, read by screen readers."
+  },
   "libraryOptionsSortByTitle": "Título",
   "libraryOptionsSortByRecent": "Última modificación",
   "libraryOptionsAscending": "Ascendente",

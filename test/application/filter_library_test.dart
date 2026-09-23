@@ -50,28 +50,87 @@ void main() {
     expect(result.map((Entry e) => e.malId), <int>[1]);
   });
 
-  test('keeps only favorites when onlyFavorites is set', () {
+  test('keeps only favorites when favorites is only', () {
     final List<Entry> entries = <Entry>[
       _entry(1, 'Naruto', isFavorite: true),
       _entry(2, 'Bleach'),
     ];
 
-    final List<Entry> result = filterLibrary(entries, onlyFavorites: true);
+    final List<Entry> result = filterLibrary(
+      entries,
+      favorites: FilterMode.only,
+    );
 
     expect(result.map((Entry e) => e.malId), <int>[1]);
   });
 
-  test('requires both the query and onlyFavorites to match', () {
+  test('hides favorites when favorites is exclude', () {
+    final List<Entry> entries = <Entry>[
+      _entry(1, 'Naruto', isFavorite: true),
+      _entry(2, 'Bleach'),
+    ];
+
+    final List<Entry> result = filterLibrary(
+      entries,
+      favorites: FilterMode.exclude,
+    );
+
+    expect(result.map((Entry e) => e.malId), <int>[2]);
+  });
+
+  test('keeps only entries missing from started when notStarted is only', () {
+    final List<Entry> entries = <Entry>[
+      _entry(1, 'Naruto'),
+      _entry(2, 'Bleach'),
+    ];
+
+    final List<Entry> result = filterLibrary(
+      entries,
+      notStarted: FilterMode.only,
+      started: <int>{1},
+    );
+
+    expect(result.map((Entry e) => e.malId), <int>[2]);
+  });
+
+  test('keeps only started entries when notStarted is exclude', () {
+    final List<Entry> entries = <Entry>[
+      _entry(1, 'Naruto'),
+      _entry(2, 'Bleach'),
+    ];
+
+    final List<Entry> result = filterLibrary(
+      entries,
+      notStarted: FilterMode.exclude,
+      started: <int>{1},
+    );
+
+    expect(result.map((Entry e) => e.malId), <int>[1]);
+  });
+
+  test('ignores started when notStarted is any', () {
+    final List<Entry> entries = <Entry>[
+      _entry(1, 'Naruto'),
+      _entry(2, 'Bleach'),
+    ];
+
+    expect(filterLibrary(entries, started: <int>{1}), same(entries));
+  });
+
+  test('requires the query and every filter to match', () {
     final List<Entry> entries = <Entry>[
       _entry(1, 'Naruto', isFavorite: true),
       _entry(2, 'Naruto Shippuden'),
       _entry(3, 'Bleach', isFavorite: true),
+      _entry(4, 'Naruto the Movie', isFavorite: true),
     ];
 
     final List<Entry> result = filterLibrary(
       entries,
       query: 'naruto',
-      onlyFavorites: true,
+      favorites: FilterMode.only,
+      notStarted: FilterMode.only,
+      started: <int>{4},
     );
 
     expect(result.map((Entry e) => e.malId), <int>[1]);

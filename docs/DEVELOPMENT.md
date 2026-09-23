@@ -228,6 +228,13 @@ tap installs it. Nothing is requested until the user taps.
   favorite if the entry is not completed. `Entry` enforces the rule: its
   constructor rejects a favorite that is not completed, and status and favorite
   change only through `withStatus` and `withFavorite`.
+- **Started series.** A planned entry is *started* when an entry of its
+  franchise is being watched or completed; a franchise is the same connected
+  component `GroupLibrary` groups by (`Franchises`), so the *Not started*
+  filter never splits a group. It needs no airing data from MyAnimeList. The
+  graph only holds the relations of library entries, so season 4 planned
+  with season 1 completed and seasons 2–3 missing counts as not started
+  (#37).
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

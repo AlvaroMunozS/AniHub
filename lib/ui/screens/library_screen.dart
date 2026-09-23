@@ -85,9 +85,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         _searchController.text = next.query;
       }
     });
-    final bool onlyFavorites = ref.watch(
+    final bool filterActive = ref.watch(
       libraryFilterProvider.select(
-        (LibraryFilter f) => f.appliedTo(widget.status).onlyFavorites,
+        (LibraryFilter f) => f.appliedTo(widget.status).isNarrowed,
       ),
     );
     final AsyncValue<List<Entry>> entries = ref.watch(
@@ -112,11 +112,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                       ref.read(libraryFilterProvider.notifier).setQuery(value),
                   onClear: () =>
                       ref.read(libraryFilterProvider.notifier).clearQuery(),
-                  onFilter: () => showLibraryOptionsSheet(
-                    context,
-                    withFavoritesFilter: widget.status == WatchStatus.completed,
-                  ),
-                  filterActive: onlyFavorites,
+                  onFilter: () =>
+                      showLibraryOptionsSheet(context, status: widget.status),
+                  filterActive: filterActive,
                 ),
                 TabBar(
                   controller: _tabController,
@@ -256,12 +254,12 @@ class _FilteredEmptyState extends StatelessWidget {
     final String query = filter.query.trim();
     final String label = statusLabel(l10n, status);
     final String message;
-    if (query.isNotEmpty && filter.onlyFavorites) {
-      message = l10n.libraryNoFavoritesMatching(query, label);
+    if (query.isNotEmpty && filter.isNarrowed) {
+      message = l10n.libraryNothingMatchingQueryAndFilters(query, label);
     } else if (query.isNotEmpty) {
       message = l10n.libraryNothingMatching(query, label);
     } else {
-      message = l10n.libraryNoFavorites(label);
+      message = l10n.libraryNothingMatchingFilters(label);
     }
     return EmptyState(
       icon: Icons.search_off,
