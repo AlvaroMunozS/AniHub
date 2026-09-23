@@ -16,6 +16,7 @@ import '../../domain/entities/entry.dart';
 import '../../domain/errors/catalog_exception.dart';
 import '../../domain/values/relation_kind.dart';
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import '../actions/add_to_library.dart';
 import '../actions/entry_actions.dart';
 import '../catalog_messages.dart';
@@ -158,9 +159,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-      ),
+      value: systemOverlayStyleFor(Theme.of(context).brightness),
       child: Scaffold(
         body: Stack(
           children: <Widget>[
@@ -204,9 +203,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       error: (Object error, StackTrace _) {
         final EmptyState notice = EmptyState(
           icon: catalogErrorIcon(error),
-          title: 'No se pudo cargar la ficha',
-          message: catalogErrorMessage(error),
-          actionLabel: 'Reintentar',
+          title: context.l10n.detailLoadFailed,
+          message: catalogErrorMessage(context.l10n, error),
+          actionLabel: context.l10n.commonRetry,
           onAction: () => ref.invalidate(animeByIdProvider(widget.malId)),
         );
         if (entry == null) {
@@ -284,16 +283,16 @@ Future<bool> _confirmRemove(BuildContext context) async {
   final bool? ok = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) => AlertDialog(
-      title: const Text('Eliminar de la biblioteca'),
-      content: const Text('¿Seguro que quieres eliminar este anime?'),
+      title: Text(context.l10n.detailRemoveTitle),
+      content: Text(context.l10n.detailRemoveMessage),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Eliminar'),
+          child: Text(context.l10n.detailRemove),
         ),
       ],
     ),
@@ -327,14 +326,14 @@ class _TopBar extends StatelessWidget {
         return Container(
           height: topInset + AppSizes.headerHeight,
           padding: EdgeInsets.only(top: topInset),
-          color: AppColors.background.withValues(alpha: t),
+          color: context.palette.background.withValues(alpha: t),
           child: Row(
             children: <Widget>[
               IconButton(
                 onPressed: () => _leaveDetail(context),
                 icon: const Icon(Icons.arrow_back, size: AppSizes.iconMd),
-                tooltip: 'Volver',
-                color: AppColors.textPrimary,
+                tooltip: context.l10n.detailBack,
+                color: context.palette.textPrimary,
                 visualDensity: VisualDensity.compact,
               ),
               const Spacer(),
@@ -342,8 +341,8 @@ class _TopBar extends StatelessWidget {
                 IconButton(
                   onPressed: () => unawaited(_confirmAndRemove(context, entry)),
                   icon: const Icon(Icons.delete_outline, size: AppSizes.iconMd),
-                  tooltip: 'Eliminar',
-                  color: AppColors.textPrimary,
+                  tooltip: context.l10n.detailRemove,
+                  color: context.palette.textPrimary,
                   visualDensity: VisualDensity.compact,
                 ),
             ],
@@ -388,8 +387,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? episodes = formatEpisodes(anime);
-    final String? season = formatSeason(anime);
+    final String? episodes = formatEpisodes(context.l10n, anime);
+    final String? season = formatSeason(context.l10n, anime);
 
     return Stack(
       children: <Widget>[
@@ -402,9 +401,9 @@ class _Header extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 stops: const <double>[0, 0.6, 1],
                 colors: <Color>[
-                  AppColors.background.withValues(alpha: 0.55),
-                  AppColors.background.withValues(alpha: 0.85),
-                  AppColors.background,
+                  context.palette.background.withValues(alpha: 0.55),
+                  context.palette.background.withValues(alpha: 0.85),
+                  context.palette.background,
                 ],
               ),
             ),
@@ -472,7 +471,11 @@ class _MetaRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpacing.s8),
       child: Row(
         children: <Widget>[
-          Icon(icon, size: AppSizes.iconSm, color: AppColors.textSecondary),
+          Icon(
+            icon,
+            size: AppSizes.iconSm,
+            color: context.palette.textSecondary,
+          ),
           const SizedBox(width: AppSpacing.s8),
           Expanded(
             child: Text(
@@ -595,9 +598,13 @@ class _FavoriteAction extends ConsumerWidget {
       toggled: isFavorite,
       child: StatusActionButton(
         icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-        label: 'Favorito',
-        color: isFavorite ? AppColors.accent : AppColors.textSecondary,
-        tooltip: isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
+        label: context.l10n.detailFavorite,
+        color: isFavorite
+            ? context.palette.accent
+            : context.palette.textSecondary,
+        tooltip: isFavorite
+            ? context.l10n.detailRemoveFavorite
+            : context.l10n.detailAddFavorite,
         onTap: !enabled
             ? null
             : () => unawaited(
@@ -688,7 +695,9 @@ class _ExpandableSynopsisState extends State<_ExpandableSynopsis> {
         return Semantics(
           button: true,
           expanded: _expanded,
-          onTapHint: _expanded ? 'Mostrar menos' : 'Mostrar más',
+          onTapHint: _expanded
+              ? context.l10n.detailShowLess
+              : context.l10n.detailShowMore,
           child: GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
             child: Column(
@@ -720,7 +729,7 @@ class _ExpandableSynopsisState extends State<_ExpandableSynopsis> {
                 Center(
                   child: Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textFaint,
+                    color: context.palette.textFaint,
                   ),
                 ),
               ],
@@ -762,12 +771,12 @@ class _Relations extends ConsumerWidget {
       children: <Widget>[
         if (prequels.isNotEmpty)
           _RelationGroup(
-            label: prequels.length == 1 ? 'Precuela' : 'Precuelas',
+            label: context.l10n.detailPrequels(prequels.length),
             relations: prequels,
           ),
         if (sequels.isNotEmpty)
           _RelationGroup(
-            label: sequels.length == 1 ? 'Secuela' : 'Secuelas',
+            label: context.l10n.detailSequels(sequels.length),
             relations: sequels,
           ),
       ],
@@ -788,7 +797,12 @@ class _RelationGroup extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label, style: AppTypography.caption),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: context.palette.textFaint,
+            ),
+          ),
           const SizedBox(height: AppSpacing.s8),
           for (final AnimeRelation relation in relations)
             _RelationRow(relation: relation),
@@ -832,13 +846,15 @@ class _RelationRow extends StatelessWidget {
                     const SizedBox(height: AppSpacing.s2),
                     Text(
                       '${relation.seasonYear}',
-                      style: AppTypography.caption,
+                      style: AppTypography.caption.copyWith(
+                        color: context.palette.textFaint,
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textFaint),
+            Icon(Icons.chevron_right, color: context.palette.textFaint),
           ],
         ),
       ),

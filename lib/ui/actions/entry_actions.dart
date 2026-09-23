@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/entry.dart';
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import '../state/library_providers.dart';
 
 /// Sets the status of [entry] through [PendingEntryChanges], showing a
@@ -16,7 +17,7 @@ Future<void> changeStatus(
   return _withFailureMessage(
     context,
     ref.read(pendingEntryChangesProvider.notifier).changeStatus(entry, status),
-    'No se pudo actualizar',
+    context.l10n.entryUpdateFailed,
   );
 }
 
@@ -26,7 +27,7 @@ Future<void> toggleFavorite(WidgetRef ref, BuildContext context, Entry entry) {
   return _withFailureMessage(
     context,
     ref.read(pendingEntryChangesProvider.notifier).toggleFavorite(entry),
-    'No se pudo actualizar',
+    context.l10n.entryUpdateFailed,
   );
 }
 
@@ -42,7 +43,7 @@ Future<bool> removeFromLibrary(
   final ChangeOutcome outcome = await _withFailureMessage(
     context,
     ref.read(pendingEntryChangesProvider.notifier).remove(entry),
-    'No se pudo eliminar',
+    context.l10n.entryRemoveFailed,
   );
   return outcome == ChangeOutcome.applied;
 }

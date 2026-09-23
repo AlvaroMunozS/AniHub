@@ -10,6 +10,8 @@
 | Library storage | SQLite through sqflite |
 | Metadata | MyAnimeList API v2 over plain `http`, public endpoints only |
 | Images | `cached_network_image` with a long-lived disk cache |
+| Localization | `flutter_localizations` and `intl`, generated from ARB files |
+| Preferences | `shared_preferences` |
 | Updates | GitHub Releases, installed with Android's `PackageInstaller` |
 
 ## Architecture
@@ -22,6 +24,7 @@ lib/application     use cases
 lib/infrastructure  adapters: local/, mal/, backup/, cache/, images/,
                     github/, update/, links/
 lib/ui              screens, widgets, state, theme
+lib/l10n            ARB files and the context.l10n extension
 lib/main.dart       composition root
 ```
 
@@ -91,7 +94,7 @@ the migration step. The relation graph from MyAnimeList is cached separately in
 
 ## Import format
 
-*Más → Importar biblioteca* reads an `anihub-library` file:
+*More → Settings → Backup → Import library* reads an `anihub-library` file:
 
 ```json
 {
@@ -154,16 +157,16 @@ allows its name only to credit it as the source and forbids altering or
 translating its content. It also requires a privacy policy shown before
 installation ([PRIVACY.md](../PRIVACY.md)) and notifying MyAnimeList of
 releases with substantially new functionality ([RELEASING.md](RELEASING.md)).
-The app credits it in *Más → Acerca de*.
+The app credits it in *More → About*.
 
 ## Updates
 
-*Más → Acerca de → Buscar actualizaciones* checks for a newer release and a
-second tap installs it. Nothing is requested until the user taps.
+*More → About → Check for updates* checks for a newer release and a second
+tap installs it. Nothing is requested until the user taps.
 
 - `lib/infrastructure/github/` reads
   `GET /repos/AlvaroMunozS/AniHub/releases/latest`, which never returns drafts
-  or pre-releases. With *Recibir versiones preliminares* on, it reads
+  or pre-releases. With *Get pre-release versions* on, it reads
   `GET /releases?per_page=30` instead and picks the highest semantic version,
   skipping drafts and tags that are not versions.
 - A release must have exactly one `.apk` asset with a `sha256:` `digest`,
@@ -204,13 +207,20 @@ second tap installs it. Nothing is requested until the user taps.
   makes no request the user did not expect and needs no background work.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so
   images are cached for a year (up to 3000 files) and load offline.
+  *More → Settings → Storage* shows its size and clears it.
+- **Preferences without a port.** Theme, accent and language are UI state:
+  notifiers in `lib/ui/state/settings_providers.dart` read and write
+  `SharedPreferences` directly.
 - **Few dependencies.** UUIDs come from a small helper over `Random.secure()`
   instead of a package. New dependencies need a clear reason.
 
 ## Code style
 
 - Identifiers, comments, documentation and commits are in English. User-facing
-  strings are in Spanish.
+  strings live in the ARB files (see [Localization](#localization)), never as
+  literals in `lib/ui`.
+- Colors come from the theme (see [Theming](#theming)), never as literals
+  outside `lib/ui/theme`.
 - Comments explain *why*: a constraint, an edge case or a platform quirk. They
   do not restate the code or narrate its history; that belongs in git.
 - Doc comments follow [Effective Dart](https://dart.dev/effective-dart/documentation):
@@ -220,6 +230,31 @@ second tap installs it. Nothing is requested until the user taps.
 - Test names describe behavior: `'rejects the file when an entry is invalid'`.
 - No dead code, debug output, swallowed errors or speculative abstractions.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Localization
+
+The app is in Spanish and English. Strings live in `lib/l10n/app_es.arb`, the
+template, and `lib/l10n/app_en.arb`. `flutter pub get` generates
+`lib/l10n/app_localizations*.dart`, which is git-ignored.
+
+- To add a string, add the key to both files and read it with
+  `context.l10n.<key>`. Keys are lowerCamelCase with the screen as prefix:
+  `aboutCheckForUpdates`, `storageImageCache`. Add an `@<key>` description
+  only when the context is not obvious.
+- Counts use ICU plurals and values use placeholders, never concatenation.
+- The language is the one picked in *Appearance*, or else the first device
+  language with a translation, in any regional variant; anything else falls
+  back to English (`resolveAppLocale` in `lib/ui/locale_resolution.dart`).
+- Data from MyAnimeList (titles, synopses, genres) is never translated.
+
+## Theming
+
+`buildTheme` in `lib/ui/theme/app_theme.dart` builds the light, dark and pure
+black themes from an `AppPalette` and an `AppAccent`. Widgets read colors with
+`context.palette` or the `ColorScheme`, so they follow the theme without
+knowing which one is active. Only `AppOverlays`, drawn over cover art, is the
+same in every theme. Each accent keeps a 3:1 contrast against the surfaces of
+every theme, checked by `test/ui/theme/accents_test.dart`.
 
 ## App icon
 

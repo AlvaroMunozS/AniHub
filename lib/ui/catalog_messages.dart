@@ -1,34 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../domain/errors/catalog_exception.dart';
-
-/// Shown instead of a connection error when the app was built without a
-/// valid MyAnimeList client id, since retrying cannot help.
-const String catalogUnauthorizedMessage =
-    'Esta versión de la app no tiene un Client ID de MyAnimeList válido.';
-
-/// Retry hint for a failure that is not about the connection.
-const String retryLaterMessage = 'Inténtalo de nuevo en unos segundos.';
-
-const String _networkMessage = 'Revisa la conexión e inténtalo otra vez.';
+import '../l10n/l10n.dart';
 
 /// Describes a failed catalog request to the user.
 ///
 /// [error] is usually a [CatalogException]; anything else is a bug, which
-/// gets [retryLaterMessage] and must be reported by whoever caught it.
-String catalogErrorMessage(Object error) {
+/// gets [AppLocalizations.catalogRetryLater] and must be reported by whoever
+/// caught it. A missing client id gets its own message instead of a
+/// connection error, since retrying cannot help.
+String catalogErrorMessage(AppLocalizations l10n, Object error) {
   return switch (error) {
     CatalogRateLimitException(:final Duration? retryAfter)
         when retryAfter != null && retryAfter.inSeconds > 1 =>
-      'Demasiadas peticiones a MyAnimeList; espera unos '
-          '${retryAfter.inSeconds} segundos.',
-    CatalogRateLimitException() =>
-      'Demasiadas peticiones a MyAnimeList; espera unos segundos.',
-    CatalogTimeoutException() || CatalogNetworkException() => _networkMessage,
-    CatalogUnauthorizedException() => catalogUnauthorizedMessage,
-    CatalogResponseException() =>
-      'MyAnimeList no devolvió datos válidos. $retryLaterMessage',
-    _ => retryLaterMessage,
+      l10n.catalogRateLimitedFor(retryAfter.inSeconds),
+    CatalogRateLimitException() => l10n.catalogRateLimited,
+    CatalogTimeoutException() ||
+    CatalogNetworkException() => l10n.catalogNetwork,
+    CatalogUnauthorizedException() => l10n.catalogUnauthorized,
+    CatalogResponseException() => l10n.catalogInvalidResponse,
+    _ => l10n.catalogRetryLater,
   };
 }
 

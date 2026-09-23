@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../application/usecases/library_order.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/library_providers.dart';
 import '../../theme/app_theme.dart';
 
@@ -34,8 +35,9 @@ class _LibraryOptionsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<(String, Widget)> tabs = <(String, Widget)>[
-      if (withFavoritesFilter) ('Filtrar', const _FilterTab()),
-      ('Ordenar', const _SortTab()),
+      if (withFavoritesFilter)
+        (context.l10n.libraryOptionsFilter, const _FilterTab()),
+      (context.l10n.libraryOptionsSort, const _SortTab()),
     ];
     return SafeArea(
       child: DefaultTabController(
@@ -74,7 +76,7 @@ class _FilterTab extends ConsumerWidget {
     return ListView(
       children: <Widget>[
         CheckboxListTile(
-          title: const Text('Solo favoritos'),
+          title: Text(context.l10n.libraryOptionsOnlyFavorites),
           value: filter.onlyFavorites,
           onChanged: (_) =>
               ref.read(libraryFilterProvider.notifier).toggleOnlyFavorites(),
@@ -93,12 +95,12 @@ class _SortTab extends ConsumerWidget {
     return ListView(
       children: <Widget>[
         _SortOption(
-          label: 'Título',
+          label: context.l10n.libraryOptionsSortByTitle,
           order: LibraryOrder.alphabetical,
           sort: sort,
         ),
         _SortOption(
-          label: 'Última modificación',
+          label: context.l10n.libraryOptionsSortByRecent,
           order: LibraryOrder.recent,
           sort: sort,
         ),
@@ -128,9 +130,11 @@ class _SortOption extends ConsumerWidget {
         child: active
             ? Icon(
                 sort.reversed ? Icons.arrow_downward : Icons.arrow_upward,
-                color: AppColors.accent,
+                color: context.palette.accent,
                 size: AppSizes.iconMd,
-                semanticLabel: sort.reversed ? 'Descendente' : 'Ascendente',
+                semanticLabel: sort.reversed
+                    ? context.l10n.libraryOptionsDescending
+                    : context.l10n.libraryOptionsAscending,
               )
             : null,
       ),
@@ -138,7 +142,7 @@ class _SortOption extends ConsumerWidget {
         label,
         style: active
             ? Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(color: AppColors.accent)
+                  ?.copyWith(color: context.palette.accent)
             : null,
       ),
       onTap: () => ref.read(libraryOrderProvider.notifier).select(order),

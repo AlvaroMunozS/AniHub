@@ -2,6 +2,11 @@ import 'package:anihub/domain/values/watch_status.dart';
 import 'package:anihub/ui/router.dart';
 import 'package:anihub/ui/screens/anime_detail_screen.dart';
 import 'package:anihub/ui/screens/library_screen.dart';
+import 'package:anihub/ui/screens/settings/appearance_settings_screen.dart';
+import 'package:anihub/ui/screens/settings/backup_settings_screen.dart';
+import 'package:anihub/ui/screens/settings/settings_screen.dart';
+import 'package:anihub/ui/screens/settings/storage_settings_screen.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -45,5 +50,22 @@ void main() {
 
     expect(_location(router), '/anime/5114');
     expect(find.byType(AnimeDetailScreen), findsOneWidget);
+  });
+
+  testWidgets('opens each settings screen at its route', (
+    WidgetTester tester,
+  ) async {
+    for (final (String path, Type screen) in <(String, Type)>[
+      (RoutePaths.settings, SettingsScreen),
+      (RoutePaths.appearanceSettings, AppearanceSettingsScreen),
+      (RoutePaths.backupSettings, BackupSettingsScreen),
+      (RoutePaths.storageSettings, StorageSettingsScreen),
+    ]) {
+      final GoRouter router = await pumpApp(tester, initialLocation: path);
+
+      expect(_location(router), path);
+      expect(find.byType(screen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    }
   });
 }

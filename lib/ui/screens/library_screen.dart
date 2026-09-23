@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../application/usecases/usecases.dart';
 import '../../domain/entities/entry.dart';
 import '../../domain/values/watch_status.dart';
-import '../catalog_messages.dart';
+import '../../l10n/l10n.dart';
 import '../router.dart';
 import '../shell/content_column.dart';
 import '../state/library_providers.dart';
@@ -100,7 +100,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         children: <Widget>[
           PillSearchBar(
             controller: _searchController,
-            hintText: 'Buscar en la biblioteca',
+            hintText: context.l10n.librarySearchHint,
             onChanged: (String value) =>
                 ref.read(libraryFilterProvider.notifier).setQuery(value),
             onClear: () =>
@@ -117,7 +117,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             tabAlignment: TabAlignment.start,
             tabs: <Widget>[
               for (final WatchStatus status in WatchStatus.values)
-                Tab(text: statusLabel(status)),
+                Tab(text: statusLabel(context.l10n, status)),
             ],
           ),
           const SizedBox(height: AppSpacing.s16),
@@ -155,18 +155,18 @@ class _LibraryTab extends ConsumerWidget {
       loading: () => const PosterGridSkeleton(),
       error: (Object error, StackTrace stackTrace) => EmptyState(
         icon: Icons.error_outline,
-        title: 'No se pudo leer la biblioteca',
-        message: retryLaterMessage,
-        actionLabel: 'Reintentar',
+        title: context.l10n.libraryLoadFailed,
+        message: context.l10n.catalogRetryLater,
+        actionLabel: context.l10n.commonRetry,
         onAction: () => ref.invalidate(libraryEntriesProvider),
       ),
       data: (List<Entry> list) {
         if (!list.any((Entry e) => e.status == status)) {
           if (list.isEmpty && status == WatchStatus.watching) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.inbox_outlined,
-              title: 'Tu biblioteca está vacía',
-              message: 'Busca un anime para empezar a seguirlo.',
+              title: context.l10n.libraryEmptyTitle,
+              message: context.l10n.libraryEmptyMessage,
             );
           }
           return _EmptyTab(status: status);
@@ -202,9 +202,8 @@ class _StaleLibraryNotice extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.s12),
       child: Text(
-        'No se pudo actualizar la biblioteca; se muestra la última versión '
-        'cargada.',
-        style: AppTypography.caption,
+        context.l10n.libraryStale,
+        style: AppTypography.caption.copyWith(color: context.palette.textFaint),
       ),
     );
   }
@@ -217,18 +216,18 @@ class _EmptyTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return EmptyState(
       icon: statusIcon(status, selected: false),
       title: switch (status) {
-        WatchStatus.watching => 'No estás viendo nada',
-        WatchStatus.planned => 'No tienes nada pendiente',
-        WatchStatus.completed => 'Aún no has completado nada',
+        WatchStatus.watching => l10n.libraryEmptyWatchingTitle,
+        WatchStatus.planned => l10n.libraryEmptyPlannedTitle,
+        WatchStatus.completed => l10n.libraryEmptyCompletedTitle,
       },
       message: switch (status) {
-        WatchStatus.watching => 'Marca un anime como «Viendo» desde su ficha.',
-        WatchStatus.planned =>
-          'Guarda aquí los animes que quieras ver más adelante.',
-        WatchStatus.completed => 'Los animes que termines aparecerán aquí.',
+        WatchStatus.watching => l10n.libraryEmptyWatchingMessage,
+        WatchStatus.planned => l10n.libraryEmptyPlannedMessage,
+        WatchStatus.completed => l10n.libraryEmptyCompletedMessage,
       },
     );
   }
@@ -243,19 +242,20 @@ class _FilteredEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final String query = filter.query.trim();
-    final String label = statusLabel(status);
+    final String label = statusLabel(l10n, status);
     final String message;
     if (query.isNotEmpty && filter.onlyFavorites) {
-      message = 'No hay favoritos que coincidan con «$query» en $label.';
+      message = l10n.libraryNoFavoritesMatching(query, label);
     } else if (query.isNotEmpty) {
-      message = 'No hay nada para «$query» en $label.';
+      message = l10n.libraryNothingMatching(query, label);
     } else {
-      message = 'No tienes favoritos en $label.';
+      message = l10n.libraryNoFavorites(label);
     }
     return EmptyState(
       icon: Icons.search_off,
-      title: 'Sin resultados',
+      title: l10n.commonNoResults,
       message: message,
     );
   }

@@ -19,11 +19,14 @@ class GroupMemberSlot extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(left: indent),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            left: BorderSide(color: AppColors.accentSoft, width: _railWidth),
+            left: BorderSide(
+              color: context.palette.accentSoft,
+              width: _railWidth,
+            ),
           ),
-          borderRadius: BorderRadius.horizontal(
+          borderRadius: const BorderRadius.horizontal(
             left: Radius.circular(AppRadius.pill),
           ),
         ),

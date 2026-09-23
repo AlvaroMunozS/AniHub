@@ -4,6 +4,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import '../theme/status_style.dart';
 
@@ -144,8 +145,8 @@ class _StatusSelectorState extends State<StatusSelector>
           opacity: 1 - t,
           child: StatusActionButton(
             icon: Icons.add_circle_outline,
-            label: 'Añadir',
-            color: AppColors.textSecondary,
+            label: context.l10n.statusSelectorAdd,
+            color: context.palette.textSecondary,
             onTap: _expand,
           ),
         ),
@@ -193,11 +194,13 @@ class _StatusSelectorState extends State<StatusSelector>
             selected: isCurrent,
             button: true,
             expanded: isCurrent ? _open : null,
-            onTapHint: isCurrent ? 'Cambiar estado' : null,
+            onTapHint: isCurrent ? context.l10n.statusSelectorChange : null,
             child: StatusActionButton(
               icon: statusIcon(status, selected: isCurrent),
-              label: statusLabel(status),
-              color: isCurrent ? statusColor(status) : AppColors.textSecondary,
+              label: statusLabel(context.l10n, status),
+              color: isCurrent
+                  ? statusColor(context.palette, status)
+                  : context.palette.textSecondary,
               onTap: isCurrent
                   ? _handleCurrentTap
                   : () => _handleSelect(status),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import '../router.dart';
 import '../state/library_providers.dart';
 
@@ -78,20 +79,20 @@ class _AppShellState extends ConsumerState<AppShell> {
               selectedIndex: _current.index,
               onDestinationSelected: (int i) =>
                   _go(context, _Destination.values[i]),
-              destinations: const <NavigationDestination>[
+              destinations: <NavigationDestination>[
                 NavigationDestination(
-                  icon: Icon(Icons.collections_bookmark_outlined),
-                  selectedIcon: Icon(Icons.collections_bookmark),
-                  label: 'Biblioteca',
+                  icon: const Icon(Icons.collections_bookmark_outlined),
+                  selectedIcon: const Icon(Icons.collections_bookmark),
+                  label: context.l10n.navLibrary,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.explore_outlined),
-                  selectedIcon: Icon(Icons.explore),
-                  label: 'Navegar',
+                  icon: const Icon(Icons.explore_outlined),
+                  selectedIcon: const Icon(Icons.explore),
+                  label: context.l10n.navBrowse,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.more_horiz),
-                  label: 'Más',
+                  icon: const Icon(Icons.more_horiz),
+                  label: context.l10n.navMore,
                 ),
               ],
             ),

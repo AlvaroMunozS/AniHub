@@ -20,8 +20,8 @@ client id, and are handled under
 Covers of an imported library are loaded from the addresses in the imported
 file.
 
-The app connects to GitHub only when you tap *Buscar actualizaciones* in
-*Más → Acerca de*, or install the update it finds:
+The app connects to GitHub only when you tap *Check for updates* in
+*More → About*, or install the update it finds:
 
 - `api.github.com`, to look up the latest release;
 - `github.com` and `release-assets.githubusercontent.com`, to download its
@@ -30,14 +30,14 @@ The app connects to GitHub only when you tap *Buscar actualizaciones* in
 These requests include the device's IP address and a user agent naming AniHub,
 and are handled under
 [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
-The links in *Acerca de* open in your browser.
+The links in *About* open in your browser.
 
 ## Data on the device
 
-The library, the sort and pre-release preferences and the cached anime data
-and covers are stored in the app's private storage. They are included in
-Android's system backup when it is enabled on the device. Uninstalling the app
-deletes them.
+The library, the app preferences and the cached anime data are stored in the
+app's private storage. They are included in Android's system backup when it is
+enabled on the device. Cover images are cached in the app's cache, which is not
+backed up. Uninstalling the app deletes all of them.
 
 A downloaded update is stored in the app's cache, which is not backed up, and
 deleted once it is handed to the system installer or the download fails. An

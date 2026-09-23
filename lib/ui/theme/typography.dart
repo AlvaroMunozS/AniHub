@@ -7,7 +7,8 @@ import 'tokens.dart';
 /// Inter ships as a single variable font, so weights are set through the
 /// `wght` axis. `fontWeight` is set too, so that system fallback fonts used
 /// for glyphs Inter lacks, such as Japanese titles, match the weight. The
-/// `opsz` axis follows the font size.
+/// `opsz` axis follows the font size. Styles carry no color: `buildTheme`
+/// colors them from the palette.
 class AppTypography {
   const AppTypography._();
 
@@ -22,14 +23,12 @@ class AppTypography {
     required FontWeight weight,
     double letterSpacing = 0,
     double height = 1.25,
-    Color color = AppColors.textPrimary,
   }) {
     return TextStyle(
       fontFamily: fontFamily,
       fontSize: size,
       height: height,
       letterSpacing: letterSpacing,
-      color: color,
       fontWeight: weight,
       fontVariations: <FontVariation>[
         FontVariation('wght', weight.value.toDouble()),
@@ -38,12 +37,13 @@ class AppTypography {
     );
   }
 
+  /// Secondary text under a title. Callers color it with
+  /// [AppPalette.textFaint].
   static final TextStyle caption = _style(
     size: 12,
     weight: FontWeight.w500,
     letterSpacing: 0.1,
     height: 1.35,
-    color: AppColors.textFaint,
   );
 
   /// Defines every Material style so no component falls back to the baseline.
@@ -84,12 +84,7 @@ class AppTypography {
     titleSmall: _style(size: 13, weight: FontWeight.w600),
     bodyLarge: _style(size: 15, weight: FontWeight.w400, height: 1.45),
     bodyMedium: _style(size: 14, weight: FontWeight.w400, height: 1.45),
-    bodySmall: _style(
-      size: 12,
-      weight: FontWeight.w400,
-      height: 1.4,
-      color: AppColors.textSecondary,
-    ),
+    bodySmall: _style(size: 12, weight: FontWeight.w400, height: 1.4),
     labelLarge: _style(size: 14, weight: FontWeight.w600, letterSpacing: 0.1),
     labelMedium: _style(size: 13, weight: FontWeight.w500),
     labelSmall: _style(size: 12, weight: FontWeight.w500, letterSpacing: 0.2),

@@ -1,9 +1,14 @@
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/values/anime_season.dart';
+import 'package:anihub/l10n/l10n.dart';
 import 'package:anihub/ui/format/anime_meta.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final AppLocalizations es = lookupAppLocalizations(const Locale('es'));
+  final AppLocalizations en = lookupAppLocalizations(const Locale('en'));
+
   group('formatEpisodes', () {
     test('uses the singular for one episode', () {
       const CatalogAnime anime = CatalogAnime(
@@ -11,7 +16,8 @@ void main() {
         title: 'x',
         totalEpisodes: 1,
       );
-      expect(formatEpisodes(anime), '1 episodio');
+      expect(formatEpisodes(es, anime), '1 episodio');
+      expect(formatEpisodes(en, anime), '1 episode');
     });
 
     test('uses the plural for several episodes', () {
@@ -20,7 +26,8 @@ void main() {
         title: 'x',
         totalEpisodes: 12,
       );
-      expect(formatEpisodes(anime), '12 episodios');
+      expect(formatEpisodes(es, anime), '12 episodios');
+      expect(formatEpisodes(en, anime), '12 episodes');
     });
 
     test('labels an airing anime without a total', () {
@@ -29,12 +36,13 @@ void main() {
         title: 'x',
         isAiring: true,
       );
-      expect(formatEpisodes(anime), 'En emisión');
+      expect(formatEpisodes(es, anime), 'En emisión');
+      expect(formatEpisodes(en, anime), 'Airing');
     });
 
     test('returns null without a total when not airing', () {
       const CatalogAnime anime = CatalogAnime(malId: 1, title: 'x');
-      expect(formatEpisodes(anime), isNull);
+      expect(formatEpisodes(es, anime), isNull);
     });
   });
 
@@ -53,8 +61,18 @@ void main() {
           seasonYear: 2026,
           season: season,
         );
-        expect(formatSeason(anime), '$label 2026');
+        expect(formatSeason(es, anime), '$label 2026');
       }
+    });
+
+    test('names the season in the given language', () {
+      const CatalogAnime anime = CatalogAnime(
+        malId: 1,
+        title: 'x',
+        seasonYear: 2026,
+        season: AnimeSeason.fall,
+      );
+      expect(formatSeason(en, anime), 'Fall 2026');
     });
 
     test('returns only the year without a season', () {
@@ -63,12 +81,12 @@ void main() {
         title: 'x',
         seasonYear: 2009,
       );
-      expect(formatSeason(anime), '2009');
+      expect(formatSeason(es, anime), '2009');
     });
 
     test('returns null without a year', () {
       const CatalogAnime anime = CatalogAnime(malId: 1, title: 'x');
-      expect(formatSeason(anime), isNull);
+      expect(formatSeason(es, anime), isNull);
     });
   });
 }

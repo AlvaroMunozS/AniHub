@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/usecases/usecases.dart';
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import '../providers.dart';
 import '../report_error.dart';
 import '../theme/status_style.dart';
@@ -47,6 +48,7 @@ Future<void> addToLibrary(
   final PendingAdds pending = ref.read(pendingAddsProvider.notifier);
   pending.add(malId);
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  final AppLocalizations l10n = context.l10n;
   try {
     await ref.read(addEntryProvider)(
       anime,
@@ -57,8 +59,8 @@ Future<void> addToLibrary(
       SnackBar(
         content: Text(
           isFavorite
-              ? 'Añadido a «${statusLabel(status)}» y a favoritos'
-              : 'Añadido a «${statusLabel(status)}»',
+              ? l10n.entryAddedAsFavorite(statusLabel(l10n, status))
+              : l10n.entryAdded(statusLabel(l10n, status)),
         ),
       ),
     );
@@ -67,7 +69,7 @@ Future<void> addToLibrary(
     // exists, which is the outcome the user asked for.
   } on Object catch (error, stack) {
     reportUiError(error, stack);
-    messenger.showSnackBar(const SnackBar(content: Text('No se pudo añadir')));
+    messenger.showSnackBar(SnackBar(content: Text(l10n.entryAddFailed)));
   } finally {
     pending.remove(malId);
   }

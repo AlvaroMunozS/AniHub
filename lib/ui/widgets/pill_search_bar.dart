@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 
 /// Larger than body text, since the search bar leads its screen.
@@ -64,25 +65,24 @@ class _PillSearchBarState extends State<PillSearchBar> {
   @override
   Widget build(BuildContext context) {
     final bool hasText = widget.controller.text.isNotEmpty;
-    final TextStyle textStyle = AppTypography.textTheme.bodyMedium!.copyWith(
-      fontSize: _fontSize,
-    );
+    final TextStyle textStyle = Theme.of(context).textTheme.bodyMedium!
+        .copyWith(fontSize: _fontSize);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
         vertical: AppSpacing.s8,
       ),
       child: Material(
-        color: AppColors.surfaceHigh,
+        color: context.palette.surfaceHigh,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: SizedBox(
           height: _height,
           child: Row(
             children: <Widget>[
               const SizedBox(width: AppSpacing.s16),
-              const Icon(
+              Icon(
                 Icons.search,
-                color: AppColors.textFaint,
+                color: context.palette.textFaint,
                 size: AppSizes.iconLg,
               ),
               const SizedBox(width: AppSpacing.s12),
@@ -93,13 +93,15 @@ class _PillSearchBarState extends State<PillSearchBar> {
                   style: textStyle,
                   decoration: InputDecoration.collapsed(
                     hintText: widget.hintText,
-                    hintStyle: textStyle.copyWith(color: AppColors.textFaint),
+                    hintStyle: textStyle.copyWith(
+                      color: context.palette.textFaint,
+                    ),
                   ),
                 ),
               ),
               if (hasText)
                 IconButton(
-                  tooltip: 'Limpiar',
+                  tooltip: context.l10n.searchBarClear,
                   icon: const Icon(Icons.close, size: AppSizes.iconMd),
                   onPressed: widget.onClear,
                   visualDensity: VisualDensity.compact,
@@ -107,13 +109,13 @@ class _PillSearchBarState extends State<PillSearchBar> {
               if (widget.onFilter != null)
                 IconButton(
                   tooltip: widget.filterActive
-                      ? 'Filtrar y ordenar (filtro activo)'
-                      : 'Filtrar y ordenar',
+                      ? context.l10n.searchBarFilterActive
+                      : context.l10n.searchBarFilter,
                   icon: Icon(
                     Icons.filter_list,
                     color: widget.filterActive
-                        ? AppColors.accent
-                        : AppColors.textSecondary,
+                        ? context.palette.accent
+                        : context.palette.textSecondary,
                   ),
                   onPressed: widget.onFilter,
                   visualDensity: VisualDensity.compact,

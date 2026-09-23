@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../domain/values/watch_status.dart';
+import '../l10n/l10n.dart';
 import 'screens/about_screen.dart';
 import 'screens/anime_detail_screen.dart';
 import 'screens/library_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/search_screen.dart';
+import 'screens/settings/appearance_settings_screen.dart';
+import 'screens/settings/backup_settings_screen.dart';
+import 'screens/settings/settings_screen.dart';
+import 'screens/settings/storage_settings_screen.dart';
 import 'shell/app_shell.dart';
 
 /// Counts the mounted detail routes. Navigating between related anime stacks
@@ -50,6 +55,10 @@ class RoutePaths {
   static const String search = '/search';
   static const String more = '/more';
   static const String about = '/more/about';
+  static const String settings = '/more/settings';
+  static const String appearanceSettings = '/more/settings/appearance';
+  static const String backupSettings = '/more/settings/backup';
+  static const String storageSettings = '/more/settings/storage';
 
   static const String libraryRoot = '/library';
 
@@ -123,6 +132,28 @@ GoRouter buildRouter({String? initialLocation}) {
                 builder: (BuildContext context, GoRouterState state) =>
                     const AboutScreen(),
               ),
+              GoRoute(
+                path: 'settings',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const SettingsScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'appearance',
+                    builder: (BuildContext context, GoRouterState state) =>
+                        const AppearanceSettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'backup',
+                    builder: (BuildContext context, GoRouterState state) =>
+                        const BackupSettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'storage',
+                    builder: (BuildContext context, GoRouterState state) =>
+                        const StorageSettingsScreen(),
+                  ),
+                ],
+              ),
             ],
           ),
           GoRoute(
@@ -194,6 +225,6 @@ class _InvalidAnimeRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Anime no encontrado'));
+    return Center(child: Text(context.l10n.routerAnimeNotFound));
   }
 }
