@@ -62,10 +62,12 @@ void main() {
     );
   });
 
-  testWidgets('opens About from the version row', (WidgetTester tester) async {
+  testWidgets('opens About without showing the version first', (
+    WidgetTester tester,
+  ) async {
     final GoRouter router = await _pumpMore(tester);
 
-    expect(find.text('Versión 1.2.3'), findsOneWidget);
+    expect(find.textContaining('1.2.3'), findsNothing);
 
     await tester.tap(find.text('Acerca de'));
     await tester.pumpAndSettle();

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../application/usecases/usecases.dart';
 import '../../domain/entities/entry.dart';
@@ -73,8 +72,6 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<PackageInfo> info = ref.watch(packageInfoProvider);
-
     return SafeArea(
       child: ContentColumn(
         maxWidth: AppLayout.readableMaxWidth,
@@ -107,9 +104,6 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('Acerca de'),
-              subtitle: info.hasValue
-                  ? Text('Versión ${info.value!.version}')
-                  : null,
               onTap: () => context.go(RoutePaths.about),
             ),
             const SizedBox(height: AppSpacing.s24),
