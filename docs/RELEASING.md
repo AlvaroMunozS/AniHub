@@ -8,7 +8,7 @@ for approval in the `release` environment before it runs.
 
 0. Before the first release, and before any release with substantially new
    functionality, notify MyAnimeList through its
-   [support form](https://myanimelist.net/about/contact), as its API license
+   [support form](https://help.myanimelist.net/hc/en-us/requests/new), as its API license
    requires.
 1. Open a pull request titled `chore: release X.Y.Z` that:
    - renames `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`,
