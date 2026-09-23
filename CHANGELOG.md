@@ -6,7 +6,7 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-09-22
+## [1.0.0] - 2026-09-23
 
 First public release.
 
