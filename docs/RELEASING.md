@@ -51,15 +51,18 @@ Secrets in the `release` environment:
 |---|---|
 | `ANDROID_KEYSTORE_BASE64` | Upload keystore (`.jks`), base64-encoded on one line |
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
-| `ANDROID_KEY_ALIAS` | Key alias (`upload`) |
 | `ANDROID_KEY_PASSWORD` | Key password |
 | `MAL_CLIENT_ID` | MyAnimeList client id, built into the APK |
 
 Keystore passwords must not contain backslashes: `key.properties` is a Java
 properties file, where a backslash starts an escape sequence.
 
-Repository variable `ANDROID_CERT_SHA256`: SHA-256 digest of the signing
-certificate, lowercase hex without separators.
+Variables in the `release` environment:
+
+| Name | Value |
+|---|---|
+| `ANDROID_KEY_ALIAS` | Key alias (`upload`) |
+| `ANDROID_CERT_SHA256` | SHA-256 digest of the signing certificate, lowercase hex without separators |
 
 Repository settings the pipeline relies on:
 
