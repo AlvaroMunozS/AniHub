@@ -62,21 +62,20 @@ void main() {
     );
   });
 
-  testWidgets('shows the version and credits MyAnimeList', (
+  testWidgets('opens About without showing the version first', (
     WidgetTester tester,
   ) async {
-    await _pumpMore(tester);
+    final GoRouter router = await _pumpMore(tester);
 
-    expect(find.text('Versión 1.2.3 · Datos de MyAnimeList'), findsOneWidget);
+    expect(find.textContaining('1.2.3'), findsNothing);
 
     await tester.tap(find.text('Acerca de'));
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining('no está afiliada a MyAnimeList'),
-      findsOneWidget,
+      router.routerDelegate.currentConfiguration.uri.path,
+      RoutePaths.about,
     );
-    expect(find.text('Ver licencias'), findsOneWidget);
   });
 
   testWidgets('imports the picked file and reports a summary', (

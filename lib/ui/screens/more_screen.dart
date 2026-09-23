@@ -2,19 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../application/usecases/usecases.dart';
 import '../../domain/entities/entry.dart';
 import '../../domain/errors/backup_format_exception.dart';
 import '../providers.dart';
 import '../report_error.dart';
+import '../router.dart';
 import '../shell/content_column.dart';
 import '../theme/app_theme.dart';
 
 const String _appIconAsset = 'assets/images/app_icon.png';
 const double _headerIconSize = 96;
-const double _dialogIconSize = 48;
 const double _progressSize = 20;
 
 class MoreScreen extends ConsumerStatefulWidget {
@@ -72,8 +72,6 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<PackageInfo> info = ref.watch(packageInfoProvider);
-
     return SafeArea(
       child: ContentColumn(
         maxWidth: AppLayout.readableMaxWidth,
@@ -106,28 +104,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('Acerca de'),
-              subtitle: Text(
-                info.hasValue
-                    ? 'Versión ${info.value!.version} · Datos de MyAnimeList'
-                    : 'Datos de MyAnimeList',
-              ),
-              onTap: () => showAboutDialog(
-                context: context,
-                applicationName: 'AniHub',
-                applicationVersion: info.value?.version,
-                applicationIcon: Image.asset(
-                  _appIconAsset,
-                  width: _dialogIconSize,
-                  height: _dialogIconSize,
-                ),
-                children: const <Widget>[
-                  Text(
-                    'Los datos de anime proceden de MyAnimeList '
-                    '(myanimelist.net). AniHub no está afiliada a '
-                    'MyAnimeList.',
-                  ),
-                ],
-              ),
+              onTap: () => context.go(RoutePaths.about),
             ),
             const SizedBox(height: AppSpacing.s24),
           ],

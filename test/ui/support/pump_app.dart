@@ -1,8 +1,11 @@
 import 'package:anihub/domain/entities/entry.dart';
 import 'package:anihub/domain/ports/anime_catalog.dart';
 import 'package:anihub/domain/ports/anime_relations.dart';
+import 'package:anihub/domain/ports/app_installer.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
+import 'package:anihub/domain/ports/external_links.dart';
 import 'package:anihub/domain/ports/library_backup_source.dart';
+import 'package:anihub/domain/ports/release_source.dart';
 import 'package:anihub/main.dart';
 import 'package:anihub/ui/providers.dart';
 import 'package:anihub/ui/router.dart';
@@ -17,6 +20,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_anime_catalog.dart';
 import '../../support/fake_anime_relations.dart';
+import '../../support/fake_app_installer.dart';
+import '../../support/fake_external_links.dart';
+import '../../support/fake_release_source.dart';
 import '../../support/in_memory_entry_repository.dart';
 import 'fake_cache_manager.dart';
 import 'fake_library_backup_source.dart';
@@ -29,7 +35,9 @@ const double _phonePixelRatio = 3;
 ///
 /// Every port gets a fake: [repo] defaults to an empty library, [catalog] to
 /// [FakeAnimeCatalog], [relations] to a graph without relations and
-/// [backupSource] to a cancelled file pick. The app starts at
+/// [backupSource] to a cancelled file pick, [releaseSource] to no releases,
+/// [installer] to one that never finishes and [links] to links that open.
+/// Preferences start as [prefs]. The app starts at
 /// [initialLocation], or on the library through the app's own
 /// [routerProvider].
 Future<GoRouter> pumpApp(
@@ -38,6 +46,10 @@ Future<GoRouter> pumpApp(
   AnimeCatalog? catalog,
   AnimeRelations? relations,
   LibraryBackupSource? backupSource,
+  ReleaseSource? releaseSource,
+  AppInstaller? installer,
+  ExternalLinks? links,
+  Map<String, Object> prefs = const <String, Object>{},
   String? initialLocation,
 }) async {
   tester.view.physicalSize = _phoneSize * _phonePixelRatio;
@@ -45,8 +57,8 @@ Future<GoRouter> pumpApp(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  SharedPreferences.setMockInitialValues(<String, Object>{});
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  SharedPreferences.setMockInitialValues(prefs);
+  final SharedPreferences preferences = await SharedPreferences.getInstance();
   final GoRouter? router = initialLocation == null
       ? null
       : buildRouter(initialLocation: initialLocation);
@@ -56,7 +68,7 @@ Future<GoRouter> pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        sharedPreferencesProvider.overrideWithValue(prefs),
+        sharedPreferencesProvider.overrideWithValue(preferences),
         entryRepositoryProvider.overrideWithValue(repository),
         animeCatalogProvider.overrideWithValue(catalog ?? FakeAnimeCatalog()),
         animeRelationsProvider.overrideWithValue(
@@ -66,6 +78,11 @@ Future<GoRouter> pumpApp(
           backupSource ?? const FakeLibraryBackupSource(),
         ),
         imageCacheManagerProvider.overrideWithValue(FakeCacheManager()),
+        releaseSourceProvider.overrideWithValue(
+          releaseSource ?? FakeReleaseSource(),
+        ),
+        appInstallerProvider.overrideWithValue(installer ?? FakeAppInstaller()),
+        externalLinksProvider.overrideWithValue(links ?? FakeExternalLinks()),
         if (router != null) routerProvider.overrideWithValue(router),
       ],
       child: const AniHubApp(),
