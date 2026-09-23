@@ -24,6 +24,7 @@ lib/application     use cases
 lib/infrastructure  adapters: local/, mal/, backup/, cache/, images/,
                     github/, update/, links/
 lib/ui              screens, widgets, state, theme
+lib/l10n            ARB files and the context.l10n extension
 lib/main.dart       composition root
 ```
 

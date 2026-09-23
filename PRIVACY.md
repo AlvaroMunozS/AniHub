@@ -34,10 +34,10 @@ The links in *About* open in your browser.
 
 ## Data on the device
 
-The library, the sort and pre-release preferences and the cached anime data
-and covers are stored in the app's private storage. They are included in
-Android's system backup when it is enabled on the device. Uninstalling the app
-deletes them.
+The library, the app preferences and the cached anime data are stored in the
+app's private storage. They are included in Android's system backup when it is
+enabled on the device. Cover images are cached in the app's cache, which is not
+backed up. Uninstalling the app deletes all of them.
 
 A downloaded update is stored in the app's cache, which is not backed up, and
 deleted once it is handed to the system installer or the download fails. An

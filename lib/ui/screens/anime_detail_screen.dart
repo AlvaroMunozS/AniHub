@@ -797,7 +797,12 @@ class _RelationGroup extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label, style: AppTypography.caption),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: context.palette.textFaint,
+            ),
+          ),
           const SizedBox(height: AppSpacing.s8),
           for (final AnimeRelation relation in relations)
             _RelationRow(relation: relation),
