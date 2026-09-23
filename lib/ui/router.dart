@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../domain/values/watch_status.dart';
+import '../l10n/l10n.dart';
 import 'screens/about_screen.dart';
 import 'screens/anime_detail_screen.dart';
 import 'screens/library_screen.dart';
@@ -194,6 +195,6 @@ class _InvalidAnimeRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Anime no encontrado'));
+    return Center(child: Text(context.l10n.routerAnimeNotFound));
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/catalog_anime.dart';
+import '../../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import 'cover_image.dart';
 import 'poster_card.dart';
@@ -49,7 +50,7 @@ class CatalogCard extends StatelessWidget {
                     vertical: AppSpacing.s2,
                   ),
                   child: Text(
-                    'En biblioteca',
+                    context.l10n.catalogCardInLibrary,
                     style: Theme.of(context).textTheme.labelSmall
                         ?.copyWith(color: context.palette.onAccent),
                   ),

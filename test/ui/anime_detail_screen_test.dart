@@ -9,7 +9,7 @@ import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/values/anime_season.dart';
 import 'package:anihub/domain/values/relation_kind.dart';
 import 'package:anihub/domain/values/watch_status.dart';
-import 'package:anihub/ui/catalog_messages.dart';
+
 import 'package:anihub/ui/router.dart';
 import 'package:anihub/ui/screens/anime_detail_screen.dart';
 import 'package:flutter/foundation.dart' show FlutterExceptionHandler;
@@ -194,7 +194,7 @@ void main() {
       ),
     );
 
-    expect(find.text(catalogUnauthorizedMessage), findsOneWidget);
+    expect(find.text(spanish.catalogUnauthorized), findsOneWidget);
   });
 
   testWidgets('offers a retry when loading fails', (WidgetTester tester) async {
@@ -231,7 +231,7 @@ void main() {
     );
 
     expect(tester.takeException(), isA<StateError>());
-    expect(find.text(retryLaterMessage), findsOneWidget);
+    expect(find.text(spanish.catalogRetryLater), findsOneWidget);
   });
 
   testWidgets(

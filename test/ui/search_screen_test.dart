@@ -3,7 +3,7 @@ import 'package:anihub/domain/errors/catalog_exception.dart';
 import 'package:anihub/domain/ports/anime_catalog.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/values/watch_status.dart';
-import 'package:anihub/ui/catalog_messages.dart';
+
 import 'package:anihub/ui/router.dart';
 import 'package:anihub/ui/screens/anime_detail_screen.dart';
 import 'package:anihub/ui/widgets/catalog_card.dart';
@@ -127,7 +127,7 @@ void main() {
 
     await _search(tester, 'Frieren');
 
-    expect(find.text(catalogUnauthorizedMessage), findsOneWidget);
+    expect(find.text(spanish.catalogUnauthorized), findsOneWidget);
   });
 
   testWidgets('reports an unexpected search failure', (
@@ -142,7 +142,7 @@ void main() {
 
     expect(tester.takeException(), isA<StateError>());
     expect(find.text('No se pudo buscar'), findsOneWidget);
-    expect(find.text(retryLaterMessage), findsOneWidget);
+    expect(find.text(spanish.catalogRetryLater), findsOneWidget);
   });
 
   testWidgets('asks to check the connection when the network fails', (

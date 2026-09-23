@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/app_release.dart';
+import '../../l10n/l10n.dart';
 import '../project_links.dart';
 import '../providers.dart';
 import '../shell/content_column.dart';
@@ -20,22 +21,22 @@ class AboutScreen extends ConsumerWidget {
 
   Future<void> _open(BuildContext context, WidgetRef ref, Uri url) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String failure = context.l10n.aboutOpenLinkFailed;
     if (!await ref.read(externalLinksProvider).open(url)) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el enlace')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(failure)));
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
     final String? version = ref.watch(packageInfoProvider).value?.version;
     final bool busy = ref.watch(
       updateControllerProvider.select((UpdateState s) => s.isBusy),
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Acerca de')),
+      appBar: AppBar(title: Text(l10n.aboutTitle)),
       body: SafeArea(
         top: false,
         child: ContentColumn(
@@ -62,16 +63,14 @@ class AboutScreen extends ConsumerWidget {
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.info_outline),
-                title: const Text('Versión'),
+                title: Text(l10n.aboutVersion),
                 subtitle: Text(version ?? '…'),
               ),
               const _UpdateTile(),
               SwitchListTile(
                 secondary: const Icon(Icons.science_outlined),
-                title: const Text('Recibir versiones preliminares'),
-                subtitle: const Text(
-                  'Versiones de prueba, pueden tener errores',
-                ),
+                title: Text(l10n.aboutPrereleases),
+                subtitle: Text(l10n.aboutPrereleasesSubtitle),
                 value: ref.watch(includePrereleasesProvider),
                 onChanged: busy
                     ? null
@@ -79,27 +78,27 @@ class AboutScreen extends ConsumerWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.new_releases_outlined),
-                title: const Text('Novedades'),
+                title: Text(l10n.aboutWhatsNew),
                 onTap: () =>
                     unawaited(_open(context, ref, ProjectLinks.releases)),
               ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.code),
-                title: const Text('Código fuente'),
-                subtitle: const Text('GitHub · Licencia MIT'),
+                title: Text(l10n.aboutSourceCode),
+                subtitle: Text(l10n.aboutSourceCodeSubtitle),
                 onTap: () =>
                     unawaited(_open(context, ref, ProjectLinks.repository)),
               ),
               ListTile(
                 leading: const Icon(Icons.privacy_tip_outlined),
-                title: const Text('Política de privacidad'),
+                title: Text(l10n.aboutPrivacy),
                 onTap: () =>
                     unawaited(_open(context, ref, ProjectLinks.privacy)),
               ),
               ListTile(
                 leading: const Icon(Icons.description_outlined),
-                title: const Text('Licencias de código abierto'),
+                title: Text(l10n.aboutLicenses),
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AniHub',
@@ -118,9 +117,7 @@ class AboutScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 child: Text(
-                  'Los datos de anime proceden de MyAnimeList '
-                  '(myanimelist.net). AniHub no está afiliada a '
-                  'MyAnimeList.',
+                  l10n.aboutAttribution,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -139,6 +136,7 @@ class _UpdateTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = context.l10n;
     final UpdateState state = ref.watch(updateControllerProvider);
     final UpdateController controller = ref.read(
       updateControllerProvider.notifier,
@@ -154,20 +152,16 @@ class _UpdateTile extends ConsumerWidget {
       Widget? trailing,
       Future<void> Function()? onTap,
     ) = switch (state) {
-      UpdateIdle() => (
-        'Comprueba si hay una versión nueva',
-        null,
-        controller.check,
-      ),
-      UpdateChecking() => ('Comprobando…', spinner, null),
-      UpdateUpToDate() => ('Tienes la última versión', null, controller.check),
+      UpdateIdle() => (l10n.aboutUpdateIdle, null, controller.check),
+      UpdateChecking() => (l10n.aboutUpdateChecking, spinner, null),
+      UpdateUpToDate() => (l10n.aboutUpdateUpToDate, null, controller.check),
       UpdateAvailable(:final AppRelease release) => (
-        'Versión ${release.version} disponible · Toca para instalar',
+        l10n.aboutUpdateAvailable(release.version.toString()),
         const Icon(Icons.download_outlined),
         controller.install,
       ),
       UpdateDownloading(:final double progress) => (
-        'Descargando… ${(progress * 100).floor()} %',
+        l10n.aboutUpdateDownloading((progress * 100).floor()),
         SizedBox(
           width: _progressSize,
           height: _progressSize,
@@ -175,30 +169,30 @@ class _UpdateTile extends ConsumerWidget {
         ),
         null,
       ),
-      UpdateInstalling() => ('Instalando…', spinner, null),
+      UpdateInstalling() => (l10n.aboutUpdateInstalling, spinner, null),
       UpdateFailed(:final UpdateFailure failure) => switch (failure) {
         UpdateFailure.check => (
-          'No se pudo comprobar. Revisa la conexión',
+          l10n.aboutUpdateCheckFailed,
           null,
           controller.check,
         ),
         UpdateFailure.rateLimit => (
-          'GitHub ha limitado las consultas. Prueba más tarde',
+          l10n.aboutUpdateRateLimited,
           null,
           controller.check,
         ),
         UpdateFailure.download => (
-          'No se pudo descargar la actualización',
+          l10n.aboutUpdateDownloadFailed,
           null,
           controller.install,
         ),
         UpdateFailure.checksum => (
-          'La descarga está dañada. Vuelve a intentarlo',
+          l10n.aboutUpdateChecksumFailed,
           null,
           controller.install,
         ),
         UpdateFailure.install => (
-          'No se pudo instalar la actualización',
+          l10n.aboutUpdateInstallFailed,
           null,
           controller.install,
         ),
@@ -207,7 +201,7 @@ class _UpdateTile extends ConsumerWidget {
 
     return ListTile(
       leading: const Icon(Icons.system_update_outlined),
-      title: const Text('Buscar actualizaciones'),
+      title: Text(l10n.aboutCheckForUpdates),
       subtitle: Text(subtitle),
       trailing: trailing,
       onTap: onTap == null ? null : () => unawaited(onTap()),

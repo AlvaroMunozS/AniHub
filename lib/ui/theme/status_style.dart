@@ -2,16 +2,17 @@ import 'package:flutter/material.dart' show IconData, Icons;
 import 'package:flutter/widgets.dart';
 
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import 'tokens.dart';
 
-String statusLabel(WatchStatus status) {
+String statusLabel(AppLocalizations l10n, WatchStatus status) {
   switch (status) {
     case WatchStatus.watching:
-      return 'Viendo';
+      return l10n.statusWatching;
     case WatchStatus.planned:
-      return 'Pendiente';
+      return l10n.statusPlanned;
     case WatchStatus.completed:
-      return 'Completado';
+      return l10n.statusCompleted;
   }
 }
 

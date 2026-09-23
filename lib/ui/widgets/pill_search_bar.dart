@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 
 /// Larger than body text, since the search bar leads its screen.
@@ -100,7 +101,7 @@ class _PillSearchBarState extends State<PillSearchBar> {
               ),
               if (hasText)
                 IconButton(
-                  tooltip: 'Limpiar',
+                  tooltip: context.l10n.searchBarClear,
                   icon: const Icon(Icons.close, size: AppSizes.iconMd),
                   onPressed: widget.onClear,
                   visualDensity: VisualDensity.compact,
@@ -108,8 +109,8 @@ class _PillSearchBarState extends State<PillSearchBar> {
               if (widget.onFilter != null)
                 IconButton(
                   tooltip: widget.filterActive
-                      ? 'Filtrar y ordenar (filtro activo)'
-                      : 'Filtrar y ordenar',
+                      ? context.l10n.searchBarFilterActive
+                      : context.l10n.searchBarFilter,
                   icon: Icon(
                     Icons.filter_list,
                     color: widget.filterActive

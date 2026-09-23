@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../application/usecases/usecases.dart';
 import '../../domain/entities/entry.dart';
 import '../../domain/errors/backup_format_exception.dart';
+import '../../l10n/l10n.dart';
 import '../providers.dart';
 import '../report_error.dart';
 import '../router.dart';
@@ -33,6 +34,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     }
     setState(() => _importing = true);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final AppLocalizations l10n = context.l10n;
     // Read before the first await: the user may leave the screen while the
     // file is picked, and `ref` cannot be used once it is disposed.
     final ImportLibrary importLibrary = ref.read(importLibraryProvider);
@@ -44,30 +46,25 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
         return;
       }
       final ImportSummary summary = await importLibrary(entries);
-      messenger.showSnackBar(SnackBar(content: Text(_describe(summary))));
-    } on BackupFormatException {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('El fichero no es una biblioteca de AniHub válida'),
+        SnackBar(
+          content: Text(
+            l10n.importSummary(
+              summary.added,
+              summary.updated,
+              summary.unchanged,
+            ),
+          ),
         ),
       );
+    } on BackupFormatException {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importInvalidFile)));
     } on Object catch (error, stack) {
       reportUiError(error, stack);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('No se pudo importar la biblioteca')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importFailed)));
     } finally {
       if (mounted) setState(() => _importing = false);
     }
-  }
-
-  static String _describe(ImportSummary summary) {
-    String count(int n, String singular, String plural) =>
-        '$n ${n == 1 ? singular : plural}';
-    return 'Biblioteca importada: '
-        '${count(summary.added, 'nueva', 'nuevas')}, '
-        '${count(summary.updated, 'actualizada', 'actualizadas')}, '
-        '${summary.unchanged} sin cambios';
   }
 
   @override
@@ -90,7 +87,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.file_open_outlined),
-              title: const Text('Importar biblioteca'),
+              title: Text(context.l10n.importLibrary),
               trailing: _importing
                   ? const SizedBox(
                       width: _progressSize,
@@ -103,7 +100,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.info_outline),
-              title: const Text('Acerca de'),
+              title: Text(context.l10n.aboutTitle),
               onTap: () => context.go(RoutePaths.about),
             ),
             const SizedBox(height: AppSpacing.s24),

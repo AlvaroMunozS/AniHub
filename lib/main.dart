@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:http/http.dart' as http;
@@ -24,6 +23,8 @@ import 'infrastructure/mal/mal_relations.dart';
 import 'infrastructure/update/android_app_installer.dart';
 import 'infrastructure/update/apk_downloader.dart';
 import 'infrastructure/update/platform_package_installer.dart';
+import 'l10n/l10n.dart';
+import 'ui/locale_resolution.dart';
 import 'ui/providers.dart';
 import 'ui/router.dart';
 import 'ui/theme/app_theme.dart';
@@ -111,9 +112,6 @@ Future<void> main() async {
   );
 }
 
-/// The app is in Spanish only, whatever the device language.
-const Locale _locale = Locale('es');
-
 class AniHubApp extends ConsumerWidget {
   const AniHubApp({super.key});
 
@@ -135,9 +133,12 @@ class AniHubApp extends ConsumerWidget {
           child: child!,
         );
       },
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const <Locale>[_locale],
-      locale: _locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeListResolutionCallback: (
+        List<Locale>? locales,
+        Iterable<Locale> supported,
+      ) => resolveAppLocale(locales),
       routerConfig: ref.watch(routerProvider),
     );
   }

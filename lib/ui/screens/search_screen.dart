@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/entities/entry.dart';
 import '../../domain/errors/catalog_exception.dart';
+import '../../l10n/l10n.dart';
 import '../catalog_messages.dart';
 import '../providers.dart';
 import '../report_error.dart';
@@ -124,7 +125,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         children: <Widget>[
           PillSearchBar(
             controller: _query,
-            hintText: 'Buscar en MyAnimeList',
+            hintText: context.l10n.searchHint,
             onChanged: _onQueryChanged,
             onClear: _clear,
           ),
@@ -145,9 +146,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (error != null) {
       return EmptyState(
         icon: catalogErrorIcon(error),
-        title: 'No se pudo buscar',
-        message: catalogErrorMessage(error),
-        actionLabel: 'Reintentar',
+        title: context.l10n.searchFailed,
+        message: catalogErrorMessage(context.l10n, error),
+        actionLabel: context.l10n.commonRetry,
         onAction: () => unawaited(_search(_query.text)),
       );
     }
@@ -157,16 +158,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final String term = _query.text.trim();
     if (_results.isEmpty) {
       if (term.length < _minQueryLength) {
-        return const EmptyState(
+        return EmptyState(
           icon: Icons.search,
-          title: 'Busca en el catálogo',
-          message: 'Escribe al menos tres letras del título de un anime.',
+          title: context.l10n.searchPromptTitle,
+          message: context.l10n.searchPromptMessage,
         );
       }
       return EmptyState(
         icon: Icons.search_off,
-        title: 'Sin resultados',
-        message: 'No hay nada para «$term».',
+        title: context.l10n.commonNoResults,
+        message: context.l10n.searchNothingMatching(term),
       );
     }
     return PosterGrid(

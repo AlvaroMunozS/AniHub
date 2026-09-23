@@ -16,6 +16,7 @@ import '../../domain/entities/entry.dart';
 import '../../domain/errors/catalog_exception.dart';
 import '../../domain/values/relation_kind.dart';
 import '../../domain/values/watch_status.dart';
+import '../../l10n/l10n.dart';
 import '../actions/add_to_library.dart';
 import '../actions/entry_actions.dart';
 import '../catalog_messages.dart';
@@ -202,9 +203,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       error: (Object error, StackTrace _) {
         final EmptyState notice = EmptyState(
           icon: catalogErrorIcon(error),
-          title: 'No se pudo cargar la ficha',
-          message: catalogErrorMessage(error),
-          actionLabel: 'Reintentar',
+          title: context.l10n.detailLoadFailed,
+          message: catalogErrorMessage(context.l10n, error),
+          actionLabel: context.l10n.commonRetry,
           onAction: () => ref.invalidate(animeByIdProvider(widget.malId)),
         );
         if (entry == null) {
@@ -282,16 +283,16 @@ Future<bool> _confirmRemove(BuildContext context) async {
   final bool? ok = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) => AlertDialog(
-      title: const Text('Eliminar de la biblioteca'),
-      content: const Text('¿Seguro que quieres eliminar este anime?'),
+      title: Text(context.l10n.detailRemoveTitle),
+      content: Text(context.l10n.detailRemoveMessage),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Eliminar'),
+          child: Text(context.l10n.detailRemove),
         ),
       ],
     ),
@@ -331,7 +332,7 @@ class _TopBar extends StatelessWidget {
               IconButton(
                 onPressed: () => _leaveDetail(context),
                 icon: const Icon(Icons.arrow_back, size: AppSizes.iconMd),
-                tooltip: 'Volver',
+                tooltip: context.l10n.detailBack,
                 color: context.palette.textPrimary,
                 visualDensity: VisualDensity.compact,
               ),
@@ -340,7 +341,7 @@ class _TopBar extends StatelessWidget {
                 IconButton(
                   onPressed: () => unawaited(_confirmAndRemove(context, entry)),
                   icon: const Icon(Icons.delete_outline, size: AppSizes.iconMd),
-                  tooltip: 'Eliminar',
+                  tooltip: context.l10n.detailRemove,
                   color: context.palette.textPrimary,
                   visualDensity: VisualDensity.compact,
                 ),
@@ -386,8 +387,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? episodes = formatEpisodes(anime);
-    final String? season = formatSeason(anime);
+    final String? episodes = formatEpisodes(context.l10n, anime);
+    final String? season = formatSeason(context.l10n, anime);
 
     return Stack(
       children: <Widget>[
@@ -597,11 +598,13 @@ class _FavoriteAction extends ConsumerWidget {
       toggled: isFavorite,
       child: StatusActionButton(
         icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-        label: 'Favorito',
+        label: context.l10n.detailFavorite,
         color: isFavorite
             ? context.palette.accent
             : context.palette.textSecondary,
-        tooltip: isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
+        tooltip: isFavorite
+            ? context.l10n.detailRemoveFavorite
+            : context.l10n.detailAddFavorite,
         onTap: !enabled
             ? null
             : () => unawaited(
@@ -692,7 +695,9 @@ class _ExpandableSynopsisState extends State<_ExpandableSynopsis> {
         return Semantics(
           button: true,
           expanded: _expanded,
-          onTapHint: _expanded ? 'Mostrar menos' : 'Mostrar más',
+          onTapHint: _expanded
+              ? context.l10n.detailShowLess
+              : context.l10n.detailShowMore,
           child: GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
             child: Column(
@@ -766,12 +771,12 @@ class _Relations extends ConsumerWidget {
       children: <Widget>[
         if (prequels.isNotEmpty)
           _RelationGroup(
-            label: prequels.length == 1 ? 'Precuela' : 'Precuelas',
+            label: context.l10n.detailPrequels(prequels.length),
             relations: prequels,
           ),
         if (sequels.isNotEmpty)
           _RelationGroup(
-            label: sequels.length == 1 ? 'Secuela' : 'Secuelas',
+            label: context.l10n.detailSequels(sequels.length),
             relations: sequels,
           ),
       ],
