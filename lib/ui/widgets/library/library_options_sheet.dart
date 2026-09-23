@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../application/usecases/library_order.dart';
+import '../../../domain/values/watch_status.dart';
 import '../../../l10n/l10n.dart';
 import '../../state/library_providers.dart';
 import '../../theme/app_theme.dart';
+import 'tri_state_filter_tile.dart';
 
-/// Shows the library sort options, and the favorites filter when
-/// [withFavoritesFilter] is set.
+/// Shows the library sort options, and the filters that apply to the
+/// [status] tab: favorites in completed, not started in planned.
 ///
 /// Uses the root navigator so the sheet also covers the bottom navigation
 /// bar.
 Future<void> showLibraryOptionsSheet(
   BuildContext context, {
-  required bool withFavoritesFilter,
+  required WatchStatus status,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
-    builder: (BuildContext context) =>
-        _LibraryOptionsSheet(withFavoritesFilter: withFavoritesFilter),
+    builder: (BuildContext context) => _LibraryOptionsSheet(status: status),
   );
 }
 
@@ -28,15 +29,15 @@ Future<void> showLibraryOptionsSheet(
 const double _heightFactor = 0.6;
 
 class _LibraryOptionsSheet extends StatelessWidget {
-  const _LibraryOptionsSheet({required this.withFavoritesFilter});
+  const _LibraryOptionsSheet({required this.status});
 
-  final bool withFavoritesFilter;
+  final WatchStatus status;
 
   @override
   Widget build(BuildContext context) {
     final List<(String, Widget)> tabs = <(String, Widget)>[
-      if (withFavoritesFilter)
-        (context.l10n.libraryOptionsFilter, const _FilterTab()),
+      if (status == WatchStatus.completed || status == WatchStatus.planned)
+        (context.l10n.libraryOptionsFilter, _FilterTab(status: status)),
       (context.l10n.libraryOptionsSort, const _SortTab()),
     ];
     return SafeArea(
@@ -68,19 +69,30 @@ class _LibraryOptionsSheet extends StatelessWidget {
 }
 
 class _FilterTab extends ConsumerWidget {
-  const _FilterTab();
+  const _FilterTab({required this.status});
+
+  final WatchStatus status;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final LibraryFilter filter = ref.watch(libraryFilterProvider);
+    final LibraryFilterNotifier notifier = ref.read(
+      libraryFilterProvider.notifier,
+    );
     return ListView(
       children: <Widget>[
-        CheckboxListTile(
-          title: Text(context.l10n.libraryOptionsOnlyFavorites),
-          value: filter.onlyFavorites,
-          onChanged: (_) =>
-              ref.read(libraryFilterProvider.notifier).toggleOnlyFavorites(),
-        ),
+        if (status == WatchStatus.completed)
+          TriStateFilterTile(
+            label: context.l10n.libraryOptionsFavorites,
+            mode: filter.favorites,
+            onTap: notifier.cycleFavorites,
+          ),
+        if (status == WatchStatus.planned)
+          TriStateFilterTile(
+            label: context.l10n.libraryOptionsNotStarted,
+            mode: filter.notStarted,
+            onTap: notifier.cycleNotStarted,
+          ),
       ],
     );
   }

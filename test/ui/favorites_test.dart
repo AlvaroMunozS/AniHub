@@ -22,13 +22,15 @@ Entry _completed({required bool isFavorite}) {
 
 final String _completedTab = RoutePaths.libraryFor(WatchStatus.completed);
 
-/// Turns on the favorites filter from the options sheet, then dismisses the
-/// sheet by tapping outside it.
-Future<void> _filterOnlyFavorites(WidgetTester tester) async {
+/// Taps the favorites filter [times] times from the options sheet, then
+/// dismisses the sheet by tapping outside it.
+Future<void> _cycleFavorites(WidgetTester tester, {int times = 1}) async {
   await tester.tap(find.byIcon(Icons.filter_list));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Solo favoritos'));
-  await tester.pumpAndSettle();
+  for (int i = 0; i < times; i++) {
+    await tester.tap(find.text('Favoritos'));
+    await tester.pumpAndSettle();
+  }
   await tester.tapAt(const Offset(20, 20));
   await tester.pumpAndSettle();
 }
@@ -44,7 +46,7 @@ void main() {
       addTearDown(repo.dispose);
 
       await pumpApp(tester, repo: repo, initialLocation: _completedTab);
-      await _filterOnlyFavorites(tester);
+      await _cycleFavorites(tester);
       expect(find.text('Fullmetal Alchemist'), findsOneWidget);
 
       await tester.tap(find.text('Fullmetal Alchemist'));
@@ -72,7 +74,7 @@ void main() {
       addTearDown(repo.dispose);
 
       await pumpApp(tester, repo: repo, initialLocation: _completedTab);
-      await _filterOnlyFavorites(tester);
+      await _cycleFavorites(tester);
 
       await tester.tap(find.text('Fullmetal Alchemist'));
       await tester.pumpAndSettle();
@@ -97,10 +99,56 @@ void main() {
       repo: inMemoryLibrary(<Entry>[_completed(isFavorite: false)]),
       initialLocation: _completedTab,
     );
-    await _filterOnlyFavorites(tester);
+    await _cycleFavorites(tester);
 
     expect(find.text('Fullmetal Alchemist'), findsNothing);
-    expect(find.text('No tienes favoritos en Completado.'), findsOneWidget);
+    expect(
+      find.text('Nada coincide con los filtros en Completado.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('hides favorites on the second tap of the filter', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      repo: inMemoryLibrary(<Entry>[
+        _completed(isFavorite: true),
+        Entry(
+          id: 'e2',
+          malId: 1,
+          title: 'Cowboy Bebop',
+          status: WatchStatus.completed,
+          updatedAt: DateTime(2023),
+        ),
+      ]),
+      initialLocation: _completedTab,
+    );
+
+    await _cycleFavorites(tester, times: 2);
+
+    expect(find.text('Fullmetal Alchemist'), findsNothing);
+    expect(find.text('Cowboy Bebop'), findsOneWidget);
+    expect(find.byTooltip('Filtrar y ordenar (filtro activo)'), findsOneWidget);
+  });
+
+  testWidgets('combines the query with the favorites filter in the empty '
+      'state', (WidgetTester tester) async {
+    await pumpApp(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_completed(isFavorite: false)]),
+      initialLocation: _completedTab,
+    );
+    await _cycleFavorites(tester);
+
+    await tester.enterText(find.byType(TextField), 'fullmetal');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Nada coincide con «fullmetal» y los filtros en Completado.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('names the filter button as active while filtering favorites', (
@@ -113,7 +161,7 @@ void main() {
     );
     expect(find.byTooltip('Filtrar y ordenar'), findsOneWidget);
 
-    await _filterOnlyFavorites(tester);
+    await _cycleFavorites(tester);
 
     expect(find.byTooltip('Filtrar y ordenar (filtro activo)'), findsOneWidget);
   });
@@ -127,6 +175,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ordenar'), findsOneWidget);
-    expect(find.text('Solo favoritos'), findsNothing);
+    expect(find.text('Favoritos'), findsNothing);
   });
 }
