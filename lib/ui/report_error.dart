@@ -24,11 +24,3 @@ Future<T> reportingUnexpected<T>(
     rethrow;
   }
 }
-
-/// Emits like [stream], reporting every error through [reportUiError].
-Stream<T> reportingErrors<T>(Stream<T> stream) {
-  return stream.handleError((Object error, StackTrace stack) {
-    reportUiError(error, stack);
-    Error.throwWithStackTrace(error, stack);
-  });
-}

@@ -13,10 +13,37 @@ import '../../domain/values/watch_status.dart';
 import '../providers.dart';
 import '../report_error.dart';
 
-final StreamProvider<List<Entry>> libraryEntriesProvider =
-    StreamProvider<List<Entry>>(
-      (Ref ref) => reportingErrors(ref.watch(listEntriesProvider)()),
-    );
+/// The library as stored, reporting a read error once.
+///
+/// Riverpod retries a failing stream and the library screen can invalidate
+/// it, and each attempt would fail the same way. The notifier outlives both,
+/// so it reports the first error and stays silent until the library loads
+/// again.
+class LibraryEntries extends StreamNotifier<List<Entry>> {
+  bool _reported = false;
+
+  @override
+  Stream<List<Entry>> build() {
+    return ref
+        .watch(listEntriesProvider)()
+        .map((List<Entry> entries) {
+          _reported = false;
+          return entries;
+        })
+        .handleError((Object error, StackTrace stack) {
+          if (!_reported) {
+            _reported = true;
+            reportUiError(error, stack);
+          }
+          Error.throwWithStackTrace(error, stack);
+        });
+  }
+}
+
+final StreamNotifierProvider<LibraryEntries, List<Entry>>
+libraryEntriesProvider = StreamNotifierProvider<LibraryEntries, List<Entry>>(
+  LibraryEntries.new,
+);
 
 /// Relation graph of the whole library rather than one tab, because seasons
 /// of a franchise can sit in different statuses.
