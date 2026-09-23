@@ -438,9 +438,9 @@ class LibraryFilter {
 
   /// The filter as applied to the [status] tab.
   ///
-  /// Only completed entries can be favorites, and every franchise with an
-  /// entry being watched or completed is started, so each of these filters
-  /// narrows a single tab.
+  /// Only completed entries can be favorites, and every watching or
+  /// completed entry is started, so each filter would be trivial outside its
+  /// own tab.
   LibraryFilter appliedTo(WatchStatus status) {
     return LibraryFilter(
       query: query,

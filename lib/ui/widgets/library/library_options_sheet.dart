@@ -36,7 +36,7 @@ class _LibraryOptionsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<(String, Widget)> tabs = <(String, Widget)>[
-      if (status != WatchStatus.watching)
+      if (status == WatchStatus.completed || status == WatchStatus.planned)
         (context.l10n.libraryOptionsFilter, _FilterTab(status: status)),
       (context.l10n.libraryOptionsSort, const _SortTab()),
     ];

@@ -128,6 +128,20 @@ void main() {
     expect(find.byType(EntryCard), findsNothing);
   });
 
+  testWidgets('keeps a franchise with only planned seasons as one group when '
+      'set to only', (WidgetTester tester) async {
+    await _pumpPlanned(tester, <Entry>[
+      _entry(2, 'Season 2', WatchStatus.planned),
+      _entry(3, 'Season 3', WatchStatus.planned, age: 1),
+      _entry(100, 'Standalone', WatchStatus.completed, age: 2),
+    ]);
+
+    await _cycleNotStarted(tester);
+
+    expect(find.byType(GroupCard), findsOneWidget);
+    expect(find.byType(EntryCard), findsNothing);
+  });
+
   testWidgets('shows everything again on the third tap', (
     WidgetTester tester,
   ) async {
