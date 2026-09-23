@@ -1,7 +1,13 @@
 import '../values/watch_status.dart';
 
 /// An anime in the user's library.
+///
+/// Only a [WatchStatus.completed] entry can be a favorite. The constructor
+/// enforces it, and [withStatus] and [withFavorite] move between valid
+/// states.
 class Entry {
+  /// Throws an [ArgumentError] if [isFavorite] is set on an entry that is not
+  /// [WatchStatus.completed].
   Entry({
     required this.malId,
     required this.title,
@@ -14,7 +20,16 @@ class Entry {
   }) : assert(
          totalEpisodes == null || totalEpisodes >= 0,
          'totalEpisodes must not be negative',
-       );
+       ) {
+    // Not an assert: release builds must never store this combination.
+    if (isFavorite && status != WatchStatus.completed) {
+      throw ArgumentError.value(
+        isFavorite,
+        'isFavorite',
+        'Only a completed entry can be a favorite, not a ${status.wire} one',
+      );
+    }
+  }
 
   /// Assigned by the repository; null until the entry is persisted.
   final String? id;
@@ -30,15 +45,17 @@ class Entry {
   final DateTime updatedAt;
   final bool isFavorite;
 
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// The status and the favorite flag change only through [withStatus] and
+  /// [withFavorite], which keep them consistent.
   Entry copyWith({
     String? id,
     int? malId,
     String? title,
     String? coverUrl,
     int? totalEpisodes,
-    WatchStatus? status,
     DateTime? updatedAt,
-    bool? isFavorite,
   }) {
     return Entry(
       id: id ?? this.id,
@@ -46,9 +63,36 @@ class Entry {
       title: title ?? this.title,
       coverUrl: coverUrl ?? this.coverUrl,
       totalEpisodes: totalEpisodes ?? this.totalEpisodes,
-      status: status ?? this.status,
+      status: status,
       updatedAt: updatedAt ?? this.updatedAt,
-      isFavorite: isFavorite ?? this.isFavorite,
+      isFavorite: isFavorite,
+    );
+  }
+
+  /// Returns a copy with [status], keeping the favorite only if [status] is
+  /// [WatchStatus.completed].
+  Entry withStatus(WatchStatus status) => _with(
+    status: status,
+    isFavorite: isFavorite && status == WatchStatus.completed,
+  );
+
+  /// Returns a copy with [isFavorite], completing the entry when it becomes
+  /// a favorite.
+  Entry withFavorite(bool isFavorite) => _with(
+    status: isFavorite ? WatchStatus.completed : status,
+    isFavorite: isFavorite,
+  );
+
+  Entry _with({required WatchStatus status, required bool isFavorite}) {
+    return Entry(
+      id: id,
+      malId: malId,
+      title: title,
+      coverUrl: coverUrl,
+      totalEpisodes: totalEpisodes,
+      status: status,
+      updatedAt: updatedAt,
+      isFavorite: isFavorite,
     );
   }
 

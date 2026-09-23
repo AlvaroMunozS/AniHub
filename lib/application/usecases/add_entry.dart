@@ -7,7 +7,7 @@ import 'duplicate_entry_exception.dart';
 /// Adds a catalog anime to the library.
 ///
 /// A favorite is always stored as [WatchStatus.completed], whatever [status]
-/// is passed, because only completed entries can be favorites.
+/// is passed (see [Entry.withFavorite]).
 ///
 /// Throws a [DuplicateEntryException] without writing anything if an entry
 /// with the same `malId` already exists. The check is done here rather
@@ -36,10 +36,9 @@ class AddEntry {
       title: anime.title,
       coverUrl: anime.coverUrl,
       totalEpisodes: anime.totalEpisodes,
-      status: isFavorite ? WatchStatus.completed : status,
-      isFavorite: isFavorite,
+      status: status,
       updatedAt: DateTime.now(),
-    );
+    ).withFavorite(isFavorite);
     return _repository.save(entry);
   }
 }

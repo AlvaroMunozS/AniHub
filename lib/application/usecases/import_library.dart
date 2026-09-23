@@ -1,6 +1,5 @@
 import '../../domain/entities/entry.dart';
 import '../../domain/ports/entry_repository.dart';
-import '../../domain/values/watch_status.dart';
 
 /// Number of entries added, updated, and left unchanged by an import.
 class ImportSummary {
@@ -25,10 +24,6 @@ class ImportSummary {
 /// one (keeping the local `id`) if its `updatedAt` is strictly newer, and is
 /// ignored otherwise. Local entries are never deleted.
 ///
-/// An incoming favorite that is not [WatchStatus.completed] keeps its status
-/// and loses the favorite flag, because only completed entries can be
-/// favorites.
-///
 /// Writes go through [EntryRepository.upsertAll] so that imported timestamps
 /// are preserved.
 class ImportLibrary {
@@ -47,11 +42,7 @@ class ImportLibrary {
     int updated = 0;
     int unchanged = 0;
 
-    for (final Entry candidate in entries) {
-      final Entry incoming =
-          candidate.isFavorite && candidate.status != WatchStatus.completed
-          ? candidate.copyWith(isFavorite: false)
-          : candidate;
+    for (final Entry incoming in entries) {
       final Entry? current = byMalId[incoming.malId];
       if (current == null) {
         toPersist.add(incoming);

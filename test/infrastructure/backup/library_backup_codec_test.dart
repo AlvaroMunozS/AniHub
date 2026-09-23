@@ -247,6 +247,26 @@ void main() {
       expect(entries.single.isFavorite, isFalse);
     });
 
+    test('drops the favorite of an entry that is not completed, keeping its '
+        'status', () {
+      final List<Entry> entries = decodeLibraryBackup(
+        _validJson(
+          entries: <Map<String, Object?>>[
+            <String, Object?>{
+              'malId': 1,
+              'title': 'Frieren',
+              'status': 'watching',
+              'isFavorite': true,
+              'updatedAt': '2026-09-20T10:00:00Z',
+            },
+          ],
+        ),
+      );
+
+      expect(entries.single.status, WatchStatus.watching);
+      expect(entries.single.isFavorite, isFalse);
+    });
+
     test('reads a timestamp without offset as local time, stored in UTC', () {
       final List<Entry> entries = decodeLibraryBackup(
         _validJson(

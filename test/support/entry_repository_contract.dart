@@ -66,7 +66,7 @@ void entryRepositoryContract(
     final Entry first = await repo.save(_entry(malId: 1));
 
     final Entry updated = await repo.save(
-      first.copyWith(status: WatchStatus.completed),
+      first.withStatus(WatchStatus.completed),
     );
 
     expect(updated.id, first.id);

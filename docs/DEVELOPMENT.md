@@ -198,7 +198,9 @@ tap installs it. Nothing is requested until the user taps.
 - **Favorites imply completed.** Favoriting a series that is not completed
   moves it to *completed* in the same write, and moving a favorite out of
   *completed* removes the favorite. An import keeps the status of an entry and
-  drops the favorite if the entry is not completed.
+  drops the favorite if the entry is not completed. `Entry` enforces the rule:
+  its constructor rejects a favorite that is not completed, and status and
+  favorite change only through `withStatus` and `withFavorite`.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

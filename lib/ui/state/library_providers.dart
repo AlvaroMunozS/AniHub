@@ -205,7 +205,7 @@ class PendingEntryChanges extends Notifier<Map<String, EntryPatch>> {
       return ChangeOutcome.ignored;
     }
     final bool clearsFavorite =
-        entry.isFavorite && status != WatchStatus.completed;
+        entry.isFavorite && !entry.withStatus(status).isFavorite;
     _inFlight.add(id);
     _apply(
       id,
@@ -243,7 +243,7 @@ class PendingEntryChanges extends Notifier<Map<String, EntryPatch>> {
     }
     final bool desired = !entry.isFavorite;
     final bool forceCompleted =
-        desired && entry.status != WatchStatus.completed;
+        entry.withFavorite(desired).status != entry.status;
     _inFlight.add(id);
     _apply(
       id,
@@ -318,13 +318,19 @@ final Provider<AsyncValue<List<Entry>>> visibleLibraryEntriesProvider =
             if (entry.id == null || !patches.containsKey(entry.id))
               entry
             else if (!patches[entry.id]!.removed)
-              entry.copyWith(
-                status: patches[entry.id]!.status,
-                isFavorite: patches[entry.id]!.isFavorite,
-              ),
+              _patched(entry, patches[entry.id]!),
         ];
       });
     });
+
+Entry _patched(Entry entry, EntryPatch patch) {
+  final WatchStatus? status = patch.status;
+  final bool? isFavorite = patch.isFavorite;
+  Entry patched = entry;
+  if (status != null) patched = patched.withStatus(status);
+  if (isFavorite != null) patched = patched.withFavorite(isFavorite);
+  return patched;
+}
 
 class LibrarySort {
   const LibrarySort({

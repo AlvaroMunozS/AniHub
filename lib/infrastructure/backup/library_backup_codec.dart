@@ -15,6 +15,9 @@ const int _version = 1;
 /// wrong type fall back to their defaults. Timestamps without an offset are
 /// read as local time. When a `malId` appears more than once, only the entry
 /// with the latest `updatedAt` is kept.
+///
+/// A favorite that is not completed keeps its status and loses the favorite
+/// flag, since an [Entry] cannot hold both.
 List<Entry> decodeLibraryBackup(String json) {
   final Object? decoded;
   try {
@@ -80,7 +83,8 @@ Entry _decodeEntry(Object? rawEntry) {
         _ => null,
       },
       status: status,
-      isFavorite: rawEntry['isFavorite'] == true,
+      isFavorite:
+          rawEntry['isFavorite'] == true && status == WatchStatus.completed,
       updatedAt: updatedAt,
     );
   }

@@ -169,22 +169,6 @@ void main() {
     expect(await repository.findAll(), hasLength(3));
   });
 
-  test('drops the favorite of an incoming entry that is not completed, '
-      'keeping its status', () async {
-    await importLibrary(<Entry>[
-      _entry(
-        malId: 1,
-        status: WatchStatus.watching,
-        isFavorite: true,
-        updatedAt: DateTime.utc(2026),
-      ),
-    ]);
-
-    final Entry result = (await repository.findAll()).single;
-    expect(result.status, WatchStatus.watching);
-    expect(result.isFavorite, isFalse);
-  });
-
   test('keeps the favorite of an incoming completed entry', () async {
     await importLibrary(<Entry>[
       _entry(

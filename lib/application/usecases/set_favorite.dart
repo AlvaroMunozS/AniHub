@@ -6,20 +6,14 @@ import '../../domain/values/watch_status.dart';
 ///
 /// Takes the target value rather than toggling, so repeated calls are
 /// idempotent. Favoriting an entry that is not [WatchStatus.completed] also
-/// completes it in the same write; unfavoriting leaves the status unchanged.
+/// completes it in the same write; unfavoriting leaves the status unchanged
+/// (see [Entry.withFavorite]).
 class SetFavorite {
   const SetFavorite(this._repository);
 
   final EntryRepository _repository;
 
   Future<Entry> call(Entry entry, {required bool isFavorite}) {
-    final bool forceCompleted =
-        isFavorite && entry.status != WatchStatus.completed;
-    return _repository.save(
-      entry.copyWith(
-        isFavorite: isFavorite,
-        status: forceCompleted ? WatchStatus.completed : entry.status,
-      ),
-    );
+    return _repository.save(entry.withFavorite(isFavorite));
   }
 }
