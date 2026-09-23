@@ -13,7 +13,8 @@ import 'package:sqflite/sqflite.dart';
 
 import 'infrastructure/backup/file_picker_library_backup_source.dart';
 import 'infrastructure/cache/caching_anime_relations.dart';
-import 'infrastructure/cache/shared_preferences_snapshot_store.dart';
+import 'infrastructure/cache/relations_cache_database.dart';
+import 'infrastructure/cache/sqflite_relations_store.dart';
 import 'infrastructure/github/github_release_source.dart';
 import 'infrastructure/images/anihub_image_cache.dart';
 import 'infrastructure/images/cache_manager_image_cache_storage.dart';
@@ -64,8 +65,11 @@ Future<void> main() async {
   _registerFontLicense();
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   // Opened once for the lifetime of the process and never closed explicitly;
-  // the OS releases it when the process dies.
-  final Database database = await openAniHubDatabase();
+  // the OS releases them when the process dies.
+  final (Database database, Database cacheDatabase) = await (
+    openAniHubDatabase(),
+    openRelationsCacheDatabase(),
+  ).wait;
   final Directory cacheDir = await getTemporaryDirectory();
   final AniHubImageCache imageCache = AniHubImageCache();
   runApp(
@@ -112,9 +116,9 @@ Future<void> main() async {
         animeRelationsProvider.overrideWith((Ref ref) {
           return CachingAnimeRelations(
             MalRelations(ref.watch(_malClientProvider)),
-            SharedPreferencesSnapshotStore(
+            SqfliteRelationsStore(
+              cacheDatabase,
               ref.watch(sharedPreferencesProvider),
-              relationsSnapshotKey,
             ),
           );
         }),
