@@ -9,9 +9,10 @@ import 'mal_mapping.dart';
 /// [AnimeCatalog] backed by the MyAnimeList API.
 ///
 /// Queries shorter than [minQueryLength] return no results without a request,
-/// because MyAnimeList rejects them. MyAnimeList leaves anime rated not safe
-/// for work out of search results because `nsfw=true` is never sent. A search
-/// result without an id or a title is skipped.
+/// because MyAnimeList rejects them. Search sends `nsfw=true` because without
+/// it MyAnimeList also leaves out anime rated `gray`, which includes ordinary
+/// films and series; results rated `black` are hentai, which the app does not
+/// list. A search result without an id or a title is skipped.
 class MalCatalog implements AnimeCatalog {
   MalCatalog(this._client);
 
@@ -47,7 +48,8 @@ class MalCatalog implements AnimeCatalog {
       <String, String>{
         'q': term,
         'limit': '${min(limit, _maxLimit)}',
-        'fields': _searchFields,
+        'fields': '$_searchFields,nsfw',
+        'nsfw': 'true',
       },
     );
     final List<CatalogAnime> results = switch (body) {
@@ -55,7 +57,9 @@ class MalCatalog implements AnimeCatalog {
         <CatalogAnime>[
           for (final Object? item in data)
             if (item case {'node': final Map<String, Object?> node}
-                when node['id'] is int && parseTitle(node) != null)
+                when node['id'] is int &&
+                    parseTitle(node) != null &&
+                    node['nsfw'] != 'black')
               _toCatalogAnime(node),
         ],
       ),
