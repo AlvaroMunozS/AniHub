@@ -40,8 +40,8 @@ class GitHubReleaseSource implements ReleaseSource {
     if (body is! List<Object?>) {
       throw const UpdateResponseException('Release list is not a list');
     }
-    Map<String, Object?>? newest;
-    AppVersion? newestVersion;
+    final List<(AppVersion, Map<String, Object?>)> candidates =
+        <(AppVersion, Map<String, Object?>)>[];
     for (final Object? item in body) {
       final Map<String, Object?> release = _asObject(item);
       if (release['draft'] == true) continue;
@@ -49,13 +49,24 @@ class GitHubReleaseSource implements ReleaseSource {
       final AppVersion? version = tag is String
           ? AppVersion.tryParse(tag)
           : null;
-      if (version == null) continue;
-      if (newestVersion == null || version > newestVersion) {
-        newest = release;
-        newestVersion = version;
+      if (version != null) candidates.add((version, release));
+    }
+    candidates.sort(
+      (
+        (AppVersion, Map<String, Object?>) a,
+        (AppVersion, Map<String, Object?>) b,
+      ) => b.$1.compareTo(a.$1),
+    );
+    for (final (AppVersion _, Map<String, Object?> release) in candidates) {
+      try {
+        return _parse(release);
+      } on UpdateResponseException {
+        // The release workflow publishes a release before uploading its APK,
+        // so the newest one can briefly have none; fall back to the next.
+        continue;
       }
     }
-    return newest == null ? null : _parse(newest);
+    return null;
   }
 
   /// Returns the decoded body, or null on HTTP 404.

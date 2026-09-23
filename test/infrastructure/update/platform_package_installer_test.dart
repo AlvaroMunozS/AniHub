@@ -46,6 +46,15 @@ void main() {
     );
   });
 
+  test('rejects an unknown answer', () async {
+    answer(() => 'maybe');
+
+    await expectLater(
+      const PlatformPackageInstaller().install(File('/c/u.apk')),
+      throwsA(isA<UpdateInstallException>()),
+    );
+  });
+
   test('reports an installer failure', () async {
     answer(
       () => throw PlatformException(

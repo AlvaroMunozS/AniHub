@@ -204,6 +204,51 @@ void main() {
     });
   }
 
+  testWidgets('locks the pre-release switch while an update runs', (
+    WidgetTester tester,
+  ) async {
+    final FakeAppInstaller installer = FakeAppInstaller();
+    await _pumpAbout(
+      tester,
+      releaseSource: FakeReleaseSource(release: sampleRelease('1.3.0')),
+      installer: installer,
+    );
+    await _tapText(tester, _updateRow);
+    await tester.tap(find.text(_updateRow));
+    await tester.pump();
+
+    expect(
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+      isNull,
+    );
+
+    installer.completer.complete(false);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
+      isNotNull,
+    );
+  });
+
+  testWidgets('stops offering an update the installer completed', (
+    WidgetTester tester,
+  ) async {
+    final FakeAppInstaller installer = FakeAppInstaller();
+    await _pumpAbout(
+      tester,
+      releaseSource: FakeReleaseSource(release: sampleRelease('1.3.0')),
+      installer: installer,
+    );
+    await _tapText(tester, _updateRow);
+    await tester.tap(find.text(_updateRow));
+    await tester.pump();
+
+    installer.completer.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tienes la última versión'), findsOneWidget);
+  });
+
   testWidgets('asks for pre-releases once the switch is on and keeps it', (
     WidgetTester tester,
   ) async {

@@ -35,9 +35,13 @@ The links in *Acerca de* open in your browser.
 ## Data on the device
 
 The library, the sort and pre-release preferences and the cached anime data
-and covers are stored in the app's private storage. A downloaded update is kept
-in the app's cache only until it is handed to the system installer. They are included in Android's system
-backup when it is enabled on the device. Uninstalling the app deletes them.
+and covers are stored in the app's private storage. They are included in
+Android's system backup when it is enabled on the device. Uninstalling the app
+deletes them.
+
+A downloaded update is stored in the app's cache, which is not backed up, and
+deleted once it is handed to the system installer or the download fails. An
+interrupted download is replaced by the next one.
 
 ## Changes
 

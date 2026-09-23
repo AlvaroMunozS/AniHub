@@ -21,6 +21,7 @@ void main() {
       '1.2.3+4',
       '1.2.3-',
       '1.2.3-beta..1',
+      '1.2.3-beta.01',
       'latest',
     ]) {
       expect(AppVersion.tryParse(raw), isNull, reason: raw);

@@ -13,17 +13,27 @@ import android.os.Looper
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.util.UUID
 
 /**
  * Installs an APK over the running app with a [PackageInstaller] session.
  *
  * The `install` call answers `cancelled` when the user declines, or an error.
- * On success Android replaces the process, so it usually never answers.
+ * On success Android replaces the process, so it usually never answers. While
+ * the confirmation screen is open the call stays pending: the screen reports
+ * `STATUS_FAILURE_ABORTED` when the user dismisses it.
  */
 class ApkInstaller(private val activity: Activity) : MethodChannel.MethodCallHandler {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var pending: MethodChannel.Result? = null
     private var sessionId = -1
+
+    /**
+     * Sent back with every status. Below Android 13 the receiver cannot be
+     * registered as not exported, so this tells the installer's broadcasts
+     * apart from ones forged by other apps.
+     */
+    private val token = UUID.randomUUID().toString()
 
     /** The confirmation screen, held until the activity is in front. */
     private var confirmation: Intent? = null
@@ -48,18 +58,13 @@ class ApkInstaller(private val activity: Activity) : MethodChannel.MethodCallHan
         answerError("The activity was destroyed")
     }
 
+    /**
+     * Shows a confirmation that arrived while the activity was in the
+     * background, where Android blocks starting activities.
+     */
     fun onResume() {
         resumed = true
-        if (confirmation != null && !confirmationShown) {
-            showConfirmation()
-        } else if (confirmationShown) {
-            // Some Android versions send no status when the confirmation is
-            // dismissed without choosing, which would leave the call hanging.
-            val id = sessionId
-            mainHandler.postDelayed({
-                if (pending != null && sessionId == id) answer(CANCELLED)
-            }, DISMISS_GRACE_MS)
-        }
+        if (confirmation != null && !confirmationShown) showConfirmation()
     }
 
     fun onPause() {
@@ -115,7 +120,9 @@ class ApkInstaller(private val activity: Activity) : MethodChannel.MethodCallHan
                     }
                 }
                 apk.delete()
-                val intent = Intent(ACTION_STATUS).setPackage(activity.packageName)
+                val intent = Intent(ACTION_STATUS)
+                    .setPackage(activity.packageName)
+                    .putExtra(EXTRA_TOKEN, token)
                 val flags = PendingIntent.FLAG_UPDATE_CURRENT or
                     // The installer adds the status as extras.
                     (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
@@ -132,7 +139,7 @@ class ApkInstaller(private val activity: Activity) : MethodChannel.MethodCallHan
 
     private fun onStatus(intent: Intent) {
         val id = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
-        if (pending == null || id != sessionId) return
+        if (pending == null || id != sessionId || intent.getStringExtra(EXTRA_TOKEN) != token) return
         when (val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 confirmation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -184,6 +191,6 @@ class ApkInstaller(private val activity: Activity) : MethodChannel.MethodCallHan
         const val ACTION_STATUS = "com.alvaromunozs.anihub.INSTALL_STATUS"
         const val SUCCESS = "success"
         const val CANCELLED = "cancelled"
-        const val DISMISS_GRACE_MS = 1500L
+        const val EXTRA_TOKEN = "com.alvaromunozs.anihub.extra.TOKEN"
     }
 }

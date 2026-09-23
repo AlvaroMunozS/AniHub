@@ -167,8 +167,9 @@ second tap installs it. Nothing is requested until the user taps.
   `GET /releases?per_page=30` instead and picks the highest semantic version,
   skipping drafts and tags that are not versions.
 - A release must have exactly one `.apk` asset with a `sha256:` `digest`,
-  which GitHub computes on upload. Without one the check fails: nothing is
-  installed unverified.
+  which GitHub computes on upload; nothing is installed unverified. Without
+  one, `/latest` fails the check and the list skips to the next release,
+  since the workflow publishes a release before uploading its APK.
 - Versions compare by semantic versioning, so `1.1.0-beta.1` is older than
   `1.1.0`. An installed pre-release is kept until a newer stable version
   exists, even with the switch off.

@@ -157,7 +157,10 @@ class UpdateController extends Notifier<UpdateState> {
               }
             },
           );
-      if (!installed) _emit(generation, UpdateAvailable(release));
+      _emit(
+        generation,
+        installed ? const UpdateUpToDate() : UpdateAvailable(release),
+      );
     } on UpdateChecksumException {
       _emit(generation, UpdateFailed(UpdateFailure.checksum, release));
     } on UpdateInstallException {

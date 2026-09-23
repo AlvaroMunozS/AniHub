@@ -11,9 +11,13 @@ class AppVersion implements Comparable<AppVersion> {
     this.preRelease = const <String>[],
   ]);
 
+  // Numeric identifiers have no leading zeros, so each version has a single
+  // spelling and equal versions hash alike.
+  static const String _identifier = r'(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)';
+
   static final RegExp _pattern = RegExp(
     r'^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)'
-    r'(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$',
+    '(?:-($_identifier(?:\\.$_identifier)*))?\$',
   );
 
   final int major;

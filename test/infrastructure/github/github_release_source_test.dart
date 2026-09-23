@@ -113,6 +113,21 @@ void main() {
     expect(release!.version.toString(), '1.1.0-beta.10');
   });
 
+  test('skips a listed release whose APK is not uploaded yet', () async {
+    final _Api api = _Api(
+      (_) async => _json(<Object?>[
+        _release('v1.2.0-beta.1', assets: <Map<String, Object?>>[]),
+        _release('v1.1.0'),
+      ]),
+    );
+
+    final AppRelease? release = await api.source().latest(
+      includePrereleases: true,
+    );
+
+    expect(release!.version.toString(), '1.1.0');
+  });
+
   test('returns null when every listed release is a draft', () async {
     final _Api api = _Api(
       (_) async => _json(<Object?>[_release('v2.0.0', draft: true)]),

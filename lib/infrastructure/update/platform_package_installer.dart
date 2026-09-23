@@ -24,7 +24,13 @@ class PlatformPackageInstaller {
         'install',
         <String, Object?>{'path': apk.path},
       );
-      return result != 'cancelled';
+      return switch (result) {
+        'success' => true,
+        'cancelled' => false,
+        _ => throw UpdateInstallException(
+          'Unexpected installer answer: $result',
+        ),
+      };
     } on PlatformException catch (error) {
       throw UpdateInstallException(error.message ?? error.code);
     }
