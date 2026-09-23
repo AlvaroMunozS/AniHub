@@ -6,6 +6,8 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-23
+
 ### Added
 
 - *Settings* in *More*, where you can pick a light, dark or system theme, pure black for OLED screens and an accent color.
@@ -44,6 +46,7 @@ First public release.
 - Offline use: the library and cover images are stored on the device.
 - Library import from an `anihub-library` JSON file.
 
-[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AlvaroMunozS/AniHub/releases/tag/v1.0.0
