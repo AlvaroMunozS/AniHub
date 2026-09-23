@@ -1,7 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:anihub/domain/entities/entry.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 import 'package:anihub/ui/router.dart';
+import 'package:anihub/ui/shell/content_column.dart';
+import 'package:anihub/ui/theme/app_theme.dart';
 import 'package:anihub/ui/widgets/entry_card.dart';
+import 'package:anihub/ui/widgets/pill_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsNode;
 import 'package:flutter_test/flutter_test.dart';
@@ -193,5 +198,43 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('keeps the search bar and tabs within the content width', (
+    WidgetTester tester,
+  ) async {
+    await _pumpSampleLibrary(tester);
+    tester.view.physicalSize =
+        const Size(1600, 900) * tester.view.devicePixelRatio;
+    await tester.pumpAndSettle();
+
+    const double maxWidth =
+        AppLayout.contentMaxWidth + ContentColumn.gutter * 2;
+    final Rect bar = tester.getRect(find.byType(PillSearchBar));
+    final Rect tabs = tester.getRect(find.byType(TabBar));
+    expect(bar.width, lessThanOrEqualTo(maxWidth));
+    expect(tabs.width, lessThanOrEqualTo(maxWidth));
+    expect(bar.center.dx, moreOrLessEquals(800));
+
+    // The pill, the first tab label and the grid share their left edge.
+    final double gridLeft = tester
+        .widgetList<EntryCard>(find.byType(EntryCard))
+        .map((EntryCard card) => tester.getTopLeft(find.byWidget(card)).dx)
+        .reduce(math.min);
+    final double pillLeft = tester
+        .getTopLeft(
+          find
+              .descendant(
+                of: find.byType(PillSearchBar),
+                matching: find.byType(Material),
+              )
+              .first,
+        )
+        .dx;
+    final double firstTabLeft = tester
+        .getTopLeft(find.text(spanish.statusWatching))
+        .dx;
+    expect(pillLeft, moreOrLessEquals(gridLeft));
+    expect(firstTabLeft, moreOrLessEquals(gridLeft));
   });
 }

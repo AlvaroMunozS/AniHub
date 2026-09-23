@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../actions/entry_actions.dart';
 import '../catalog_messages.dart';
 import '../router.dart';
+import '../shell/content_column.dart';
 import '../state/anime_detail_providers.dart';
 import '../state/library_providers.dart';
 import '../theme/app_theme.dart';
@@ -139,7 +140,10 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     return anime.when(
       loading: () => <Widget>[
         SliverToBoxAdapter(
-          child: DetailSkeleton(key: _headerKey, topInset: topInset),
+          child: _Readable(
+            key: _headerKey,
+            child: DetailSkeleton(topInset: topInset),
+          ),
         ),
       ],
       error: (Object error, StackTrace _) {
@@ -156,7 +160,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               hasScrollBody: false,
               child: Padding(
                 padding: EdgeInsets.only(top: topInset + AppSizes.headerHeight),
-                child: notice,
+                child: _Readable(child: notice),
               ),
             ),
           ];
@@ -179,7 +183,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               topInset: topInset,
             ),
           ),
-          SliverToBoxAdapter(child: notice),
+          SliverToBoxAdapter(child: _Readable(child: notice)),
         ];
       },
       data: (CatalogAnime data) => <Widget>[
@@ -192,7 +196,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           ),
         ),
         SliverToBoxAdapter(
-          child: DetailBody(anime: data, malId: widget.malId),
+          child: _Readable(
+            child: DetailBody(anime: data, malId: widget.malId),
+          ),
         ),
       ],
     );
@@ -262,8 +268,27 @@ class _HeaderAndActions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         DetailHeader(anime: anime, topInset: topInset),
-        DetailActionRow(anime: anime, entry: entry),
+        _Readable(
+          child: DetailActionRow(anime: anime, entry: entry),
+        ),
       ],
+    );
+  }
+}
+
+/// Centers detail content at a readable width on tablets and landscape
+/// screens. Its children pad themselves by the gutter already.
+class _Readable extends StatelessWidget {
+  const _Readable({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ContentColumn(
+      maxWidth: AppLayout.readableMaxWidth,
+      padded: false,
+      child: child,
     );
   }
 }

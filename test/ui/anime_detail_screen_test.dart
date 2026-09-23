@@ -12,6 +12,11 @@ import 'package:anihub/domain/values/watch_status.dart';
 
 import 'package:anihub/ui/router.dart';
 import 'package:anihub/ui/screens/anime_detail_screen.dart';
+import 'package:anihub/ui/shell/content_column.dart';
+import 'package:anihub/ui/theme/app_theme.dart';
+import 'package:anihub/ui/widgets/detail/detail_action_row.dart';
+import 'package:anihub/ui/widgets/detail/detail_header.dart';
+import 'package:anihub/ui/widgets/detail/expandable_synopsis.dart';
 import 'package:flutter/foundation.dart' show FlutterExceptionHandler;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +26,9 @@ import '../support/fake_anime_relations.dart';
 import '../support/in_memory_entry_repository.dart';
 import '../support/sample_data.dart';
 import 'support/pump_app.dart';
+
+/// A landscape tablet, wider than any content column.
+const Size _wideScreen = Size(1600, 900);
 
 /// Fullmetal Alchemist: Brotherhood with a synopsis long enough to collapse
 /// and a known season, which `sampleCatalog` lacks.
@@ -419,5 +427,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(barColor().a, greaterThan(0));
+  });
+
+  testWidgets('centers the content at a readable width on a wide screen', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDetail(tester, repo: inMemoryLibrary(<Entry>[_watching()]));
+    tester.view.physicalSize = _wideScreen * tester.view.devicePixelRatio;
+    await tester.pumpAndSettle();
+
+    final Rect synopsis = tester.getRect(find.byType(ExpandableSynopsis));
+    expect(synopsis.width, lessThanOrEqualTo(AppLayout.readableMaxWidth));
+    expect(synopsis.center.dx, moreOrLessEquals(_wideScreen.width / 2));
+
+    final Rect title = tester.getRect(
+      find.text('Fullmetal Alchemist: Brotherhood'),
+    );
+    expect(title.left, greaterThanOrEqualTo(synopsis.left));
+    expect(title.right, lessThanOrEqualTo(synopsis.right));
+
+    final Rect actions = tester.getRect(find.byType(DetailActionRow));
+    expect(actions.center.dx, moreOrLessEquals(_wideScreen.width / 2));
+    expect(
+      actions.width,
+      lessThanOrEqualTo(AppLayout.readableMaxWidth + ContentColumn.gutter * 2),
+    );
+
+    // The faded cover behind the header still spans the whole screen.
+    expect(tester.getSize(find.byType(DetailHeader)).width, _wideScreen.width);
   });
 }

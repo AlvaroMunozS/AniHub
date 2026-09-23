@@ -227,7 +227,8 @@ tap installs it. Nothing is requested until the user taps.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on
-  tablets.
+  tablets, where content is capped in width and centered instead of
+  stretching (`ContentColumn`).
 - **Manual updates.** The app looks for a new version only when asked, so it
   makes no request the user did not expect and needs no background work.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so

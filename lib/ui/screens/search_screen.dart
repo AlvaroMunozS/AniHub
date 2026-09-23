@@ -123,11 +123,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          PillSearchBar(
-            controller: _query,
-            hintText: context.l10n.searchHint,
-            onChanged: _onQueryChanged,
-            onClear: _clear,
+          ContentColumn(
+            padded: false,
+            child: PillSearchBar(
+              controller: _query,
+              hintText: context.l10n.searchHint,
+              onChanged: _onQueryChanged,
+              onClear: _clear,
+            ),
           ),
           _LoadingLine(loading: _loading),
           Expanded(

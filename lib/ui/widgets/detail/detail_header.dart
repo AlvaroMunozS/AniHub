@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/catalog_anime.dart';
 import '../../../l10n/l10n.dart';
 import '../../format/anime_meta.dart';
+import '../../shell/content_column.dart';
 import '../../theme/app_theme.dart';
 import '../cover_image.dart';
 import 'detail_metrics.dart';
 
 /// The cover, title and metadata of an anime over a faded copy of its cover.
 ///
-/// The content starts below the top bar, at [topInset] plus the bar's
+/// The faded cover spans the full width, while the content is centered at a
+/// readable width and starts below the top bar, at [topInset] plus the bar's
 /// height.
 class DetailHeader extends StatelessWidget {
   const DetailHeader({required this.anime, required this.topInset, super.key});
@@ -41,49 +43,53 @@ class DetailHeader extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.s16,
-            topInset + AppSizes.headerHeight,
-            AppSpacing.s16,
-            AppSpacing.s16,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              CoverImage(
-                url: anime.coverUrl,
-                width: detailCoverWidth,
-                height: detailCoverWidth / AppSizes.posterAspectRatio,
-              ),
-              const SizedBox(width: AppSpacing.s16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      anime.title,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.s12),
-                    if (episodes != null)
-                      _MetaRow(icon: Icons.tv_outlined, text: episodes),
-                    if (season != null)
-                      _MetaRow(
-                        icon: Icons.calendar_today_outlined,
-                        text: season,
-                      ),
-                    if (anime.studioName != null)
-                      _MetaRow(
-                        icon: Icons.palette_outlined,
-                        text: anime.studioName!,
-                      ),
-                  ],
+        ContentColumn(
+          maxWidth: AppLayout.readableMaxWidth,
+          padded: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.s16,
+              topInset + AppSizes.headerHeight,
+              AppSpacing.s16,
+              AppSpacing.s16,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                CoverImage(
+                  url: anime.coverUrl,
+                  width: detailCoverWidth,
+                  height: detailCoverWidth / AppSizes.posterAspectRatio,
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSpacing.s16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        anime.title,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.s12),
+                      if (episodes != null)
+                        _MetaRow(icon: Icons.tv_outlined, text: episodes),
+                      if (season != null)
+                        _MetaRow(
+                          icon: Icons.calendar_today_outlined,
+                          text: season,
+                        ),
+                      if (anime.studioName != null)
+                        _MetaRow(
+                          icon: Icons.palette_outlined,
+                          text: anime.studioName!,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
