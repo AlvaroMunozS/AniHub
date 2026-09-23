@@ -1,4 +1,5 @@
 import 'package:anihub/domain/entities/entry.dart';
+import 'package:anihub/domain/errors/duplicate_entry_exception.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,8 +13,8 @@ typedef EntryRepositoryFactory = Future<EntryRepository> Function(
 /// Runs the behavior every [EntryRepository] shares against the repositories
 /// built by [create].
 ///
-/// [constraintError] matches the error that the implementation throws when a
-/// write would store two entries with the same `id` or the same `malId`.
+/// [constraintError] matches the error that the implementation throws when
+/// [EntryRepository.upsertAll] would store two entries with the same `id`.
 void entryRepositoryContract(
   EntryRepositoryFactory create, {
   required Matcher constraintError,
@@ -66,7 +67,7 @@ void entryRepositoryContract(
     final Entry first = await repo.save(_entry(malId: 1));
 
     final Entry updated = await repo.save(
-      first.copyWith(status: WatchStatus.completed),
+      first.withStatus(WatchStatus.completed),
     );
 
     expect(updated.id, first.id);
@@ -87,9 +88,52 @@ void entryRepositoryContract(
 
     await expectLater(
       repo.save(_entry(malId: 42, title: 'B')),
-      throwsA(constraintError),
+      throwsA(
+        isA<DuplicateEntryException>().having(
+          (DuplicateEntryException e) => e.malId,
+          'malId',
+          42,
+        ),
+      ),
     );
     expect(await repo.findAll(), <Entry>[first]);
+  });
+
+  test('save rejects an update that takes the malId of another '
+      'entry', () async {
+    final Entry first = await repo.save(_entry(malId: 1));
+    final Entry second = await repo.save(_entry(malId: 2));
+
+    await expectLater(
+      repo.save(second.copyWith(malId: 1)),
+      throwsA(
+        isA<DuplicateEntryException>().having(
+          (DuplicateEntryException e) => e.malId,
+          'malId',
+          1,
+        ),
+      ),
+    );
+    expect(await repo.findAll(), <Entry>[second, first]);
+  });
+
+  test('two concurrent inserts of the same anime save one and reject the '
+      'other', () async {
+    final List<Future<Object>> attempts = <Future<Object>>[
+      for (final String title in <String>['A', 'B'])
+        repo
+            .save(_entry(malId: 42, title: title))
+            .then<Object>(
+              (Entry saved) => saved,
+              onError: (Object error) => error,
+            ),
+    ];
+
+    final List<Object> outcomes = await Future.wait(attempts);
+
+    expect(outcomes.whereType<Entry>(), hasLength(1));
+    expect(outcomes.whereType<DuplicateEntryException>(), hasLength(1));
+    expect(await repo.findAll(), <Entry>[outcomes.whereType<Entry>().single]);
   });
 
   test('delete removes the entry and ignores unknown ids', () async {
@@ -108,6 +152,26 @@ void entryRepositoryContract(
     await repo.save(_entry(malId: 3));
 
     expect(await storedMalIds(), <int>[3, 2, 1]);
+  });
+
+  test('findAll orders entries saved within the same millisecond', () async {
+    final DateTime start = DateTime.utc(2024, 3, 1, 12);
+    final List<DateTime> times = <DateTime>[
+      start,
+      start.add(const Duration(microseconds: 1)),
+      start.add(const Duration(microseconds: 2)),
+    ];
+    int saves = 0;
+    final EntryRepository sameMillisecond = await create(() => times[saves++]);
+
+    await sameMillisecond.save(_entry(malId: 1));
+    await sameMillisecond.save(_entry(malId: 2));
+    await sameMillisecond.save(_entry(malId: 3));
+
+    expect(
+      (await sameMillisecond.findAll()).map((Entry e) => e.updatedAt),
+      times.reversed,
+    );
   });
 
   test('watchAll emits the library on subscribe', () async {

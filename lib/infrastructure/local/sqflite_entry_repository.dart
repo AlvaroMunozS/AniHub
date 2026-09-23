@@ -4,23 +4,29 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../../domain/entities/entry.dart';
+import '../../domain/errors/duplicate_entry_exception.dart';
 import '../../domain/ports/entry_repository.dart';
 import '../../domain/values/watch_status.dart';
 import 'uuid.dart';
 
 const String _databaseFileName = 'library.db';
 
-const int _schemaVersion = 1;
+const int _schemaVersion = 2;
 
 const String _entries = 'entries';
 
-/// Opens the app database, creating its schema on first launch.
+/// Opens the app database, creating its schema on first launch and
+/// migrating it after an update.
+///
+/// There is no `onDowngrade`: Android refuses to install an older version
+/// over a newer one.
 Future<Database> openAniHubDatabase() async {
   final String path = p.join(await getDatabasesPath(), _databaseFileName);
   return openDatabase(
     path,
     version: _schemaVersion,
     onCreate: (Database db, int _) => createAniHubSchema(db),
+    onUpgrade: upgradeAniHubSchema,
   );
 }
 
@@ -28,21 +34,64 @@ Future<Database> openAniHubDatabase() async {
 ///
 /// Public so that tests can build the same schema on an in-memory database.
 Future<void> createAniHubSchema(Database db) async {
-  await db.execute('''
-CREATE TABLE $_entries (
+  await _createEntriesTable(db, _entries);
+  await _createEntriesIndex(db);
+}
+
+/// Migrates [db] from schema version [from] to [to].
+///
+/// Public so that tests can migrate an in-memory database. sqflite runs it
+/// inside a transaction, so a failed step leaves the old schema intact.
+Future<void> upgradeAniHubSchema(Database db, int from, int to) async {
+  if (from < 2) await _migrateToV2(db);
+}
+
+Future<void> _createEntriesTable(DatabaseExecutor db, String table) {
+  return db.execute('''
+CREATE TABLE $table (
   id TEXT PRIMARY KEY,
   mal_id INTEGER NOT NULL UNIQUE,
   title TEXT NOT NULL,
   cover_url TEXT,
   total_episodes INTEGER,
   status TEXT NOT NULL CHECK(status IN ('watching', 'planned', 'completed')),
-  is_favorite INTEGER NOT NULL DEFAULT 0,
-  updated_at TEXT NOT NULL
+  is_favorite INTEGER NOT NULL DEFAULT 0
+    CHECK(is_favorite = 0 OR status = 'completed'),
+  updated_at INTEGER NOT NULL
 )
 ''');
-  await db.execute(
+}
+
+Future<void> _createEntriesIndex(DatabaseExecutor db) {
+  return db.execute(
     'CREATE INDEX idx_entries_updated_at ON $_entries (updated_at)',
   );
+}
+
+// Schema 1 stored `updated_at` as ISO-8601 text, whose fraction of a second
+// has three or six digits and so does not sort as time within a second, and
+// allowed favorites that are not completed. SQLite cannot change a column's
+// type in place, so the table is rebuilt. Timestamps are converted in Dart
+// because `julianday` would lose the microseconds.
+Future<void> _migrateToV2(Database db) async {
+  const String next = '${_entries}_v2';
+  await _createEntriesTable(db, next);
+  final List<Map<String, Object?>> rows = await db.query(_entries);
+  final Batch batch = db.batch();
+  for (final Map<String, Object?> row in rows) {
+    final bool isFavorite =
+        row['is_favorite'] != 0 && row['status'] == WatchStatus.completed.wire;
+    batch.insert(next, <String, Object?>{
+      ...row,
+      'is_favorite': isFavorite ? 1 : 0,
+      'updated_at': DateTime.parse(row['updated_at']! as String)
+          .microsecondsSinceEpoch,
+    });
+  }
+  await batch.commit(noResult: true);
+  await db.execute('DROP TABLE $_entries');
+  await db.execute('ALTER TABLE $next RENAME TO $_entries');
+  await _createEntriesIndex(db);
 }
 
 /// [EntryRepository] backed by the sqflite `entries` table.
@@ -73,7 +122,10 @@ class SqfliteEntryRepository implements EntryRepository {
   Future<List<Entry>> findAll() => _fetchAll();
 
   /// Throws a [StateError] if [entry] has an id that is not stored, and a
-  /// [DatabaseException] if another entry has the same `malId`.
+  /// [DuplicateEntryException] if another entry has the same `malId`.
+  ///
+  /// Duplicates are caught by the `mal_id` unique constraint rather than
+  /// looked up first, so two concurrent inserts cannot both pass the check.
   @override
   Future<Entry> save(Entry entry) async {
     final String? existingId = entry.id;
@@ -81,16 +133,23 @@ class SqfliteEntryRepository implements EntryRepository {
     final Entry saved = entry.copyWith(id: id, updatedAt: now().toUtc());
     final Map<String, Object?> row = _toRow(id, saved);
 
-    if (existingId == null) {
-      await _db.insert(_entries, row);
-    } else {
-      final int updated = await _db.update(
-        _entries,
-        row,
-        where: 'id = ?',
-        whereArgs: <Object?>[id],
-      );
-      if (updated == 0) throw StateError('No entry with id $id');
+    try {
+      if (existingId == null) {
+        await _db.insert(_entries, row);
+      } else {
+        final int updated = await _db.update(
+          _entries,
+          row,
+          where: 'id = ?',
+          whereArgs: <Object?>[id],
+        );
+        if (updated == 0) throw StateError('No entry with id $id');
+      }
+    } on DatabaseException catch (error) {
+      if (error.isUniqueConstraintError('$_entries.mal_id')) {
+        throw DuplicateEntryException(entry.malId);
+      }
+      rethrow;
     }
 
     await _notifyChange();
@@ -168,7 +227,10 @@ Entry _fromRow(Map<String, Object?> row) {
     totalEpisodes: row['total_episodes'] as int?,
     status: WatchStatus.fromWire(row['status']! as String),
     isFavorite: (row['is_favorite']! as int) != 0,
-    updatedAt: DateTime.parse(row['updated_at']! as String),
+    updatedAt: DateTime.fromMicrosecondsSinceEpoch(
+      row['updated_at']! as int,
+      isUtc: true,
+    ),
   );
 }
 
@@ -181,6 +243,6 @@ Map<String, Object?> _toRow(String id, Entry entry) {
     'total_episodes': entry.totalEpisodes,
     'status': entry.status.wire,
     'is_favorite': entry.isFavorite ? 1 : 0,
-    'updated_at': entry.updatedAt.toUtc().toIso8601String(),
+    'updated_at': entry.updatedAt.microsecondsSinceEpoch,
   };
 }

@@ -24,6 +24,16 @@ Entry _entry({
   isFavorite: isFavorite,
 );
 
+/// Holds [patches] from the start, whatever the library emits.
+class _FixedPatches extends PendingEntryChanges {
+  _FixedPatches(this.patches);
+
+  final Map<String, EntryPatch> patches;
+
+  @override
+  Map<String, EntryPatch> build() => patches;
+}
+
 PendingEntryChanges _changes(ProviderContainer container) =>
     container.read(pendingEntryChangesProvider.notifier);
 
@@ -189,5 +199,34 @@ void main() {
         ?.value;
     expect(visible?.single.status, WatchStatus.completed);
     expect(await pending, ChangeOutcome.applied);
+  });
+
+  test('drops the favorite of a completed entry patched to another '
+      'status', () async {
+    final ControllableRepository repo = ControllableRepository(<Entry>[
+      _entry(status: WatchStatus.completed, isFavorite: true),
+    ]);
+    addTearDown(repo.dispose);
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        entryRepositoryProvider.overrideWithValue(repo),
+        pendingEntryChangesProvider.overrideWith(
+          () => _FixedPatches(<String, EntryPatch>{
+            'e-1': const EntryPatch(status: WatchStatus.planned),
+          }),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.listen(visibleLibraryEntriesProvider, (_, _) {});
+    await Future<void>.delayed(Duration.zero);
+
+    final Entry visible = container
+        .read(visibleLibraryEntriesProvider)
+        .requireValue
+        .single;
+    expect(visible.status, WatchStatus.planned);
+    expect(visible.isFavorite, isFalse);
   });
 }

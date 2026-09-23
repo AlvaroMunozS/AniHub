@@ -16,6 +16,10 @@ All notable changes to AniHub are documented here. The format follows
 
 - *Import library* moves to *Settings → Backup*.
 
+### Fixed
+
+- Series changed within the same instant no longer appear out of order in the library.
+
 ## [1.1.0] - 2026-09-23
 
 ### Added

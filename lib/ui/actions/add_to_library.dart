@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../application/usecases/usecases.dart';
 import '../../domain/entities/catalog_anime.dart';
+import '../../domain/errors/duplicate_entry_exception.dart';
 import '../../domain/values/watch_status.dart';
 import '../../l10n/l10n.dart';
 import '../providers.dart';
