@@ -68,13 +68,17 @@ List<Entry> _library() => <Entry>[
 
 final String _plannedTab = RoutePaths.libraryFor(WatchStatus.planned);
 
-Future<void> _pumpPlanned(WidgetTester tester, List<Entry> library) async {
+Future<void> _pumpPlanned(
+  WidgetTester tester,
+  List<Entry> library, {
+  Map<int, AnimeRelationNode>? graph,
+}) async {
   final ControllableRepository repo = ControllableRepository(library);
   addTearDown(repo.dispose);
   await pumpApp(
     tester,
     repo: repo,
-    relations: FakeAnimeRelations(graph: _graph()),
+    relations: FakeAnimeRelations(graph: graph ?? _graph()),
     initialLocation: _plannedTab,
   );
 }
@@ -259,5 +263,48 @@ void main() {
 
     repo.saveGate!.complete();
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('counts a season as started through seasons missing from the '
+      'library', (WidgetTester tester) async {
+    // Season 4 continues season 3, which is not in the library either.
+    final Map<int, AnimeRelationNode> graph = <int, AnimeRelationNode>{
+      ..._graph(),
+      3: AnimeRelationNode(
+        malId: 3,
+        title: 'Season 3',
+        seasonYear: 2003,
+        relations: <AnimeRelation>[
+          ..._graph()[3]!.relations,
+          const AnimeRelation(
+            malId: 4,
+            kind: RelationKind.sequel,
+            title: 'Season 4',
+          ),
+        ],
+      ),
+      4: const AnimeRelationNode(
+        malId: 4,
+        title: 'Season 4',
+        seasonYear: 2004,
+        relations: <AnimeRelation>[
+          AnimeRelation(
+            malId: 3,
+            kind: RelationKind.prequel,
+            title: 'Season 3',
+          ),
+        ],
+      ),
+    };
+    await _pumpPlanned(tester, <Entry>[
+      _entry(1, 'Season 1', WatchStatus.completed),
+      _entry(4, 'Season 4', WatchStatus.planned, age: 1),
+      _entry(100, 'Standalone', WatchStatus.planned, age: 2),
+    ], graph: graph);
+
+    await _cycleNotStarted(tester);
+
+    expect(find.text('Standalone'), findsOneWidget);
+    expect(find.text('Season 4'), findsNothing);
   });
 }

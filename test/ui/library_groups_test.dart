@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:anihub/application/usecases/usecases.dart';
 import 'package:anihub/domain/entities/anime_relation.dart';
 import 'package:anihub/domain/entities/anime_relation_node.dart';
@@ -82,6 +84,112 @@ List<Entry> _twoSeasons() {
     ),
   ];
 }
+
+/// Four seasons chained by sequel and prequel edges.
+Map<int, AnimeRelationNode> _fourSeasons() {
+  AnimeRelationNode season(int malId) {
+    return AnimeRelationNode(
+      malId: malId,
+      title: 'Season $malId',
+      seasonYear: 2000 + malId,
+      relations: <AnimeRelation>[
+        if (malId > 1)
+          AnimeRelation(
+            malId: malId - 1,
+            kind: RelationKind.prequel,
+            title: 'Season ${malId - 1}',
+          ),
+        if (malId < 4)
+          AnimeRelation(
+            malId: malId + 1,
+            kind: RelationKind.sequel,
+            title: 'Season ${malId + 1}',
+          ),
+      ],
+    );
+  }
+
+  return <int, AnimeRelationNode>{
+    for (int id = 1; id <= 4; id++) id: season(id),
+  };
+}
+
+/// Seasons 1 and 4 being watched, without seasons 2 and 3.
+List<Entry> _firstAndLastSeasons() {
+  final DateTime now = DateTime.now();
+  return <Entry>[
+    Entry(
+      malId: 4,
+      title: 'Season 4',
+      status: WatchStatus.watching,
+      updatedAt: now,
+    ),
+    Entry(
+      malId: 1,
+      title: 'Season 1',
+      status: WatchStatus.watching,
+      updatedAt: now.subtract(const Duration(minutes: 1)),
+    ),
+  ];
+}
+
+/// Serves [graph], holding the lookups of ids outside [library] until
+/// [release] and failing the first [failures] of them.
+class _Chains implements AnimeRelations {
+  _Chains(this.graph, this.library, {this.failures = 0});
+
+  final Map<int, AnimeRelationNode> graph;
+  final Set<int> library;
+  int failures;
+  Completer<void> release = Completer<void>()..complete();
+  int calls = 0;
+
+  @override
+  Future<Map<int, AnimeRelationNode>> forIds(Iterable<int> malIds) async {
+    calls++;
+    final List<int> ids = List<int>.of(malIds);
+    if (!ids.every(library.contains)) {
+      await release.future;
+      if (failures > 0) {
+        failures--;
+        throw const CatalogNetworkException('down');
+      }
+    }
+    return <int, AnimeRelationNode>{
+      for (final int id in ids)
+        if (graph[id] != null) id: graph[id]!,
+    };
+  }
+}
+
+Future<ProviderContainer> _pumpContainer(
+  WidgetTester tester,
+  List<Entry> library,
+  AnimeRelations relations,
+) async {
+  SharedPreferences.setMockInitialValues(<String, Object>{});
+  final ProviderContainer container = ProviderContainer(
+    overrides: <Override>[
+      sharedPreferencesProvider.overrideWithValue(
+        await SharedPreferences.getInstance(),
+      ),
+      entryRepositoryProvider.overrideWithValue(inMemoryLibrary(library)),
+      animeRelationsProvider.overrideWithValue(relations),
+    ],
+  );
+  addTearDown(container.dispose);
+  container.listen(libraryGroupsProvider(WatchStatus.watching), (_, _) {});
+  await tester.pumpWidget(
+    UncontrolledProviderScope(container: container, child: const SizedBox()),
+  );
+  await tester.pumpAndSettle();
+  return container;
+}
+
+List<LibraryGroupItem> _groups(ProviderContainer container) => container
+    .read(libraryGroupsProvider(WatchStatus.watching))
+    .whereType<LibraryGroupItem>()
+    .toList();
 
 /// Returns [graph] minus the ids in [missing], which shrinks by one id per
 /// call, like a source that recovers bit by bit.
@@ -278,5 +386,46 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pump(const Duration(hours: 1));
     expect(relations.calls, 1 + LibraryRelations.retryDelays.length);
+  });
+
+  testWidgets('groups seasons linked only through anime missing from the '
+      'library once the chain is fetched', (WidgetTester tester) async {
+    final _Chains relations = _Chains(_fourSeasons(), <int>{1, 4})
+      ..release = Completer<void>();
+    final ProviderContainer container = await _pumpContainer(
+      tester,
+      _firstAndLastSeasons(),
+      relations,
+    );
+
+    expect(_groups(container), isEmpty);
+    expect(container.read(libraryRelationsProvider).value!.keys, <int>[1, 4]);
+
+    relations.release.complete();
+    await tester.pumpAndSettle();
+
+    expect(_groups(container), hasLength(1));
+    expect(_groups(container).single.members.map((Entry e) => e.malId), <int>[
+      1,
+      4,
+    ]);
+  });
+
+  testWidgets('fetches the chain again after it fails', (
+    WidgetTester tester,
+  ) async {
+    final _Chains relations = _Chains(_fourSeasons(), <int>{1, 4}, failures: 1);
+    final ProviderContainer container = await _pumpContainer(
+      tester,
+      _firstAndLastSeasons(),
+      relations,
+    );
+
+    expect(_groups(container), isEmpty);
+
+    await tester.pump(LibraryRelations.retryDelays[0]);
+    await tester.pumpAndSettle();
+
+    expect(_groups(container), hasLength(1));
   });
 }

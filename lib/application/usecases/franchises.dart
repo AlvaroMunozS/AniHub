@@ -5,8 +5,9 @@ import '../../domain/entities/entry.dart';
 /// graph along the edges whose kind satisfies `RelationKind.groupsFranchise`.
 ///
 /// Entries connected through anime missing from the library still share a
-/// franchise, so seasons 1 and 3 share one without season 2. An entry with
-/// no such edges is a franchise of its own.
+/// franchise when [relations] holds the nodes in between, so seasons 1 and 4
+/// share one without seasons 2 and 3 (see [LinkFranchiseChains]). An entry
+/// with no such edges is a franchise of its own.
 class Franchises {
   Franchises(List<Entry> entries, Map<int, AnimeRelationNode> relations) {
     for (final Entry entry in entries) {

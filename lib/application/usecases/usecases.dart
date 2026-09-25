@@ -15,6 +15,7 @@ export 'group_library.dart';
 export 'import_library.dart';
 export 'library_item.dart';
 export 'library_order.dart';
+export 'link_franchise_chains.dart';
 export 'list_entries.dart';
 export 'remove_entry.dart';
 export 'set_favorite.dart';

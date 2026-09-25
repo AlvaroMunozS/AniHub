@@ -12,7 +12,8 @@ import 'relations_store.dart';
 /// [AnimeRelations] decorator that persists the relation graph on disk.
 ///
 /// Freshness is tracked per node rather than per snapshot, because the cache
-/// also holds anime outside the library that were only opened in detail.
+/// also holds anime outside the library: those opened in detail and those
+/// fetched to link the seasons of a franchise.
 /// If every requested id is fresher than [ttl], the network is not touched.
 /// Missing and stale ids are fetched [chunkSize] at a time, and each chunk is
 /// persisted as it arrives, so a failure part way through a large library

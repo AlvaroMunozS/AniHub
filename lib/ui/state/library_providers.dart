@@ -9,6 +9,7 @@ import '../../application/usecases/usecases.dart';
 import '../../domain/entities/anime_relation_node.dart';
 import '../../domain/entities/entry.dart';
 import '../../domain/errors/catalog_exception.dart';
+import '../../domain/ports/anime_relations.dart';
 import '../../domain/values/watch_status.dart';
 import '../providers.dart';
 import '../report_error.dart';
@@ -52,11 +53,17 @@ libraryEntriesProvider = StreamNotifierProvider<LibraryEntries, List<Entry>>(
 /// selected values with `==`, and a new `List<int>` never equals the previous
 /// one, which would refetch the graph on every library write.
 ///
+/// Emits the direct relations of the library first, then the same graph
+/// extended with the anime that link its entries through sequel and prequel
+/// chains ([LinkFranchiseChains]), so groups show before the chains are
+/// fetched.
+///
 /// The port returns what it could fetch when a large lookup fails part way,
-/// so a graph that lacks some ids is fetched again after [retryDelays]; ids
-/// already fetched come from the cache. An id the catalog does not know is
-/// also absent, which is why the retries are capped.
-class LibraryRelations extends AsyncNotifier<Map<int, AnimeRelationNode>> {
+/// so a graph that lacks some ids, or whose chains could not be fetched, is
+/// fetched again after [retryDelays]; ids already fetched come from the
+/// cache. An id the catalog does not know is also absent, which is why the
+/// retries are capped.
+class LibraryRelations extends StreamNotifier<Map<int, AnimeRelationNode>> {
   static const List<Duration> retryDelays = <Duration>[
     Duration(minutes: 1),
     Duration(minutes: 5),
@@ -69,7 +76,7 @@ class LibraryRelations extends AsyncNotifier<Map<int, AnimeRelationNode>> {
   int _retries = 0;
 
   @override
-  Future<Map<int, AnimeRelationNode>> build() async {
+  Stream<Map<int, AnimeRelationNode>> build() async* {
     final String idsKey = ref.watch(
       libraryEntriesProvider.select(_libraryIdsKey),
     );
@@ -77,25 +84,41 @@ class LibraryRelations extends AsyncNotifier<Map<int, AnimeRelationNode>> {
       _idsKey = idsKey;
       _retries = 0;
     }
-    if (idsKey.isEmpty) return const <int, AnimeRelationNode>{};
+    if (idsKey.isEmpty) {
+      yield const <int, AnimeRelationNode>{};
+      return;
+    }
     final List<int> ids = idsKey.split(',').map(int.parse).toList();
+    final AnimeRelations relations = ref.watch(animeRelationsProvider);
+    final LinkFranchiseChains linkChains = ref.watch(
+      linkFranchiseChainsProvider,
+    );
     final Map<int, AnimeRelationNode> graph = await reportingUnexpected(
-      ref.watch(animeRelationsProvider).forIds(ids),
+      relations.forIds(ids),
       isExpected: (Object error) => error is CatalogException,
     );
-    if (ref.mounted &&
-        _retries < retryDelays.length &&
-        !ids.every(graph.containsKey)) {
+    yield graph;
+
+    bool complete = ids.every(graph.containsKey);
+    try {
+      final FranchiseChains chains = await linkChains(graph, ids.toSet());
+      complete = complete && chains.complete;
+      if (chains.graph.length > graph.length) yield chains.graph;
+    } on Object catch (error, stack) {
+      // The direct graph is already shown; an unexpected failure only leaves
+      // the chains unlinked, and retrying would fail the same way.
+      reportUiError(error, stack);
+    }
+    if (ref.mounted && _retries < retryDelays.length && !complete) {
       final Timer retry = Timer(retryDelays[_retries++], ref.invalidateSelf);
       ref.onDispose(retry.cancel);
     }
-    return graph;
   }
 }
 
-final AsyncNotifierProvider<LibraryRelations, Map<int, AnimeRelationNode>>
+final StreamNotifierProvider<LibraryRelations, Map<int, AnimeRelationNode>>
 libraryRelationsProvider =
-    AsyncNotifierProvider<LibraryRelations, Map<int, AnimeRelationNode>>(
+    StreamNotifierProvider<LibraryRelations, Map<int, AnimeRelationNode>>(
       LibraryRelations.new,
     );
 
