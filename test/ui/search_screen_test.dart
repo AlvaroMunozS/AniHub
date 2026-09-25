@@ -318,6 +318,24 @@ void main() {
       expect(find.widgetWithText(CatalogCard, 'Web Series'), findsOneWidget);
     });
 
+    testWidgets('starts the week on the day picked in the settings', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(
+        tester,
+        catalog: FakeAnimeCatalog(airing: _airing),
+        initialLocation: RoutePaths.search,
+        overrides: _madridThursday,
+        prefs: const <String, Object>{'general.firstWeekday': 'sunday'},
+      );
+
+      final List<String> tabs = <String>[
+        for (final Tab tab in tester.widgetList<Tab>(find.byType(Tab)))
+          if (tab.text case final String text) text,
+      ];
+      expect(tabs.take(2), <String>['dom', 'lun']);
+    });
+
     testWidgets('has no last tab when every anime has a slot', (
       WidgetTester tester,
     ) async {

@@ -9,6 +9,7 @@ All notable changes to AniHub are documented here. The format follows
 ### Added
 
 - *Browse* shows the best-known anime airing this season, by day of the week, most popular first, with the broadcast time in your time zone. It opens on today, and anime already in your library are dimmed.
+- *Appearance* lets you start the week on Monday or Sunday; by default it follows your phone's region.
 
 ## [1.3.0] - 2026-09-25
 

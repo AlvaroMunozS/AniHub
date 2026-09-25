@@ -258,7 +258,11 @@ tap installs it. Nothing is requested until the user taps.
   day lists the most followed first, by how many MyAnimeList lists hold the
   anime, and anime in fewer than 5000 are left out: about three in four
   airing series are niche web series or children's shows. The count is
-  never shown. The list is requested once per session and not cached on disk: it changes
+  never shown. The week starts on the day picked in *Appearance*, or else
+  on the one of the device's region by the Unicode CLDR week data
+  (`lib/ui/week_start.dart`), since the language alone cannot tell the
+  United States from the United Kingdom. The list is requested once per
+  session and not cached on disk: it changes
   every week and is only useful online.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
@@ -270,9 +274,9 @@ tap installs it. Nothing is requested until the user taps.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so
   images are cached for a year (up to 3000 files) and load offline.
   *More → Settings → Storage* shows its size and clears it.
-- **Preferences without a port.** Theme, accent and language are UI state:
-  notifiers in `lib/ui/state/settings_providers.dart` read and write
-  `SharedPreferences` directly.
+- **Preferences without a port.** Theme, accent, language and the first day
+  of the week are UI state: notifiers in `lib/ui/state/settings_providers.dart`
+  read and write `SharedPreferences` directly.
 - **Few dependencies.** UUIDs come from a small helper over `Random.secure()`
   instead of a package. New dependencies need a clear reason.
 

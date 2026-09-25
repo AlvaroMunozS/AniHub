@@ -216,6 +216,16 @@
   "appearanceAccentPink": "Rosa",
   "appearanceDisplay": "Visualización",
   "appearanceLanguage": "Idioma de la aplicación",
+  "appearanceFirstWeekday": "Primer día de la semana",
+  "appearanceFirstWeekdayRegion": "{day, select, sunday{Según la región (domingo)} other{Según la región (lunes)}}",
+  "@appearanceFirstWeekdayRegion": {
+    "description": "day is the first day of the week of the device's region: monday or sunday.",
+    "placeholders": {
+      "day": {"type": "String"}
+    }
+  },
+  "appearanceMonday": "Lunes",
+  "appearanceSunday": "Domingo",
 
   "backupRestore": "Restaurar",
 

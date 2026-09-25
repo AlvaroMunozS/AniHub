@@ -13,6 +13,7 @@ import '../../providers.dart';
 import '../../router.dart';
 import '../../shell/content_column.dart';
 import '../../state/airing_providers.dart';
+import '../../state/settings_providers.dart';
 import '../../theme/app_theme.dart';
 import '../catalog_card.dart';
 import '../empty_state.dart';
@@ -22,7 +23,7 @@ import '../skeleton.dart';
 /// Diameter of the dot that marks today's tab.
 const double _todayDotSize = 5;
 
-/// This season's airing anime, one tab per local weekday starting on today,
+/// This season's airing anime, one tab per local weekday, opening on today,
 /// plus a last tab for those without a fixed slot when there are any.
 ///
 /// Anime in [inLibrary] are dimmed, as in search results.
@@ -70,20 +71,16 @@ class _AiringTabs extends ConsumerWidget {
   final AiringSchedule schedule;
   final Set<int> inLibrary;
 
-  /// Weekdays from [DateTime.monday] to [DateTime.sunday], starting on the
-  /// first day of the week of the app's language.
-  static List<int> _weekdays(BuildContext context) {
-    // Material counts from Sunday, as 0; DateTime from Monday, as 1.
-    final int first = MaterialLocalizations.of(context).firstDayOfWeekIndex;
-    return <int>[
-      for (int i = 0; i < DateTime.daysPerWeek; i++)
-        (first + i - 1) % DateTime.daysPerWeek + 1,
-    ];
-  }
+  /// Weekdays from [DateTime.monday] to [DateTime.sunday], starting on
+  /// [first].
+  static List<int> _weekdays(int first) => <int>[
+    for (int i = 0; i < DateTime.daysPerWeek; i++)
+      (first + i - 1) % DateTime.daysPerWeek + 1,
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final List<int> weekdays = _weekdays(context);
+    final List<int> weekdays = _weekdays(ref.watch(firstWeekdayProvider));
     final bool hasOther = schedule.unscheduled.isNotEmpty;
     final int tabCount = weekdays.length + (hasOther ? 1 : 0);
     final int today = ref.watch(clockProvider)().weekday;
@@ -92,9 +89,9 @@ class _AiringTabs extends ConsumerWidget {
     );
 
     return DefaultTabController(
-      // A new controller when the tab count changes, since a controller's
-      // length is fixed.
-      key: ValueKey<int>(tabCount),
+      // A new controller when the tabs change, since a controller's length
+      // is fixed and its index would point at another day.
+      key: ValueKey<(int, int)>((tabCount, weekdays.first)),
       length: tabCount,
       initialIndex: weekdays.indexOf(today),
       child: Column(

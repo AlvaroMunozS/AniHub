@@ -90,6 +90,17 @@ class AppearanceSettingsScreen extends ConsumerWidget {
                 ),
                 onTap: () => unawaited(_pickLanguage(context, ref)),
               ),
+              ListTile(
+                title: Text(l10n.appearanceFirstWeekday),
+                subtitle: Text(
+                  _firstWeekdayName(
+                    l10n,
+                    ref.watch(firstWeekdayPreferenceProvider),
+                    ref.watch(regionFirstWeekdayProvider),
+                  ),
+                ),
+                onTap: () => unawaited(_pickFirstWeekday(context, ref)),
+              ),
               const SizedBox(height: AppSpacing.s24),
             ],
           ),
@@ -99,24 +110,53 @@ class AppearanceSettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _pickLanguage(BuildContext context, WidgetRef ref) async {
-    final AppLanguage current = ref.read(appLanguageProvider);
-    final AppLanguage? picked = await showDialog<AppLanguage>(
+    final AppLanguage? picked = await _pickOption<AppLanguage>(
+      context,
+      title: context.l10n.appearanceLanguage,
+      values: AppLanguage.values,
+      current: ref.read(appLanguageProvider),
+      name: (AppLanguage language) => _languageName(context.l10n, language),
+    );
+    if (picked != null) ref.read(appLanguageProvider.notifier).set(picked);
+  }
+
+  Future<void> _pickFirstWeekday(BuildContext context, WidgetRef ref) async {
+    final int regionWeekday = ref.read(regionFirstWeekdayProvider);
+    final FirstWeekday? picked = await _pickOption<FirstWeekday>(
+      context,
+      title: context.l10n.appearanceFirstWeekday,
+      values: FirstWeekday.values,
+      current: ref.read(firstWeekdayPreferenceProvider),
+      name: (FirstWeekday day) =>
+          _firstWeekdayName(context.l10n, day, regionWeekday),
+    );
+    if (picked != null) {
+      ref.read(firstWeekdayPreferenceProvider.notifier).set(picked);
+    }
+  }
+
+  /// Asks for one of [values] in a dialog, with [current] checked; returns
+  /// null when cancelled.
+  Future<T?> _pickOption<T>(
+    BuildContext context, {
+    required String title,
+    required List<T> values,
+    required T current,
+    required String Function(T value) name,
+  }) {
+    return showDialog<T>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: Text(context.l10n.appearanceLanguage),
+        title: Text(title),
         contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
-        content: RadioGroup<AppLanguage>(
+        content: RadioGroup<T>(
           groupValue: current,
-          onChanged: (AppLanguage? language) =>
-              Navigator.pop(context, language),
+          onChanged: (T? value) => Navigator.pop(context, value),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              for (final AppLanguage language in AppLanguage.values)
-                RadioListTile<AppLanguage>(
-                  value: language,
-                  title: Text(_languageName(context.l10n, language)),
-                ),
+              for (final T value in values)
+                RadioListTile<T>(value: value, title: Text(name(value))),
             ],
           ),
         ),
@@ -128,8 +168,23 @@ class AppearanceSettingsScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (picked != null) ref.read(appLanguageProvider.notifier).set(picked);
   }
+}
+
+/// [regionWeekday] is the first day of the device's region, named in the
+/// region option so the user knows what it amounts to.
+String _firstWeekdayName(
+  AppLocalizations l10n,
+  FirstWeekday day,
+  int regionWeekday,
+) {
+  return switch (day) {
+    FirstWeekday.region => l10n.appearanceFirstWeekdayRegion(
+      regionWeekday == DateTime.sunday ? 'sunday' : 'monday',
+    ),
+    FirstWeekday.monday => l10n.appearanceMonday,
+    FirstWeekday.sunday => l10n.appearanceSunday,
+  };
 }
 
 /// Languages are named in their own language, so a user who cannot read the

@@ -125,6 +125,10 @@
   "appearanceAccentPink": "Pink",
   "appearanceDisplay": "Display",
   "appearanceLanguage": "App language",
+  "appearanceFirstWeekday": "First day of the week",
+  "appearanceFirstWeekdayRegion": "{day, select, sunday{By region (Sunday)} other{By region (Monday)}}",
+  "appearanceMonday": "Monday",
+  "appearanceSunday": "Sunday",
 
   "backupRestore": "Restore",
 

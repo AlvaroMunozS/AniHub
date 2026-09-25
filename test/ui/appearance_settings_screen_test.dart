@@ -147,4 +147,32 @@ void main() {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('general.language'), isNull);
   });
+
+  testWidgets('starts the week by the device region by default', (
+    WidgetTester tester,
+  ) async {
+    await _pumpAppearance(
+      tester,
+      deviceLocales: const <Locale>[Locale('es', 'US')],
+    );
+
+    expect(find.text('Según la región (domingo)'), findsOneWidget);
+  });
+
+  testWidgets('saves the first day of the week', (WidgetTester tester) async {
+    await _pumpAppearance(
+      tester,
+      deviceLocales: const <Locale>[Locale('es', 'ES')],
+    );
+    expect(find.text('Según la región (lunes)'), findsOneWidget);
+
+    await tester.tap(find.text('Primer día de la semana'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Domingo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Domingo'), findsOneWidget);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('general.firstWeekday'), 'sunday');
+  });
 }
