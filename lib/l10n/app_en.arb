@@ -62,8 +62,13 @@
 
   "searchHint": "Search MyAnimeList",
   "searchFailed": "Could not search",
-  "searchPromptTitle": "Search the catalog",
-  "searchPromptMessage": "{count, plural, =1{Type at least one letter of an anime title.} other{Type at least {count} letters of an anime title.}}",
+  "searchAiringCount": "{count} airing",
+  "searchAiringOther": "Other",
+  "searchAiringToday": "{day}, today",
+  "searchAiringFailed": "Could not load the season",
+  "searchAiringEmptyTitle": "Nothing airing",
+  "searchAiringEmptyMessage": "MyAnimeList has no anime for this season yet.",
+  "searchAiringDayEmpty": "Nothing airs on this day",
   "searchNothingMatching": "Nothing matches “{query}”.",
 
   "catalogCardInLibrary": "In library",

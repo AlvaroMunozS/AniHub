@@ -16,13 +16,19 @@ const CatalogAnime _anime = CatalogAnime(
 Future<void> _pump(
   WidgetTester tester, {
   required bool inLibrary,
+  String? caption,
   VoidCallback? onOpen,
 }) {
   return pumpInScaffold(
     tester,
     SizedBox(
       width: 160,
-      child: CatalogCard(anime: _anime, inLibrary: inLibrary, onOpen: onOpen),
+      child: CatalogCard(
+        anime: _anime,
+        inLibrary: inLibrary,
+        caption: caption,
+        onOpen: onOpen,
+      ),
     ),
   );
 }
@@ -63,5 +69,14 @@ void main() {
 
     await tester.tap(find.byType(CatalogCard));
     expect(tapped, isTrue);
+  });
+
+  testWidgets('writes the caption over the cover in the scrim color', (
+    WidgetTester tester,
+  ) async {
+    await _pump(tester, inLibrary: false, caption: '16:15');
+
+    final Text caption = tester.widget<Text>(find.text('16:15'));
+    expect(caption.style?.color, AppOverlays.onScrim);
   });
 }

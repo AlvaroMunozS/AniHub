@@ -1,6 +1,7 @@
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/errors/catalog_exception.dart';
 import 'package:anihub/domain/values/anime_season.dart';
+import 'package:anihub/domain/values/broadcast.dart';
 import 'package:anihub/infrastructure/mal/mal_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -286,6 +287,160 @@ void main() {
           .search('bebop');
 
       expect(results.map((CatalogAnime a) => a.malId), <int>[1]);
+    });
+  });
+
+  group('airingIn', () {
+    Map<String, Object?> series(
+      int id,
+      String title, {
+      String mediaType = 'tv',
+      String status = 'currently_airing',
+      Map<String, Object?>? broadcast,
+      String? nsfw,
+    }) => <String, Object?>{
+      'id': id,
+      'title': title,
+      'media_type': mediaType,
+      'status': status,
+      'broadcast': ?broadcast,
+      'nsfw': ?nsfw,
+    };
+
+    /// Answers the season and the ranking with [season] and [ranking].
+    FakeMalApi api({
+      List<Map<String, Object?>> season = const <Map<String, Object?>>[],
+      List<Map<String, Object?>> ranking = const <Map<String, Object?>>[],
+    }) {
+      return FakeMalApi((Uri url) async {
+        return url.path.startsWith('/v2/anime/season/')
+            ? _page(season)
+            : _page(ranking);
+      });
+    }
+
+    test('asks for the season and the airing ranking', () async {
+      final FakeMalApi server = api();
+
+      await MalCatalog(server.client()).airingIn(2026, AnimeSeason.summer);
+
+      final Uri season = server.requests.firstWhere(
+        (Uri url) => url.path == '/v2/anime/season/2026/summer',
+      );
+      final Uri ranking = server.requests.firstWhere(
+        (Uri url) => url.path == '/v2/anime/ranking',
+      );
+      expect(ranking.queryParameters['ranking_type'], 'airing');
+      for (final Uri request in <Uri>[season, ranking]) {
+        expect(request.queryParameters['limit'], '500');
+        expect(request.queryParameters['nsfw'], 'true');
+        expect(
+          request.queryParameters['fields']!.split(','),
+          containsAll(<String>['broadcast', 'media_type', 'nsfw', 'status']),
+        );
+      }
+      expect(server.requests, hasLength(2));
+    });
+
+    test('joins premieres and continuing series without duplicates', () async {
+      final FakeMalApi server = api(
+        season: <Map<String, Object?>>[
+          series(1, 'Premiere', status: 'not_yet_aired'),
+          series(2, 'Both'),
+        ],
+        ranking: <Map<String, Object?>>[
+          series(2, 'Both'),
+          series(21, 'One Piece'),
+        ],
+      );
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .airingIn(2026, AnimeSeason.summer);
+
+      expect(anime.map((CatalogAnime a) => a.malId), <int>[1, 2, 21]);
+    });
+
+    test(
+      'lists only series that have not finished, rated white or gray',
+      () async {
+        final FakeMalApi server = api(
+          season: <Map<String, Object?>>[
+            series(1, 'Series'),
+            series(2, 'Web series', mediaType: 'ona', nsfw: 'gray'),
+            series(3, 'Film', mediaType: 'movie'),
+            series(4, 'Music video', mediaType: 'music'),
+            series(5, 'Ended', status: 'finished_airing'),
+            series(6, 'Hentai', nsfw: 'black'),
+          ],
+        );
+
+        final List<CatalogAnime> anime = await MalCatalog(server.client())
+            .airingIn(2026, AnimeSeason.summer);
+
+        expect(anime.map((CatalogAnime a) => a.malId), <int>[1, 2]);
+      },
+    );
+
+    test('maps the broadcast slot, which may lack a day or a time', () async {
+      final FakeMalApi server = api(
+        ranking: <Map<String, Object?>>[
+          series(
+            1,
+            'Timed',
+            broadcast: <String, Object?>{
+              'day_of_the_week': 'sunday',
+              'start_time': '23:15',
+            },
+          ),
+          series(
+            2,
+            'Day only',
+            broadcast: <String, Object?>{'day_of_the_week': 'monday'},
+          ),
+          series(
+            3,
+            'Other',
+            broadcast: <String, Object?>{'day_of_the_week': 'other'},
+          ),
+          series(4, 'None'),
+        ],
+      );
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .airingIn(2026, AnimeSeason.summer);
+
+      expect(anime.map((CatalogAnime a) => a.broadcast), <Broadcast?>[
+        const Broadcast(weekday: DateTime.sunday, hour: 23, minute: 15),
+        const Broadcast(weekday: DateTime.monday),
+        null,
+        null,
+      ]);
+    });
+
+    test('reads the next page while the list has one', () async {
+      final FakeMalApi server = FakeMalApi((Uri url) async {
+        if (url.path.startsWith('/v2/anime/season/')) {
+          return _page(const <Map<String, Object?>>[]);
+        }
+        final bool first = url.queryParameters['offset'] == '0';
+        return jsonResponse(<String, Object?>{
+          'data': <Object?>[
+            <String, Object?>{'node': series(first ? 1 : 2, 'Anime')},
+          ],
+          'paging': <String, Object?>{if (first) 'next': 'https://next'},
+        });
+      });
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .airingIn(2026, AnimeSeason.summer);
+
+      expect(anime.map((CatalogAnime a) => a.malId), <int>[1, 2]);
+      expect(
+        server.requests
+            .where((Uri url) => url.path == '/v2/anime/ranking')
+            .map((Uri url) => url.queryParameters['offset']),
+        <String>['0', '500'],
+      );
     });
   });
 }

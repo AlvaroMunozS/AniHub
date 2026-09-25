@@ -8,6 +8,7 @@ class PosterCard extends StatelessWidget {
   const PosterCard({
     required this.cover,
     required this.title,
+    this.overlay,
     this.onTap,
     this.expanded,
     super.key,
@@ -15,6 +16,11 @@ class PosterCard extends StatelessWidget {
 
   final Widget cover;
   final String title;
+
+  /// Drawn over the gradient, so text on it stays readable; usually a
+  /// [Positioned] near the bottom.
+  final Widget? overlay;
+
   final VoidCallback? onTap;
 
   /// Whether the group this poster toggles is expanded, or null for a poster
@@ -54,6 +60,7 @@ class PosterCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  ?overlay,
                 ],
               ),
             ),

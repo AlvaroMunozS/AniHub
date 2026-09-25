@@ -49,7 +49,8 @@ final AppLocalizations spanish = lookupAppLocalizations(_testLocale);
 /// [imageCacheStorage] to an empty cache.
 /// Preferences start as [prefs] and the device languages are
 /// [deviceLocales]. The app starts at [initialLocation], or on the library
-/// through the app's own [routerProvider].
+/// through the app's own [routerProvider]. [overrides] replace any other
+/// provider, such as the clock.
 Future<GoRouter> pumpApp(
   WidgetTester tester, {
   EntryRepository? repo,
@@ -63,6 +64,7 @@ Future<GoRouter> pumpApp(
   Map<String, Object> prefs = const <String, Object>{},
   List<Locale> deviceLocales = const <Locale>[_testLocale],
   String? initialLocation,
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.physicalSize = _phoneSize * _phonePixelRatio;
   tester.view.devicePixelRatio = _phonePixelRatio;
@@ -101,6 +103,7 @@ Future<GoRouter> pumpApp(
         appInstallerProvider.overrideWithValue(installer ?? FakeAppInstaller()),
         externalLinksProvider.overrideWithValue(links ?? FakeExternalLinks()),
         if (router != null) routerProvider.overrideWithValue(router),
+        ...overrides,
       ],
       child: const AniHubApp(),
     ),

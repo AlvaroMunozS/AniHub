@@ -6,6 +6,10 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- *Browse* shows the anime airing this season, by day of the week and with the broadcast time in your time zone. It opens on today, and anime already in your library are dimmed.
+
 ## [1.3.0] - 2026-09-25
 
 ### Added

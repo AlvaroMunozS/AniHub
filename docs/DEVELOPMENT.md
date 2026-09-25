@@ -158,6 +158,15 @@ an incompatible change may simply empty the table. On its first load,
 
 - `GET /anime?q=` searches, and `GET /anime/{id}` returns one anime. Both only
   return the fields listed in `fields`.
+- *Browse* lists the season's airing anime from two lists, merged by id:
+  `GET /anime/season/{year}/{season}`, which only holds the anime that
+  premiere in that season, and `GET /anime/ranking?ranking_type=airing`,
+  which holds everything `currently_airing` whenever it started (*One
+  Piece*, the second half of a two-cour series). Both allow 500 results per
+  page. Only `tv` and `ona` are kept, and anime that have already finished
+  are dropped.
+- `broadcast` gives `day_of_the_week` and `start_time` (`HH:mm`) in Japan
+  Standard Time. Many ONAs have none, or `other` as the day.
 - Queries shorter than three characters are rejected with HTTP 400, so the app
   does not send them.
 - Without `nsfw=true`, search returns only anime rated `white`, which leaves
@@ -242,6 +251,12 @@ tap installs it. Nothing is requested until the user taps.
   stories and spin-offs grow to hundreds of requests in franchises such as
   *Detective Conan*. The library shows the direct groups first and merges
   them when the chains arrive; the extra anime are never shown.
+- **Airing schedule.** Broadcast slots are in Japan Standard Time and shown
+  in local time, so a late-night slot in Japan falls on the previous day in
+  Europe or America. `ScheduleAiring` converts each slot at its date in the
+  current week, so daylight saving time is applied as it is that week. The
+  list is requested once per session and not cached on disk: it changes
+  every week and is only useful online.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

@@ -14,14 +14,18 @@ import '../report_error.dart';
 import '../router.dart';
 import '../shell/content_column.dart';
 import '../state/library_providers.dart';
+import '../widgets/airing/airing_view.dart';
 import '../widgets/catalog_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/pill_search_bar.dart';
 import '../widgets/poster_grid.dart';
 
-/// Searches the catalog as the user types.
+/// Searches the catalog as the user types, and shows this season's airing
+/// anime while the query is too short to search.
 ///
-/// Results already in the library are dimmed but stay tappable.
+/// The airing view stays mounted during a search, so clearing the query
+/// returns to the same day and scroll position. Anime already in the library
+/// are dimmed but stay tappable.
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -131,15 +135,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           _LoadingLine(loading: _loading),
           Expanded(
-            child: ContentColumn(
-              alignment: Alignment.topCenter,
-              child: _body(inLibrary),
+            child: IndexedStack(
+              index: _showsAiring ? 0 : 1,
+              sizing: StackFit.expand,
+              children: <Widget>[
+                AiringView(inLibrary: inLibrary),
+                ContentColumn(
+                  alignment: Alignment.topCenter,
+                  child: _body(inLibrary),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  bool get _showsAiring =>
+      _error == null &&
+      _query.text.trim().length < ref.read(animeCatalogProvider).minQueryLength;
 
   Widget _body(Set<int> inLibrary) {
     final Object? error = _error;
@@ -157,14 +172,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
     final String term = _query.text.trim();
     if (_results.isEmpty) {
-      final int minQueryLength = ref.read(animeCatalogProvider).minQueryLength;
-      if (term.length < minQueryLength) {
-        return EmptyState(
-          icon: Icons.search,
-          title: context.l10n.searchPromptTitle,
-          message: context.l10n.searchPromptMessage(minQueryLength),
-        );
-      }
       return EmptyState(
         icon: Icons.search_off,
         title: context.l10n.commonNoResults,
