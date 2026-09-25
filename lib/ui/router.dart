@@ -15,8 +15,9 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/settings/storage_settings_screen.dart';
 import 'shell/app_shell.dart';
 
-/// Counts the mounted detail routes. Navigating between related anime stacks
-/// one detail route on top of another, so the count can exceed one.
+/// Counts the mounted detail routes. A related anime replaces the current
+/// detail route, and the new route mounts before the old one unmounts, so the
+/// count can briefly exceed one.
 class _AnimeDetailDepth extends Notifier<int> {
   @override
   int build() => 0;
