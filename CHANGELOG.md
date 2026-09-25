@@ -6,6 +6,8 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-25
+
 ### Added
 
 - In *Planned*, the *Not started* filter shows only anime from series you have not started, or hides them to leave the next seasons of series you follow.
@@ -62,7 +64,8 @@ First public release.
 - Offline use: the library and cover images are stored on the device.
 - Library import from an `anihub-library` JSON file.
 
-[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/AlvaroMunozS/AniHub/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.0.0...v1.1.0
