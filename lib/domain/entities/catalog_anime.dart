@@ -5,8 +5,9 @@ import '../values/broadcast.dart';
 /// Read-only anime metadata from the catalog.
 ///
 /// Search results only fill the basic fields. [description], [genres] and
-/// [studioName] come from the detail lookup, and [broadcast] from the airing
-/// list, and MyAnimeList may still leave them empty.
+/// [studioName] come from the detail lookup, and [broadcast] and
+/// [memberCount] from the airing list, and MyAnimeList may still leave them
+/// empty.
 class CatalogAnime {
   const CatalogAnime({
     required this.malId,
@@ -20,6 +21,7 @@ class CatalogAnime {
     this.genres = const <String>[],
     this.studioName,
     this.broadcast,
+    this.memberCount,
   });
 
   final int malId;
@@ -46,6 +48,10 @@ class CatalogAnime {
   /// Null when the anime has no fixed weekly slot.
   final Broadcast? broadcast;
 
+  /// How many MyAnimeList users have it in their list, as a measure of how
+  /// well known it is; never shown, since the app has no statistics.
+  final int? memberCount;
+
   @override
   bool operator ==(Object other) =>
       other is CatalogAnime &&
@@ -59,7 +65,8 @@ class CatalogAnime {
       other.description == description &&
       sameElements(other.genres, genres) &&
       other.studioName == studioName &&
-      other.broadcast == broadcast;
+      other.broadcast == broadcast &&
+      other.memberCount == memberCount;
 
   @override
   int get hashCode => Object.hash(
@@ -74,6 +81,7 @@ class CatalogAnime {
     Object.hashAll(genres),
     studioName,
     broadcast,
+    memberCount,
   );
 
   @override

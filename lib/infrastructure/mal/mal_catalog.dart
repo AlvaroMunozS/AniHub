@@ -33,7 +33,7 @@ class MalCatalog implements AnimeCatalog {
   static const String _detailFields = '$_searchFields,synopsis,genres,studios';
 
   static const String _airingFields =
-      '$_searchFields,nsfw,media_type,broadcast';
+      '$_searchFields,nsfw,media_type,broadcast,num_list_users';
 
   /// Media types listed by [airingIn]; the rest are films, specials, music
   /// videos and commercials.
@@ -178,6 +178,10 @@ class MalCatalog implements AnimeCatalog {
         _ => null,
       },
       broadcast: parseBroadcast(node),
+      memberCount: switch (node) {
+        {'num_list_users': final int count} when count >= 0 => count,
+        _ => null,
+      },
     );
   }
 }

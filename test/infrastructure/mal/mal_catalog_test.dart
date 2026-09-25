@@ -298,6 +298,7 @@ void main() {
       String status = 'currently_airing',
       Map<String, Object?>? broadcast,
       String? nsfw,
+      int? members,
     }) => <String, Object?>{
       'id': id,
       'title': title,
@@ -305,6 +306,7 @@ void main() {
       'status': status,
       'broadcast': ?broadcast,
       'nsfw': ?nsfw,
+      'num_list_users': ?members,
     };
 
     /// Answers the season and the ranking with [season] and [ranking].
@@ -336,7 +338,13 @@ void main() {
         expect(request.queryParameters['nsfw'], 'true');
         expect(
           request.queryParameters['fields']!.split(','),
-          containsAll(<String>['broadcast', 'media_type', 'nsfw', 'status']),
+          containsAll(<String>[
+            'broadcast',
+            'media_type',
+            'nsfw',
+            'num_list_users',
+            'status',
+          ]),
         );
       }
       expect(server.requests, hasLength(2));
@@ -413,6 +421,23 @@ void main() {
         const Broadcast(weekday: DateTime.sunday, hour: 23, minute: 15),
         const Broadcast(weekday: DateTime.monday),
         null,
+        null,
+      ]);
+    });
+
+    test('maps how many lists hold each anime', () async {
+      final FakeMalApi server = api(
+        ranking: <Map<String, Object?>>[
+          series(1, 'Re:Zero', members: 334883),
+          series(2, 'Unknown'),
+        ],
+      );
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .airingIn(2026, AnimeSeason.summer);
+
+      expect(anime.map((CatalogAnime a) => a.memberCount), <int?>[
+        334883,
         null,
       ]);
     });

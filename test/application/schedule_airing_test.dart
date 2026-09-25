@@ -6,8 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 /// Thursday 24 September 2026 at noon UTC.
 final DateTime _now = DateTime.utc(2026, 9, 24, 12);
 
-CatalogAnime _anime(int id, String title, [Broadcast? broadcast]) =>
-    CatalogAnime(malId: id, title: title, broadcast: broadcast);
+CatalogAnime _anime(
+  int id,
+  String title, [
+  Broadcast? broadcast,
+  int? members,
+]) => CatalogAnime(
+  malId: id,
+  title: title,
+  broadcast: broadcast,
+  memberCount: members,
+);
 
 ScheduleAiring _at(Duration offset) =>
     ScheduleAiring(localOffset: (DateTime utc) => offset);
@@ -74,31 +83,35 @@ void main() {
     expect(asked, <DateTime>[DateTime.utc(2026, 9, 25, 16)]);
   });
 
-  test('orders each day by time, then by title, with unknown times last', () {
+  test('orders each day by members, then by title, unknown counts last', () {
+    const Broadcast sunday = Broadcast(
+      weekday: DateTime.sunday,
+      hour: 20,
+      minute: 0,
+    );
     final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
-      _anime(
-        1,
-        'Zeta',
-        const Broadcast(weekday: DateTime.sunday, hour: 20, minute: 0),
-      ),
-      _anime(2, 'Late', const Broadcast(weekday: DateTime.sunday)),
-      _anime(
-        3,
-        'Beta',
-        const Broadcast(weekday: DateTime.sunday, hour: 20, minute: 0),
-      ),
-      _anime(
-        4,
-        'Ōkami',
-        const Broadcast(weekday: DateTime.sunday, hour: 18, minute: 0),
-      ),
+      _anime(1, 'Unknown', sunday),
+      _anime(2, 'Zeta', sunday, 6000),
+      _anime(3, 'Re:Zero', sunday, 334883),
+      _anime(4, 'Beta', sunday, 6000),
     ], now: _now);
 
     expect(_titles(schedule.byWeekday[DateTime.sunday]), <String>[
-      'Ōkami',
+      'Re:Zero',
       'Beta',
       'Zeta',
-      'Late',
+      'Unknown',
+    ]);
+  });
+
+  test('leaves out anime in too few lists', () {
+    final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
+      _anime(1, 'Niche', null, ScheduleAiring.minMembers - 1),
+      _anime(2, 'Known', null, ScheduleAiring.minMembers),
+    ], now: _now);
+
+    expect(schedule.unscheduled.map((CatalogAnime a) => a.title), <String>[
+      'Known',
     ]);
   });
 

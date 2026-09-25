@@ -164,7 +164,7 @@ an incompatible change may simply empty the table. On its first load,
   which holds everything `currently_airing` whenever it started (*One
   Piece*, the second half of a two-cour series). Both allow 500 results per
   page. Only `tv` and `ona` are kept, and anime that have already finished
-  are dropped.
+  are dropped. `num_list_users` orders them.
 - `broadcast` gives `day_of_the_week` and `start_time` (`HH:mm`) in Japan
   Standard Time. Many ONAs have none, or `other` as the day.
 - Queries shorter than three characters are rejected with HTTP 400, so the app
@@ -254,8 +254,11 @@ tap installs it. Nothing is requested until the user taps.
 - **Airing schedule.** Broadcast slots are in Japan Standard Time and shown
   in local time, so a late-night slot in Japan falls on the previous day in
   Europe or America. `ScheduleAiring` converts each slot at its date in the
-  current week, so daylight saving time is applied as it is that week. The
-  list is requested once per session and not cached on disk: it changes
+  current week, so daylight saving time is applied as it is that week. Each
+  day lists the most followed first, by how many MyAnimeList lists hold the
+  anime, and anime in fewer than 5000 are left out: about three in four
+  airing series are niche web series or children's shows. The count is
+  never shown. The list is requested once per session and not cached on disk: it changes
   every week and is only useful online.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.

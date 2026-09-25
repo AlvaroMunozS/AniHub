@@ -31,9 +31,11 @@ class AiringSchedule {
       });
 }
 
-/// Sorts airing anime into the local weekdays they air on.
+/// Sorts the better known airing anime into the local weekdays they air on.
 ///
-/// Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
+/// Anime in fewer than [minMembers] MyAnimeList lists are left out: most
+/// airing series are short web series or children's shows that few people
+/// follow, and they would bury the ones worth finding. Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
 /// fall on the previous day elsewhere. Each one is converted at its
 /// occurrence in the week of `now`, so the offset in force that week,
 /// daylight saving time included, is the one used.
@@ -48,14 +50,19 @@ class ScheduleAiring {
 
   static const Duration _jstOffset = Duration(hours: 9);
 
-  /// Returns [anime] by local weekday, each day ordered by time and title.
-  /// Anime with a day but no time go last in their day, which stays the one
-  /// in Japan since the time cannot be converted.
+  /// Fewest MyAnimeList lists an anime must be in to be listed. Anime whose
+  /// count is unknown are listed.
+  static const int minMembers = 5000;
+
+  /// Returns [anime] by local weekday, most followed first. An anime with a
+  /// day but no time stays on its day in Japan, since the time cannot be
+  /// converted.
   AiringSchedule call(List<CatalogAnime> anime, {required DateTime now}) {
     final Map<int, List<ScheduledAnime>> byWeekday =
         <int, List<ScheduledAnime>>{};
     final List<CatalogAnime> unscheduled = <CatalogAnime>[];
     for (final CatalogAnime item in anime) {
+      if ((item.memberCount ?? minMembers) < minMembers) continue;
       final Broadcast? broadcast = item.broadcast;
       if (broadcast == null) {
         unscheduled.add(item);
@@ -69,9 +76,12 @@ class ScheduleAiring {
       (byWeekday[weekday] ??= <ScheduledAnime>[]).add(scheduled);
     }
     for (final List<ScheduledAnime> day in byWeekday.values) {
-      day.sort(_compareScheduled);
+      day.sort(
+        (ScheduledAnime a, ScheduledAnime b) =>
+            _compareRelevance(a.anime, b.anime),
+      );
     }
-    unscheduled.sort(_compareTitles);
+    unscheduled.sort(_compareRelevance);
     return AiringSchedule(
       byWeekday: <int, List<ScheduledAnime>>{
         for (final MapEntry<int, List<ScheduledAnime>> day in byWeekday.entries)
@@ -111,18 +121,12 @@ class ScheduleAiring {
   }
 }
 
-int _compareScheduled(ScheduledAnime a, ScheduledAnime b) {
-  final int? minutesA = a.hour == null ? null : a.hour! * 60 + a.minute!;
-  final int? minutesB = b.hour == null ? null : b.hour! * 60 + b.minute!;
-  if (minutesA != minutesB) {
-    if (minutesA == null) return 1;
-    if (minutesB == null) return -1;
-    return minutesA.compareTo(minutesB);
-  }
-  return _compareTitles(a.anime, b.anime);
-}
-
-int _compareTitles(CatalogAnime a, CatalogAnime b) {
+/// Most followed first, then by title; unknown counts go last.
+int _compareRelevance(CatalogAnime a, CatalogAnime b) {
+  final int membersCompare = (b.memberCount ?? -1).compareTo(
+    a.memberCount ?? -1,
+  );
+  if (membersCompare != 0) return membersCompare;
   final int keyCompare = titleKey(a.title).compareTo(titleKey(b.title));
   if (keyCompare != 0) return keyCompare;
   return a.malId.compareTo(b.malId);
