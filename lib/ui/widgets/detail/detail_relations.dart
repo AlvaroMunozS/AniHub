@@ -92,7 +92,10 @@ class _RelationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.push(RoutePaths.animeDetail(relation.malId)),
+      // Back returns to where the first detail was opened, not through each
+      // related anime.
+      onTap: () =>
+          context.pushReplacement(RoutePaths.animeDetail(relation.malId)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
         child: Row(

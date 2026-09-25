@@ -14,6 +14,7 @@ All notable changes to AniHub are documented here. The format follows
 
 - The *Favorites* filter can also hide your favorites.
 - Seasons of a series are grouped together, and count as started, even when the seasons in between are not in your library.
+- Back from a prequel or sequel returns to the library or search, instead of going through every anime you opened on the way.
 
 ## [1.2.1] - 2026-09-23
 

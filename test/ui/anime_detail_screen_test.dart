@@ -155,6 +155,7 @@ void main() {
       find.byType(AnimeDetailScreen),
     );
     expect(screen.malId, 21);
+    expect(find.byType(AnimeDetailScreen, skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('hides the relations section without relations', (
