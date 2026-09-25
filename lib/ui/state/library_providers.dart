@@ -56,7 +56,9 @@ libraryEntriesProvider = StreamNotifierProvider<LibraryEntries, List<Entry>>(
 /// Emits the direct relations of the library first, then the same graph
 /// extended with the anime that link its entries through sequel and prequel
 /// chains ([LinkFranchiseChains]), so groups show before the chains are
-/// fetched.
+/// fetched. On a rebuild, the first emission keeps the nodes of the previous
+/// graph, so groups linked by a chain do not split while it is fetched
+/// again; relations between anime rarely change.
 ///
 /// The port returns what it could fetch when a large lookup fails part way,
 /// so a graph that lacks some ids, or whose chains could not be fetched, is
@@ -77,6 +79,7 @@ class LibraryRelations extends StreamNotifier<Map<int, AnimeRelationNode>> {
 
   @override
   Stream<Map<int, AnimeRelationNode>> build() async* {
+    final Map<int, AnimeRelationNode>? previous = state.value;
     final String idsKey = ref.watch(
       libraryEntriesProvider.select(_libraryIdsKey),
     );
@@ -97,13 +100,20 @@ class LibraryRelations extends StreamNotifier<Map<int, AnimeRelationNode>> {
       relations.forIds(ids),
       isExpected: (Object error) => error is CatalogException,
     );
-    yield graph;
+    final Map<int, AnimeRelationNode> shown = previous == null
+        ? graph
+        : <int, AnimeRelationNode>{...previous, ...graph};
+    yield shown;
 
     bool complete = ids.every(graph.containsKey);
     try {
-      final FranchiseChains chains = await linkChains(graph, ids.toSet());
+      final FranchiseChains chains = await linkChains(
+        graph,
+        ids.toSet(),
+        isCancelled: () => !ref.mounted,
+      );
       complete = complete && chains.complete;
-      if (chains.graph.length > graph.length) yield chains.graph;
+      if (!mapEquals(chains.graph, shown)) yield chains.graph;
     } on Object catch (error, stack) {
       // The direct graph is already shown; an unexpected failure only leaves
       // the chains unlinked, and retrying would fail the same way.

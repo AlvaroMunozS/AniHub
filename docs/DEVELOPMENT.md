@@ -171,7 +171,7 @@ an incompatible change may simply empty the table. On its first load,
   fields (`related_anime{node{...}}`) for the related titles. At most four
   requests run at a time, and each chunk of 25 anime is cached as it arrives.
   Results are refreshed after 30 days, and older copies are kept for up to 90
-  days as an offline fallback. Following franchise chains adds up to 100
+  days as an offline fallback. Following franchise chains adds up to 500
   lookups per load, cached the same way, so they cost requests mostly on the
   first load.
 - An unknown id answers HTTP 404, and an invalid client id HTTP 400 with the
@@ -237,7 +237,7 @@ tap installs it. Nothing is requested until the user taps.
 - **Franchise chains.** MyAnimeList has no franchise id, so seasons 1 and 4
   are linked only through the anime in between. After the library's own
   relations, `LinkFranchiseChains` follows the `sequel` and `prequel` edges
-  that leave the library, round by round, until the chains close or 100
+  that leave the library, round by round, until the chains close or 500
   extra anime have been requested. Other edges are not followed: side
   stories and spin-offs grow to hundreds of requests in franchises such as
   *Detective Conan*. The library shows the direct groups first and merges

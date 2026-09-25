@@ -200,4 +200,38 @@ void main() {
 
     expect(graph.keys, <int>[1]);
   });
+
+  test('stops at the cap within a later round', () async {
+    final Map<int, AnimeRelationNode> seasons = _seasons();
+    final _Recording relations = _Recording(seasons);
+
+    final FranchiseChains chains = await LinkFranchiseChains(
+      relations,
+      maxExtraIds: 2,
+    )(_only(seasons, <int>[1]), <int>{1});
+
+    expect(relations.requests, <List<int>>[
+      <int>[2],
+      <int>[3],
+    ]);
+    expect(chains.graph.keys, unorderedEquals(<int>[1, 2, 3]));
+    expect(chains.complete, isTrue);
+  });
+
+  test('starts no further round once cancelled', () async {
+    final Map<int, AnimeRelationNode> seasons = _seasons();
+    final _Recording relations = _Recording(seasons);
+
+    final FranchiseChains chains = await LinkFranchiseChains(relations)(
+      _only(seasons, <int>[1]),
+      <int>{1},
+      isCancelled: () => relations.requests.isNotEmpty,
+    );
+
+    expect(relations.requests, <List<int>>[
+      <int>[2],
+    ]);
+    expect(chains.graph.keys, unorderedEquals(<int>[1, 2]));
+    expect(chains.complete, isFalse);
+  });
 }

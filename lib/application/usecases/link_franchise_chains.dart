@@ -8,13 +8,16 @@ import '../../domain/values/relation_kind.dart';
 class FranchiseChains {
   const FranchiseChains(this.graph, {required this.complete});
 
+  /// The given graph plus the nodes fetched along the chains.
   final Map<int, AnimeRelationNode> graph;
 
   /// Whether every requested anime was fetched.
   ///
-  /// False when a lookup failed or left requested ids out. Stopping at
-  /// `LinkFranchiseChains.maxExtraIds` still counts as complete, because
-  /// fetching again would stop at the same point.
+  /// False when a lookup failed, left requested ids out or was cancelled. An
+  /// id the catalog no longer knows is left out on every call, so callers
+  /// should cap their retries. Stopping at [LinkFranchiseChains.maxExtraIds]
+  /// still counts as complete, because fetching again would stop at the same
+  /// point.
   final bool complete;
 }
 
@@ -25,13 +28,18 @@ class FranchiseChains {
 /// followed: following every edge that groups a franchise grows to hundreds
 /// of requests in franchises with many side stories and spin-offs.
 class LinkFranchiseChains {
-  const LinkFranchiseChains(this._relations, {this.maxExtraIds = 100})
+  const LinkFranchiseChains(this._relations, {this.maxExtraIds = 500})
     : assert(maxExtraIds >= 0, 'maxExtraIds must not be negative');
 
   final AnimeRelations _relations;
 
   /// Most anime requested per call, beyond the graph and the library it
   /// receives.
+  ///
+  /// Counts cached anime too, since the port does not tell them apart. It is
+  /// generous because the first round alone requests every sequel and
+  /// prequel missing from the library, and only the first load pays for
+  /// them.
   final int maxExtraIds;
 
   /// Returns [graph] with the nodes reached by following the sequel and
@@ -41,12 +49,14 @@ class LinkFranchiseChains {
   /// [libraryIds] are never requested, even when [graph] lacks them. Each
   /// round requests the lowest ids first, so a franchise over the cap is
   /// always cut at the same point. A [CatalogException] ends the traversal
-  /// with what was fetched so far; any other error is rethrown. [graph] is
-  /// not modified.
+  /// with what was fetched so far; any other error is rethrown. When
+  /// [isCancelled] returns true, no further round starts. [graph] is not
+  /// modified.
   Future<FranchiseChains> call(
     Map<int, AnimeRelationNode> graph,
-    Set<int> libraryIds,
-  ) async {
+    Set<int> libraryIds, {
+    bool Function()? isCancelled,
+  }) async {
     final Map<int, AnimeRelationNode> extended = Map<int, AnimeRelationNode>.of(
       graph,
     );
@@ -56,6 +66,10 @@ class LinkFranchiseChains {
     bool complete = true;
 
     while (frontier.isNotEmpty && budget > 0) {
+      if (isCancelled?.call() ?? false) {
+        complete = false;
+        break;
+      }
       final List<int> batch = frontier.take(budget).toList(growable: false);
       budget -= batch.length;
       known.addAll(batch);

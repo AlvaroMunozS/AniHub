@@ -6,6 +6,7 @@ import 'package:anihub/domain/entities/anime_relation_node.dart';
 import 'package:anihub/domain/entities/entry.dart';
 import 'package:anihub/domain/errors/catalog_exception.dart';
 import 'package:anihub/domain/ports/anime_relations.dart';
+import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/values/relation_kind.dart';
 import 'package:anihub/domain/values/release_date.dart';
 import 'package:anihub/domain/values/watch_status.dart';
@@ -134,13 +135,15 @@ List<Entry> _firstAndLastSeasons() {
 }
 
 /// Serves [graph], holding the lookups of ids outside [library] until
-/// [release] and failing the first [failures] of them.
+/// [release], failing the first [failures] of them, and throwing [bug] from
+/// them when set.
 class _Chains implements AnimeRelations {
-  _Chains(this.graph, this.library, {this.failures = 0});
+  _Chains(this.graph, this.library, {this.failures = 0, this.bug});
 
   final Map<int, AnimeRelationNode> graph;
   final Set<int> library;
   int failures;
+  final Object? bug;
   Completer<void> release = Completer<void>()..complete();
   int calls = 0;
 
@@ -150,6 +153,7 @@ class _Chains implements AnimeRelations {
     final List<int> ids = List<int>.of(malIds);
     if (!ids.every(library.contains)) {
       await release.future;
+      if (bug != null) throw bug!;
       if (failures > 0) {
         failures--;
         throw const CatalogNetworkException('down');
@@ -164,7 +168,7 @@ class _Chains implements AnimeRelations {
 
 Future<ProviderContainer> _pumpContainer(
   WidgetTester tester,
-  List<Entry> library,
+  EntryRepository repo,
   AnimeRelations relations,
 ) async {
   SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -173,7 +177,7 @@ Future<ProviderContainer> _pumpContainer(
       sharedPreferencesProvider.overrideWithValue(
         await SharedPreferences.getInstance(),
       ),
-      entryRepositoryProvider.overrideWithValue(inMemoryLibrary(library)),
+      entryRepositoryProvider.overrideWithValue(repo),
       animeRelationsProvider.overrideWithValue(relations),
     ],
   );
@@ -394,7 +398,7 @@ void main() {
       ..release = Completer<void>();
     final ProviderContainer container = await _pumpContainer(
       tester,
-      _firstAndLastSeasons(),
+      inMemoryLibrary(_firstAndLastSeasons()),
       relations,
     );
 
@@ -417,7 +421,7 @@ void main() {
     final _Chains relations = _Chains(_fourSeasons(), <int>{1, 4}, failures: 1);
     final ProviderContainer container = await _pumpContainer(
       tester,
-      _firstAndLastSeasons(),
+      inMemoryLibrary(_firstAndLastSeasons()),
       relations,
     );
 
@@ -427,5 +431,64 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_groups(container), hasLength(1));
+  });
+
+  testWidgets('keeps seasons linked by a chain grouped while the library '
+      'changes', (WidgetTester tester) async {
+    final _Chains relations = _Chains(
+      <int, AnimeRelationNode>{
+        ..._fourSeasons(),
+        100: const AnimeRelationNode(malId: 100, title: 'Standalone'),
+      },
+      <int>{1, 4, 100},
+    );
+    final EntryRepository repo = inMemoryLibrary(_firstAndLastSeasons());
+    final ProviderContainer container = await _pumpContainer(
+      tester,
+      repo,
+      relations,
+    );
+    expect(_groups(container), hasLength(1));
+
+    relations.release = Completer<void>();
+    await repo.save(
+      Entry(
+        malId: 100,
+        title: 'Standalone',
+        status: WatchStatus.watching,
+        updatedAt: DateTime.now(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(_groups(container), hasLength(1));
+
+    relations.release.complete();
+    await tester.pumpAndSettle();
+
+    expect(_groups(container), hasLength(1));
+  });
+
+  testWidgets('reports an unexpected chain failure and keeps the direct '
+      'graph without retrying', (WidgetTester tester) async {
+    final _Chains relations = _Chains(_fourSeasons(), <int>{
+      1,
+      4,
+    }, bug: StateError('bug'));
+    final ProviderContainer container = await _pumpContainer(
+      tester,
+      inMemoryLibrary(_firstAndLastSeasons()),
+      relations,
+    );
+
+    expect(tester.takeException(), isStateError);
+    expect(container.read(libraryRelationsProvider).value!.keys, <int>[1, 4]);
+    final int calls = relations.calls;
+
+    await tester.pump(LibraryRelations.retryDelays[0]);
+    await tester.pumpAndSettle();
+
+    expect(relations.calls, calls);
   });
 }
