@@ -416,6 +416,91 @@ void main() {
       expect(find.widgetWithText(CatalogCard, 'Gachiakuta'), findsOneWidget);
     });
 
+    testWidgets('moves to the new season and day when the app resumes', (
+      WidgetTester tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      DateTime now = DateTime(2026, 9, 30, 12);
+      final FakeAnimeCatalog catalog = FakeAnimeCatalog(airing: _airing);
+      await pumpApp(
+        tester,
+        catalog: catalog,
+        initialLocation: RoutePaths.search,
+        overrides: <Override>[
+          clockProvider.overrideWithValue(() => now),
+          scheduleAiringProvider.overrideWithValue(
+            ScheduleAiring(
+              localOffset: (DateTime utc) => const Duration(hours: 2),
+            ),
+          ),
+        ],
+      );
+      expect(find.text('Verano 2026'), findsOneWidget);
+
+      now = DateTime(2026, 10, 1, 12);
+      for (final AppLifecycleState state in <AppLifecycleState>[
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.text('Otoño 2026'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('^jue, hoy')), findsOneWidget);
+      expect(catalog.airingRequests, <(int, AnimeSeason)>[
+        (2026, AnimeSeason.summer),
+        (2026, AnimeSeason.fall),
+      ]);
+      semantics.dispose();
+    });
+
+    testWidgets('keeps the list when a refresh fails, without retrying', (
+      WidgetTester tester,
+    ) async {
+      final FakeAnimeCatalog catalog = FakeAnimeCatalog(airing: _airing);
+      await _pumpSearch(tester, catalog: catalog);
+
+      catalog.airingError = const CatalogNetworkException('down');
+      await tester.drag(
+        find.widgetWithText(CatalogCard, 'Gachiakuta'),
+        const Offset(0, 400),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(CatalogCard, 'Gachiakuta'), findsOneWidget);
+      expect(
+        find.widgetWithText(
+          SnackBar,
+          'Revisa la conexión e inténtalo otra vez.',
+        ),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 30));
+      expect(catalog.airingRequests, hasLength(2));
+    });
+
+    testWidgets('keeps the season until the debounced search runs', (
+      WidgetTester tester,
+    ) async {
+      await _pumpSearch(tester, catalog: FakeAnimeCatalog(airing: _airing));
+
+      await tester.enterText(find.byType(TextField), 'One');
+      await tester.pump();
+
+      expect(find.byType(AiringView), findsOneWidget);
+      expect(find.text('Sin resultados'), findsNothing);
+
+      await tester.pump(_debounce);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(CatalogCard, 'One Piece'), findsOneWidget);
+    });
+
     testWidgets('says so when nothing is airing', (WidgetTester tester) async {
       await _pumpSearch(
         tester,

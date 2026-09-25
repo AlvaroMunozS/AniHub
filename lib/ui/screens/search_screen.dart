@@ -45,6 +45,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   /// The failure of the last search, or null.
   Object? _error;
 
+  /// The trimmed query of the last search, which decides between the airing
+  /// view and the results; the text field runs ahead of it during the
+  /// debounce.
+  String _searchedTerm = '';
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -60,6 +65,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Future<void> _search(String value) async {
     final String term = value.trim();
     final int id = ++_requestId;
+    _searchedTerm = term;
     if (term.length < ref.read(animeCatalogProvider).minQueryLength) {
       setState(() {
         _loading = false;
@@ -154,7 +160,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   bool get _showsAiring =>
       _error == null &&
-      _query.text.trim().length < ref.read(animeCatalogProvider).minQueryLength;
+      _searchedTerm.length < ref.read(animeCatalogProvider).minQueryLength;
 
   Widget _body(Set<int> inLibrary) {
     final Object? error = _error;

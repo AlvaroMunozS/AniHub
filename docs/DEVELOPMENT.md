@@ -253,8 +253,8 @@ tap installs it. Nothing is requested until the user taps.
   them when the chains arrive; the extra anime are never shown.
 - **Airing schedule.** Broadcast slots are in Japan Standard Time and shown
   in local time, so a late-night slot in Japan falls on the previous day in
-  Europe or America. `ScheduleAiring` converts each slot at its date in the
-  current week, so daylight saving time is applied as it is that week. Each
+  Europe or America. `ScheduleAiring` converts each slot at its next
+  occurrence, so daylight saving time is applied as it is that week. Each
   day lists the most followed first, by how many MyAnimeList lists hold the
   anime, and anime in fewer than 5000 are left out: about three in four
   airing series are niche web series or children's shows. The count is
@@ -262,8 +262,9 @@ tap installs it. Nothing is requested until the user taps.
   on the one of the device's region by the Unicode CLDR week data
   (`lib/ui/week_start.dart`), since the language alone cannot tell the
   United States from the United Kingdom. The list is requested once per
-  session and not cached on disk: it changes
-  every week and is only useful online.
+  season and session, and not cached on disk: it changes every week and is
+  only useful online. The season and today are read again whenever the app
+  returns to the foreground, since it can stay open across a change.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

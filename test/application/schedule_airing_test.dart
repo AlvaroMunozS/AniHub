@@ -127,20 +127,20 @@ void main() {
     expect(item.hour, isNull);
   });
 
-  test('lists anime without a slot apart, by title', () {
+  test('lists anime without a slot apart, most followed first', () {
     final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
-      _anime(1, 'Zeta'),
+      _anime(1, 'Alpha'),
       _anime(
         2,
         'Frieren',
         const Broadcast(weekday: DateTime.friday, hour: 23, minute: 0),
       ),
-      _anime(3, 'Alpha'),
+      _anime(3, 'Zeta', null, 9000),
     ], now: _now);
 
     expect(schedule.unscheduled.map((CatalogAnime a) => a.title), <String>[
-      'Alpha',
       'Zeta',
+      'Alpha',
     ]);
     expect(schedule.length, 3);
   });

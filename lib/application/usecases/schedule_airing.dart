@@ -24,21 +24,26 @@ class AiringSchedule {
   /// Anime without a fixed weekly slot, such as series released all at once.
   final List<CatalogAnime> unscheduled;
 
+  /// How many anime the schedule lists.
   int get length =>
       unscheduled.length +
       byWeekday.values.fold(0, (int sum, List<ScheduledAnime> day) {
         return sum + day.length;
       });
+
+  bool get isEmpty => length == 0;
 }
 
 /// Sorts the better known airing anime into the local weekdays they air on.
 ///
 /// Anime in fewer than [minMembers] MyAnimeList lists are left out: most
 /// airing series are short web series or children's shows that few people
-/// follow, and they would bury the ones worth finding. Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
-/// fall on the previous day elsewhere. Each one is converted at its
-/// occurrence in the week of `now`, so the offset in force that week,
-/// daylight saving time included, is the one used.
+/// follow, and they would bury the ones worth finding.
+///
+/// Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
+/// fall on the previous day elsewhere. Each one is converted at its next
+/// occurrence from `now`, so the offset in force then, daylight saving time
+/// included, is the one used.
 class ScheduleAiring {
   const ScheduleAiring({this.localOffset = _deviceOffset});
 
