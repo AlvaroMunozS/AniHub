@@ -13,6 +13,7 @@ All notable changes to AniHub are documented here. The format follows
 ### Changed
 
 - The *Favorites* filter can also hide your favorites.
+- Seasons of a series are grouped together, and count as started, even when the seasons in between are not in your library.
 
 ## [1.2.1] - 2026-09-23
 

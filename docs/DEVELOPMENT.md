@@ -171,7 +171,9 @@ an incompatible change may simply empty the table. On its first load,
   fields (`related_anime{node{...}}`) for the related titles. At most four
   requests run at a time, and each chunk of 25 anime is cached as it arrives.
   Results are refreshed after 30 days, and older copies are kept for up to 90
-  days as an offline fallback.
+  days as an offline fallback. Following franchise chains adds up to 500
+  lookups per load, cached the same way, so they cost requests mostly on the
+  first load.
 - An unknown id answers HTTP 404, and an invalid client id HTTP 400 with the
   message `Invalid client id`. The details screen shows a 404 as an anime
   that is no longer available, and offers to remove it from the library
@@ -231,10 +233,15 @@ tap installs it. Nothing is requested until the user taps.
 - **Started series.** A planned entry is *started* when an entry of its
   franchise is being watched or completed; a franchise is the same connected
   component `GroupLibrary` groups by (`Franchises`), so the *Not started*
-  filter never splits a group. It needs no airing data from MyAnimeList. The
-  graph only holds the relations of library entries, so season 4 planned
-  with season 1 completed and seasons 2–3 missing counts as not started
-  (#37).
+  filter never splits a group. It needs no airing data from MyAnimeList.
+- **Franchise chains.** MyAnimeList has no franchise id, so seasons 1 and 4
+  are linked only through the anime in between. After the library's own
+  relations, `LinkFranchiseChains` follows the `sequel` and `prequel` edges
+  that leave the library, round by round, until the chains close or 500
+  extra anime have been requested. Other edges are not followed: side
+  stories and spin-offs grow to hundreds of requests in franchises such as
+  *Detective Conan*. The library shows the direct groups first and merges
+  them when the chains arrive; the extra anime are never shown.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

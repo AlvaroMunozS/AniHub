@@ -129,6 +129,11 @@ final Provider<FilterLibrary> filterLibraryProvider = Provider<FilterLibrary>((
   return const FilterLibrary();
 });
 
+final Provider<LinkFranchiseChains> linkFranchiseChainsProvider =
+    Provider<LinkFranchiseChains>((Ref ref) {
+      return LinkFranchiseChains(ref.watch(animeRelationsProvider));
+    });
+
 final Provider<FindStartedEntries> findStartedEntriesProvider =
     Provider<FindStartedEntries>((Ref ref) {
       return const FindStartedEntries();
