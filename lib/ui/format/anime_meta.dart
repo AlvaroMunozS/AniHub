@@ -15,7 +15,12 @@ String? formatEpisodes(AppLocalizations l10n, CatalogAnime anime) {
 String? formatSeason(AppLocalizations l10n, CatalogAnime anime) {
   final int? year = anime.seasonYear;
   if (year == null) return null;
-  final String? label = _seasonLabel(l10n, anime.season);
+  return formatSeasonOf(l10n, anime.season, year);
+}
+
+/// Returns [season] and [year], or just the year without a season.
+String formatSeasonOf(AppLocalizations l10n, AnimeSeason? season, int year) {
+  final String? label = _seasonLabel(l10n, season);
   return label == null ? '$year' : '$label $year';
 }
 

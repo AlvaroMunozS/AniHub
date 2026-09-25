@@ -24,6 +24,10 @@ Never _notOverridden(String name) {
   );
 }
 
+/// The current time, fixed by tests.
+final Provider<DateTime Function()> clockProvider =
+    Provider<DateTime Function()>((Ref ref) => DateTime.now);
+
 final Provider<SharedPreferences> sharedPreferencesProvider =
     Provider<SharedPreferences>(
       (Ref ref) => _notOverridden('sharedPreferencesProvider'),
@@ -137,4 +141,9 @@ final Provider<LinkFranchiseChains> linkFranchiseChainsProvider =
 final Provider<FindStartedEntries> findStartedEntriesProvider =
     Provider<FindStartedEntries>((Ref ref) {
       return const FindStartedEntries();
+    });
+
+final Provider<ScheduleAiring> scheduleAiringProvider =
+    Provider<ScheduleAiring>((Ref ref) {
+      return const ScheduleAiring();
     });

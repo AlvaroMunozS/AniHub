@@ -181,6 +181,9 @@ class AppOverlays {
 
   static const Color scrim = Color(0xB3000000);
   static const Color dim = Color(0x66000000);
+
+  /// Text over [scrim].
+  static const Color onScrim = Color(0xFFFFFFFF);
 }
 
 extension PaletteContext on BuildContext {

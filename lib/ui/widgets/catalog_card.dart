@@ -14,12 +14,17 @@ class CatalogCard extends StatelessWidget {
   const CatalogCard({
     required this.anime,
     this.inLibrary = false,
+    this.caption,
     this.onOpen,
     super.key,
   });
 
   final CatalogAnime anime;
   final bool inLibrary;
+
+  /// Short text over the bottom of the cover, such as a broadcast time.
+  final String? caption;
+
   final VoidCallback? onOpen;
 
   @override
@@ -60,6 +65,18 @@ class CatalogCard extends StatelessWidget {
           ],
         ],
       ),
+      overlay: switch (caption) {
+        final String caption => Positioned(
+          left: AppSpacing.s8,
+          bottom: AppSpacing.s8,
+          child: Text(
+            caption,
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: AppOverlays.onScrim),
+          ),
+        ),
+        null => null,
+      },
       title: anime.title,
       onTap: onOpen,
     );

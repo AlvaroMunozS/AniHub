@@ -158,6 +158,15 @@ an incompatible change may simply empty the table. On its first load,
 
 - `GET /anime?q=` searches, and `GET /anime/{id}` returns one anime. Both only
   return the fields listed in `fields`.
+- *Browse* lists the season's airing anime from two lists, merged by id:
+  `GET /anime/season/{year}/{season}`, which only holds the anime that
+  premiere in that season, and `GET /anime/ranking?ranking_type=airing`,
+  which holds everything `currently_airing` whenever it started (*One
+  Piece*, the second half of a two-cour series). Both allow 500 results per
+  page. Only `tv` and `ona` are kept, and anime that have already finished
+  are dropped. `num_list_users` orders them.
+- `broadcast` gives `day_of_the_week` and `start_time` (`HH:mm`) in Japan
+  Standard Time. Many ONAs have none, or `other` as the day.
 - Queries shorter than three characters are rejected with HTTP 400, so the app
   does not send them.
 - Without `nsfw=true`, search returns only anime rated `white`, which leaves
@@ -242,6 +251,20 @@ tap installs it. Nothing is requested until the user taps.
   stories and spin-offs grow to hundreds of requests in franchises such as
   *Detective Conan*. The library shows the direct groups first and merges
   them when the chains arrive; the extra anime are never shown.
+- **Airing schedule.** Broadcast slots are in Japan Standard Time and shown
+  in local time, so a late-night slot in Japan falls on the previous day in
+  Europe or America. `ScheduleAiring` converts each slot at its next
+  occurrence, so daylight saving time is applied as it is that week. Each
+  day lists the most followed first, by how many MyAnimeList lists hold the
+  anime, and anime in fewer than 5000 are left out: about three in four
+  airing series are niche web series or children's shows. The count is
+  never shown. The week starts on the day picked in *Appearance*, or else
+  on the one of the device's region by the Unicode CLDR week data
+  (`lib/ui/week_start.dart`), since the language alone cannot tell the
+  United States from the United Kingdom. The list is requested once per
+  season and session, and not cached on disk: it changes every week and is
+  only useful online. The season and today are read again whenever the app
+  returns to the foreground, since it can stay open across a change.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on
@@ -252,9 +275,9 @@ tap installs it. Nothing is requested until the user taps.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so
   images are cached for a year (up to 3000 files) and load offline.
   *More → Settings → Storage* shows its size and clears it.
-- **Preferences without a port.** Theme, accent and language are UI state:
-  notifiers in `lib/ui/state/settings_providers.dart` read and write
-  `SharedPreferences` directly.
+- **Preferences without a port.** Theme, accent, language and the first day
+  of the week are UI state: notifiers in `lib/ui/state/settings_providers.dart`
+  read and write `SharedPreferences` directly.
 - **Few dependencies.** UUIDs come from a small helper over `Random.secure()`
   instead of a package. New dependencies need a clear reason.
 

@@ -109,14 +109,27 @@
 
   "searchHint": "Buscar en MyAnimeList",
   "searchFailed": "No se pudo buscar",
-  "searchPromptTitle": "Busca en el catálogo",
-  "searchPromptMessage": "{count, plural, =1{Escribe al menos una letra del título de un anime.} other{Escribe al menos {count} letras del título de un anime.}}",
-  "@searchPromptMessage": {
-    "description": "count is the shortest query the catalog searches.",
+  "searchAiringCount": "{count, plural, =1{1 en emisión} other{{count} en emisión}}",
+  "@searchAiringCount": {
     "placeholders": {
       "count": {"type": "int"}
     }
   },
+  "searchAiringOther": "Otros",
+  "@searchAiringOther": {
+    "description": "Tab after the weekdays for anime without a fixed weekly slot."
+  },
+  "searchAiringToday": "{day}, hoy",
+  "@searchAiringToday": {
+    "description": "Screen reader label of today's weekday tab; day is its short name.",
+    "placeholders": {
+      "day": {"type": "String"}
+    }
+  },
+  "searchAiringFailed": "No se pudo cargar la temporada",
+  "searchAiringEmptyTitle": "Nada en emisión",
+  "searchAiringEmptyMessage": "MyAnimeList aún no tiene anime para esta temporada.",
+  "searchAiringDayEmpty": "Nada se emite este día",
   "searchNothingMatching": "No hay nada para «{query}».",
   "@searchNothingMatching": {
     "placeholders": {
@@ -203,6 +216,16 @@
   "appearanceAccentPink": "Rosa",
   "appearanceDisplay": "Visualización",
   "appearanceLanguage": "Idioma de la aplicación",
+  "appearanceFirstWeekday": "Primer día de la semana",
+  "appearanceFirstWeekdayRegion": "{day, select, sunday{Según la región (domingo)} other{Según la región (lunes)}}",
+  "@appearanceFirstWeekdayRegion": {
+    "description": "day is the first day of the week of the device's region: monday or sunday.",
+    "placeholders": {
+      "day": {"type": "String"}
+    }
+  },
+  "appearanceMonday": "Lunes",
+  "appearanceSunday": "Domingo",
 
   "backupRestore": "Restaurar",
 
