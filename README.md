@@ -38,8 +38,8 @@ The app is available in Spanish and English.
 - The library works offline, and cover images are cached on the device.
 - Light, dark and pure black themes, with a choice of accent color.
 - Settings for the theme, the app language and the image cache.
-- Library import from an `anihub-library` JSON file in *Settings → Backup*
-  ([format](docs/DEVELOPMENT.md#import-format)).
+- Library export and import as an `anihub-library` JSON file in
+  *Settings → Backup* ([format](docs/DEVELOPMENT.md#backup-format)).
 
 AniHub deliberately has no scores, reviews, episode counters or statistics.
 See the [project scope](CONTRIBUTING.md#scope).
@@ -52,9 +52,12 @@ New versions install over the previous one and keep the library. To update,
 open *More → About* and tap *Check for updates*.
 Requires Android 7.0 or later.
 
-AniHub has no backup or export of its own. If Android backup is enabled on
-the device, the library is included in it and restored when the app is
-reinstalled; otherwise uninstalling the app deletes it.
+*Settings → Backup → Export library* saves the library to a file wherever
+you choose, on the phone or in a cloud storage app, and *Import library*
+restores it on a new install or another phone. If Android backup is enabled on
+the device, the library is also included in it and restored when the app is
+reinstalled; otherwise uninstalling the app deletes it, except for the files
+you exported.
 
 ## Verifying the APK
 

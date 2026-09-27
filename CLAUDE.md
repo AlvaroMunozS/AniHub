@@ -4,7 +4,7 @@ Minimal anime tracker for Android. Local only: no account, no server; the
 library lives in SQLite on the device. Metadata comes from the MyAnimeList
 API.
 
-Stack, architecture, storage, import format, design decisions and code style
+Stack, architecture, storage, backup format, design decisions and code style
 are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The release process is in
 [docs/RELEASING.md](docs/RELEASING.md). Read them before changing code.
 

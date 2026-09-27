@@ -7,6 +7,47 @@ import '../../domain/values/watch_status.dart';
 const String _format = 'anihub-library';
 const int _version = 1;
 
+/// Encodes [entries] as an `anihub-library` v1 document exported at
+/// [exportedAt].
+///
+/// Entries are sorted by `malId`, so two exports of the same library differ
+/// only in what changed. Every key is written, `null` included, and times are
+/// in UTC with their microseconds, so [decodeLibraryBackup] returns the same
+/// entries. The local `id` is left out: it means nothing on another device.
+String encodeLibraryBackup(
+  List<Entry> entries, {
+  required DateTime exportedAt,
+}) {
+  final List<Entry> sorted = entries.toList()
+    ..sort((Entry a, Entry b) => a.malId.compareTo(b.malId));
+  return const JsonEncoder.withIndent('  ').convert(<String, Object?>{
+    'format': _format,
+    'version': _version,
+    'exportedAt': exportedAt.toUtc().toIso8601String(),
+    'entries': <Map<String, Object?>>[
+      for (final Entry entry in sorted)
+        <String, Object?>{
+          'malId': entry.malId,
+          'title': entry.title,
+          'coverUrl': entry.coverUrl,
+          'totalEpisodes': entry.totalEpisodes,
+          'status': entry.status.wire,
+          'isFavorite': entry.isFavorite,
+          'updatedAt': entry.updatedAt.toUtc().toIso8601String(),
+        },
+    ],
+  });
+}
+
+/// Returns the file name suggested for a backup exported at [exportedAt],
+/// dated in the device's time zone: `anihub-library-2026-09-27.json`.
+String libraryBackupFileName(DateTime exportedAt) {
+  final DateTime local = exportedAt.toLocal();
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '$_format-${local.year}-${twoDigits(local.month)}-'
+      '${twoDigits(local.day)}.json';
+}
+
 /// Decodes an `anihub-library` v1 document into entries.
 ///
 /// Throws [BackupFormatException] and rejects the whole file if the envelope

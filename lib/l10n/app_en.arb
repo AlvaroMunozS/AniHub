@@ -98,6 +98,12 @@
   "metaSummer": "Summer",
   "metaFall": "Fall",
 
+  "exportLibrary": "Export library",
+  "exportLibrarySubtitle": "Saves every entry to an AniHub .json file",
+  "exportEmptyLibrary": "Your library is empty",
+  "exportFailed": "Could not export the library",
+  "exportSummary": "Library exported: {count} anime",
+
   "importLibrary": "Import library",
   "importLibrarySubtitle": "Adds or updates entries from an AniHub .json file",
   "importInvalidFile": "The file is not a valid AniHub library",
@@ -129,6 +135,7 @@
   "appearanceMonday": "Monday",
   "appearanceSunday": "Sunday",
 
+  "backupExport": "Export",
   "backupRestore": "Restore",
 
   "storageCache": "Cache",

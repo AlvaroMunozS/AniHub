@@ -39,6 +39,11 @@ app's private storage. They are included in Android's system backup when it is
 enabled on the device. Cover images are cached in the app's cache, which is not
 backed up. Uninstalling the app deletes all of them.
 
+*Export library* in *Settings → Backup* saves the library to a file wherever
+you choose in the system's save dialog, which may be a cloud storage app. That
+file is outside the app: uninstalling AniHub does not delete it, and it is
+handled by whichever app or service stores it.
+
 A downloaded update is stored in the app's cache, which is not backed up, and
 deleted once it is handed to the system installer or the download fails. An
 interrupted download is replaced by the next one.

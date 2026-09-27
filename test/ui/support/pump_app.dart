@@ -5,7 +5,7 @@ import 'package:anihub/domain/ports/app_installer.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/ports/external_links.dart';
 import 'package:anihub/domain/ports/image_cache_storage.dart';
-import 'package:anihub/domain/ports/library_backup_source.dart';
+import 'package:anihub/domain/ports/library_backups.dart';
 import 'package:anihub/domain/ports/release_source.dart';
 import 'package:anihub/l10n/l10n.dart';
 import 'package:anihub/main.dart';
@@ -25,10 +25,10 @@ import '../../support/fake_anime_relations.dart';
 import '../../support/fake_app_installer.dart';
 import '../../support/fake_external_links.dart';
 import '../../support/fake_image_cache_storage.dart';
+import '../../support/fake_library_backups.dart';
 import '../../support/fake_release_source.dart';
 import '../../support/in_memory_entry_repository.dart';
 import 'fake_cache_manager.dart';
-import 'fake_library_backup_source.dart';
 
 /// Logical size of the phone that app tests run on.
 const Size _phoneSize = Size(400, 800);
@@ -44,7 +44,7 @@ final AppLocalizations spanish = lookupAppLocalizations(_testLocale);
 ///
 /// Every port gets a fake: [repo] defaults to an empty library, [catalog] to
 /// [FakeAnimeCatalog], [relations] to a graph without relations and
-/// [backupSource] to a cancelled file pick, [releaseSource] to no releases,
+/// [backups] to cancelled file dialogs, [releaseSource] to no releases,
 /// [installer] to one that never finishes, [links] to links that open and
 /// [imageCacheStorage] to an empty cache.
 /// Preferences start as [prefs] and the device languages are
@@ -56,7 +56,7 @@ Future<GoRouter> pumpApp(
   EntryRepository? repo,
   AnimeCatalog? catalog,
   AnimeRelations? relations,
-  LibraryBackupSource? backupSource,
+  LibraryBackups? backups,
   ReleaseSource? releaseSource,
   AppInstaller? installer,
   ExternalLinks? links,
@@ -90,8 +90,8 @@ Future<GoRouter> pumpApp(
         animeRelationsProvider.overrideWithValue(
           relations ?? FakeAnimeRelations(),
         ),
-        libraryBackupSourceProvider.overrideWithValue(
-          backupSource ?? const FakeLibraryBackupSource(),
+        libraryBackupsProvider.overrideWithValue(
+          backups ?? FakeLibraryBackups(),
         ),
         imageCacheManagerProvider.overrideWithValue(FakeCacheManager()),
         imageCacheStorageProvider.overrideWithValue(

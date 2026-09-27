@@ -115,15 +115,16 @@ an incompatible change may simply empty the table. On its first load,
 `SqfliteRelationsStore` moves the snapshot that older versions kept under the
 `anihub.relations.cache` preferences key into the table and removes the key.
 
-## Import format
+## Backup format
 
-*More → Settings → Backup → Import library* reads an `anihub-library` file:
+*More → Settings → Backup → Export library* writes an `anihub-library` file
+and *Import library* reads one:
 
 ```json
 {
   "format": "anihub-library",
   "version": 1,
-  "exportedAt": "2026-09-22T10:00:00Z",
+  "exportedAt": "2026-09-22T10:00:00.000Z",
   "entries": [
     {
       "malId": 1,
@@ -150,6 +151,18 @@ an incompatible change may simply empty the table. On its first load,
   is used.
 - Entries are merged by `malId`. New series are added. An existing entry is
   replaced only when the file's `updatedAt` is newer. Nothing is deleted.
+
+The export saves every entry, in every status, through the system's save
+dialog, so the file can go to the device or to a cloud storage app.
+
+- The suggested name is `anihub-library-YYYY-MM-DD.json`, with the device's
+  date.
+- Entries are sorted by `malId` and every key is written, `null` included.
+  The local `id` is not: it means nothing on another device.
+- `updatedAt` and `exportedAt` are in UTC with their microseconds, so
+  importing the file into the same library leaves every entry unchanged.
+- The JSON is indented with two spaces.
+- An empty library is not exported, since the file would restore nothing.
 
 ## MyAnimeList API
 
@@ -227,8 +240,9 @@ tap installs it. Nothing is requested until the user taps.
 ## Design decisions
 
 - **Local only.** No account and no server: the app works offline and there is
-  nothing to operate. The cost is no sync between devices, and no backup of its
-  own beyond Android's system backup.
+  nothing to operate. The cost is no sync between devices. The library is
+  backed up by Android's system backup, when it is enabled, or by exporting it
+  to a file that the user keeps.
 - **Three statuses.** *On hold* and *dropped* fit in *planned*; more statuses
   would complicate every screen for little benefit.
 - **Narrow scope.** AniHub answers what you are watching and what you have

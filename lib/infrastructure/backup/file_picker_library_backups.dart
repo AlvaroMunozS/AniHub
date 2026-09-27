@@ -5,11 +5,11 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../domain/entities/entry.dart';
 import '../../domain/errors/backup_format_exception.dart';
-import '../../domain/ports/library_backup_source.dart';
+import '../../domain/ports/library_backups.dart';
 import 'library_backup_codec.dart';
 
-class FilePickerLibraryBackupSource implements LibraryBackupSource {
-  const FilePickerLibraryBackupSource();
+class FilePickerLibraryBackups implements LibraryBackups {
+  const FilePickerLibraryBackups();
 
   @override
   Future<List<Entry>?> pickLibrary() async {
@@ -28,5 +28,18 @@ class FilePickerLibraryBackupSource implements LibraryBackupSource {
       throw const BackupFormatException('The file is not UTF-8.');
     }
     return decodeLibraryBackup(json);
+  }
+
+  @override
+  Future<bool> saveLibrary(
+    List<Entry> entries, {
+    required DateTime exportedAt,
+  }) async {
+    final Uri? saved = await FilePicker.saveFile(
+      fileName: libraryBackupFileName(exportedAt),
+      bytes: utf8.encode(encodeLibraryBackup(entries, exportedAt: exportedAt)),
+      mimeType: 'application/json',
+    );
+    return saved != null;
   }
 }

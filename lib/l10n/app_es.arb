@@ -176,6 +176,18 @@
   "metaSummer": "Verano",
   "metaFall": "Otoño",
 
+  "exportLibrary": "Exportar biblioteca",
+  "exportLibrarySubtitle": "Guarda todas las entradas en un fichero .json de AniHub",
+  "exportEmptyLibrary": "Tu biblioteca está vacía",
+  "exportFailed": "No se pudo exportar la biblioteca",
+  "exportSummary": "Biblioteca exportada: {count} anime",
+  "@exportSummary": {
+    "description": "\"anime\" stays invariable after a number.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
   "importLibrary": "Importar biblioteca",
   "importLibrarySubtitle": "Añade o actualiza entradas desde un fichero .json de AniHub",
   "importInvalidFile": "El fichero no es una biblioteca de AniHub válida",
@@ -223,6 +235,7 @@
   "appearanceMonday": "Lunes",
   "appearanceSunday": "Domingo",
 
+  "backupExport": "Exportar",
   "backupRestore": "Restaurar",
 
   "storageCache": "Caché",
