@@ -37,7 +37,8 @@ final List<Override> _madridThursday = <Override>[
 ];
 
 /// In local time: Kaiju on Wednesday at 17:30, Gachiakuta on Thursday at
-/// 15:00, Frieren on Friday at 16:00 and Web Series without a slot.
+/// 15:00, Frieren on Friday at 16:00 and Web Series without a slot, which is
+/// left out.
 const List<CatalogAnime> _airing = <CatalogAnime>[
   CatalogAnime(
     malId: 101,
@@ -276,7 +277,7 @@ void main() {
         (2026, AnimeSeason.summer),
       ]);
       expect(find.text('Verano 2026'), findsOneWidget);
-      expect(find.text('4 en emisión'), findsOneWidget);
+      expect(find.text('3 en emisión'), findsOneWidget);
     });
 
     testWidgets('opens on today with the local broadcast times', (
@@ -308,14 +309,12 @@ void main() {
       expect(find.text('17:30'), findsOneWidget);
     });
 
-    testWidgets('lists anime without a fixed slot in a last tab', (
+    testWidgets('has one tab per weekday and nothing else', (
       WidgetTester tester,
     ) async {
       await _pumpSearch(tester, catalog: FakeAnimeCatalog(airing: _airing));
 
-      await _openTab(tester, 'Otros');
-
-      expect(find.widgetWithText(CatalogCard, 'Web Series'), findsOneWidget);
+      expect(find.byType(Tab), findsNWidgets(DateTime.daysPerWeek));
     });
 
     testWidgets('starts the week on the day picked in the settings', (
@@ -334,17 +333,6 @@ void main() {
           if (tab.text case final String text) text,
       ];
       expect(tabs.take(2), <String>['dom', 'lun']);
-    });
-
-    testWidgets('has no last tab when every anime has a slot', (
-      WidgetTester tester,
-    ) async {
-      await _pumpSearch(
-        tester,
-        catalog: FakeAnimeCatalog(airing: _airing.take(3).toList()),
-      );
-
-      expect(find.widgetWithText(Tab, 'Otros'), findsNothing);
     });
 
     testWidgets('says so on a day without anime', (WidgetTester tester) async {

@@ -115,10 +115,6 @@
       "count": {"type": "int"}
     }
   },
-  "searchAiringOther": "Otros",
-  "@searchAiringOther": {
-    "description": "Tab after the weekdays for anime without a fixed weekly slot."
-  },
   "searchAiringToday": "{day}, hoy",
   "@searchAiringToday": {
     "description": "Screen reader label of today's weekday tab; day is its short name.",

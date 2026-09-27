@@ -22,8 +22,7 @@ import '../skeleton.dart';
 /// Diameter of the dot that marks today's tab.
 const double _todayDotSize = 5;
 
-/// This season's airing anime, one tab per local weekday, opening on today,
-/// plus a last tab for those without a fixed slot when there are any.
+/// This season's airing anime, one tab per local weekday, opening on today.
 ///
 /// Anime in [inLibrary] are dimmed, as in search results. The season and
 /// today are read from the clock on every build and again when the app
@@ -123,18 +122,15 @@ class _AiringTabs extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final List<int> weekdays = _weekdays(ref.watch(firstWeekdayProvider));
-    final bool hasOther = schedule.unscheduled.isNotEmpty;
-    final int tabCount = weekdays.length + (hasOther ? 1 : 0);
     final DateFormat dayName = DateFormat.E(
       Localizations.localeOf(context).toLanguageTag(),
     );
 
     return DefaultTabController(
-      // A new controller when the tabs or today change, since a
-      // controller's length is fixed and its index would point at another
-      // day.
-      key: ValueKey<(int, int, int)>((tabCount, weekdays.first, today)),
-      length: tabCount,
+      // A new controller when the first day or today change, since its
+      // index would point at another day.
+      key: ValueKey<(int, int)>((weekdays.first, today)),
+      length: weekdays.length,
       initialIndex: weekdays.indexOf(today),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,7 +147,6 @@ class _AiringTabs extends ConsumerWidget {
                     label: dayName.format(_dateOnWeekday(weekday)),
                     isToday: weekday == today,
                   ),
-                if (hasOther) Tab(text: context.l10n.searchAiringOther),
               ],
             ),
           ),
@@ -171,16 +166,6 @@ class _AiringTabs extends ConsumerWidget {
                           anime: item.anime,
                           time: _formatTime(context, item.hour, item.minute),
                         ),
-                    ],
-                    inLibrary: inLibrary,
-                  ),
-                if (hasOther)
-                  _AiringGrid(
-                    season: season,
-                    storageKey: 0,
-                    anime: <_AiringItem>[
-                      for (final CatalogAnime anime in schedule.unscheduled)
-                        (anime: anime, time: null),
                     ],
                     inLibrary: inLibrary,
                   ),

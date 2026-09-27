@@ -105,14 +105,13 @@ void main() {
   });
 
   test('leaves out anime in too few lists', () {
+    const Broadcast monday = Broadcast(weekday: DateTime.monday);
     final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
-      _anime(1, 'Niche', null, ScheduleAiring.minMembers - 1),
-      _anime(2, 'Known', null, ScheduleAiring.minMembers),
+      _anime(1, 'Niche', monday, ScheduleAiring.minMembers - 1),
+      _anime(2, 'Known', monday, ScheduleAiring.minMembers),
     ], now: _now);
 
-    expect(schedule.unscheduled.map((CatalogAnime a) => a.title), <String>[
-      'Known',
-    ]);
+    expect(_titles(schedule.byWeekday[DateTime.monday]), <String>['Known']);
   });
 
   test('keeps the day in Japan when the time is unknown', () {
@@ -127,21 +126,17 @@ void main() {
     expect(item.hour, isNull);
   });
 
-  test('lists anime without a slot apart, most followed first', () {
+  test('leaves out anime without a weekly slot', () {
     final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
-      _anime(1, 'Alpha'),
+      _anime(1, 'Alpha', null, 9000),
       _anime(
         2,
         'Frieren',
         const Broadcast(weekday: DateTime.friday, hour: 23, minute: 0),
       ),
-      _anime(3, 'Zeta', null, 9000),
     ], now: _now);
 
-    expect(schedule.unscheduled.map((CatalogAnime a) => a.title), <String>[
-      'Zeta',
-      'Alpha',
-    ]);
-    expect(schedule.length, 3);
+    expect(_titles(schedule.byWeekday[DateTime.friday]), <String>['Frieren']);
+    expect(schedule.length, 1);
   });
 }

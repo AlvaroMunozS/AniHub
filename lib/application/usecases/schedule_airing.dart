@@ -15,18 +15,14 @@ class ScheduledAnime {
 
 /// Airing anime by local weekday.
 class AiringSchedule {
-  const AiringSchedule({required this.byWeekday, required this.unscheduled});
+  const AiringSchedule({required this.byWeekday});
 
   /// Keyed by [DateTime.monday] to [DateTime.sunday]; a day without anime has
   /// no key.
   final Map<int, List<ScheduledAnime>> byWeekday;
 
-  /// Anime without a fixed weekly slot, such as series released all at once.
-  final List<CatalogAnime> unscheduled;
-
   /// How many anime the schedule lists.
   int get length =>
-      unscheduled.length +
       byWeekday.values.fold(0, (int sum, List<ScheduledAnime> day) {
         return sum + day.length;
       });
@@ -38,7 +34,10 @@ class AiringSchedule {
 ///
 /// Anime in fewer than [minMembers] MyAnimeList lists are left out: most
 /// airing series are short web series or children's shows that few people
-/// follow, and they would bury the ones worth finding.
+/// follow, and they would bury the ones worth finding. Anime without a
+/// weekly slot are left out too, since they have no day to go under; most are
+/// Chinese series MyAnimeList has no schedule for, or series released all at
+/// once.
 ///
 /// Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
 /// fall on the previous day elsewhere. Each one is converted at its next
@@ -65,14 +64,10 @@ class ScheduleAiring {
   AiringSchedule call(List<CatalogAnime> anime, {required DateTime now}) {
     final Map<int, List<ScheduledAnime>> byWeekday =
         <int, List<ScheduledAnime>>{};
-    final List<CatalogAnime> unscheduled = <CatalogAnime>[];
     for (final CatalogAnime item in anime) {
       if ((item.memberCount ?? minMembers) < minMembers) continue;
       final Broadcast? broadcast = item.broadcast;
-      if (broadcast == null) {
-        unscheduled.add(item);
-        continue;
-      }
+      if (broadcast == null) continue;
       final (int weekday, ScheduledAnime scheduled) = _toLocal(
         item,
         broadcast,
@@ -86,13 +81,11 @@ class ScheduleAiring {
             _compareRelevance(a.anime, b.anime),
       );
     }
-    unscheduled.sort(_compareRelevance);
     return AiringSchedule(
       byWeekday: <int, List<ScheduledAnime>>{
         for (final MapEntry<int, List<ScheduledAnime>> day in byWeekday.entries)
           day.key: List<ScheduledAnime>.unmodifiable(day.value),
       },
-      unscheduled: List<CatalogAnime>.unmodifiable(unscheduled),
     );
   }
 

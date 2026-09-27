@@ -63,7 +63,6 @@
   "searchHint": "Search MyAnimeList",
   "searchFailed": "Could not search",
   "searchAiringCount": "{count} airing",
-  "searchAiringOther": "Other",
   "searchAiringToday": "{day}, today",
   "searchAiringFailed": "Could not load the season",
   "searchAiringEmptyTitle": "Nothing airing",
