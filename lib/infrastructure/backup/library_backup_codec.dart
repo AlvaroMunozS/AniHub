@@ -39,8 +39,8 @@ String encodeLibraryBackup(
   });
 }
 
-/// The file name suggested for a backup exported at [exportedAt], dated in
-/// the device's time zone: `anihub-library-2026-09-27.json`.
+/// Returns the file name suggested for a backup exported at [exportedAt],
+/// dated in the device's time zone: `anihub-library-2026-09-27.json`.
 String libraryBackupFileName(DateTime exportedAt) {
   final DateTime local = exportedAt.toLocal();
   String twoDigits(int value) => value.toString().padLeft(2, '0');

@@ -118,13 +118,17 @@ void main() {
   testWidgets('does nothing when the save is cancelled', (
     WidgetTester tester,
   ) async {
+    final FakeLibraryBackups backups = FakeLibraryBackups();
     await _pumpBackup(
       tester,
       repo: inMemoryLibrary(<Entry>[_entry(malId: 1, title: 'Frieren')]),
+      backups: backups,
     );
     await _export(tester);
 
+    expect(backups.savedEntries, hasLength(1));
     expect(find.byType(SnackBar), findsNothing);
+    expect(_tile(tester, 'Exportar biblioteca').onTap, isNotNull);
   });
 
   testWidgets('reports an export failure', (WidgetTester tester) async {
@@ -159,7 +163,7 @@ void main() {
     expect(find.text('Biblioteca exportada: 1 anime'), findsOneWidget);
   });
 
-  testWidgets('disables both actions while one is running', (
+  testWidgets('disables both actions while an export is running', (
     WidgetTester tester,
   ) async {
     final _PendingBackups backups = _PendingBackups();
@@ -177,6 +181,25 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     backups.saved.complete(false);
+    await tester.pumpAndSettle();
+
+    expect(_tile(tester, 'Exportar biblioteca').onTap, isNotNull);
+    expect(_tile(tester, 'Importar biblioteca').onTap, isNotNull);
+  });
+
+  testWidgets('disables both actions while an import is running', (
+    WidgetTester tester,
+  ) async {
+    final _PendingBackups backups = _PendingBackups();
+    await _pumpBackup(tester, backups: backups);
+
+    await tester.tap(find.text('Importar biblioteca'));
+    await tester.pump();
+
+    expect(_tile(tester, 'Exportar biblioteca').onTap, isNull);
+    expect(_tile(tester, 'Importar biblioteca').onTap, isNull);
+
+    backups.picked.complete(null);
     await tester.pumpAndSettle();
 
     expect(_tile(tester, 'Exportar biblioteca').onTap, isNotNull);

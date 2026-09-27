@@ -182,7 +182,7 @@
   "exportFailed": "No se pudo exportar la biblioteca",
   "exportSummary": "Biblioteca exportada: {count} anime",
   "@exportSummary": {
-    "description": "\"anime\" does not change in the plural.",
+    "description": "\"anime\" stays invariable after a number.",
     "placeholders": {
       "count": {"type": "int"}
     }

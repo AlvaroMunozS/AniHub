@@ -54,6 +54,17 @@ final List<Entry> _library = <Entry>[
   ),
 ];
 
+/// [entry] as a backup holds it, without the id local to this device.
+Entry _withoutId(Entry entry) => Entry(
+  malId: entry.malId,
+  title: entry.title,
+  coverUrl: entry.coverUrl,
+  totalEpisodes: entry.totalEpisodes,
+  status: entry.status,
+  isFavorite: entry.isFavorite,
+  updatedAt: entry.updatedAt,
+);
+
 Future<Database> _openLibraryDatabase() async {
   final Database db = await databaseFactoryFfi.openDatabase(
     inMemoryDatabasePath,
@@ -144,52 +155,27 @@ void main() {
         encodeLibraryBackup(_library, exportedAt: _exportedAt),
       );
 
-      expect(
-        decoded,
-        unorderedEquals(<Entry>[
-          for (final Entry entry in _library)
-            Entry(
-              malId: entry.malId,
-              title: entry.title,
-              coverUrl: entry.coverUrl,
-              totalEpisodes: entry.totalEpisodes,
-              status: entry.status,
-              isFavorite: entry.isFavorite,
-              updatedAt: entry.updatedAt,
-            ),
-        ]),
-      );
+      expect(decoded, unorderedEquals(_library.map(_withoutId)));
     });
 
-    test('an export of the stored library imports as unchanged', () async {
+    test('an export of the stored library reads back exactly and imports as '
+        'unchanged', () async {
       final SqfliteEntryRepository repository = SqfliteEntryRepository(
         await _openLibraryDatabase(),
       );
       addTearDown(repository.dispose);
-      await repository.upsertAll(<Entry>[
-        for (final Entry entry in _library)
-          Entry(
-            malId: entry.malId,
-            title: entry.title,
-            coverUrl: entry.coverUrl,
-            totalEpisodes: entry.totalEpisodes,
-            status: entry.status,
-            isFavorite: entry.isFavorite,
-            updatedAt: entry.updatedAt,
-          ),
-      ]);
+      await repository.upsertAll(_library.map(_withoutId).toList());
       final List<Entry> stored = await repository.findAll();
 
-      final ImportSummary summary = await ImportLibrary(repository)(
-        decodeLibraryBackup(
-          encodeLibraryBackup(stored, exportedAt: _exportedAt),
-        ),
+      final List<Entry> decoded = decodeLibraryBackup(
+        encodeLibraryBackup(stored, exportedAt: _exportedAt),
       );
+      final ImportSummary summary = await ImportLibrary(repository)(decoded);
 
+      expect(decoded, unorderedEquals(stored.map(_withoutId)));
       expect(summary.added, 0);
       expect(summary.updated, 0);
       expect(summary.unchanged, _library.length);
-      expect(await repository.findAll(), stored);
     });
   });
 

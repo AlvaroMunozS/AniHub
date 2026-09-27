@@ -124,7 +124,7 @@ and *Import library* reads one:
 {
   "format": "anihub-library",
   "version": 1,
-  "exportedAt": "2026-09-22T10:00:00Z",
+  "exportedAt": "2026-09-22T10:00:00.000Z",
   "entries": [
     {
       "malId": 1,
