@@ -1,14 +1,17 @@
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/entities/entry.dart';
+import 'package:anihub/domain/values/broadcast.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 
-/// A few real MyAnimeList titles. One Piece is airing and has no episode count.
+/// A few real MyAnimeList titles. One Piece is airing, on Sundays at 23:15
+/// in Japan, and has no episode count.
 const List<CatalogAnime> sampleCatalog = <CatalogAnime>[
   CatalogAnime(
     malId: 21,
     title: 'One Piece',
     seasonYear: 1999,
     isAiring: true,
+    broadcast: Broadcast(weekday: DateTime.sunday, hour: 23, minute: 15),
     coverUrl: 'https://cdn.myanimelist.net/images/anime/1244/138851l.jpg',
   ),
   CatalogAnime(

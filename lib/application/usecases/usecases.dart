@@ -1,4 +1,4 @@
-/// Use cases of the library.
+/// Use cases of the library and the airing schedule.
 ///
 /// The UI reads and writes the library only through these, never through
 /// `EntryRepository` directly, so every library rule is enforced in one
@@ -18,5 +18,6 @@ export 'library_order.dart';
 export 'link_franchise_chains.dart';
 export 'list_entries.dart';
 export 'remove_entry.dart';
+export 'schedule_airing.dart';
 export 'set_favorite.dart';
 export 'sort_library.dart';

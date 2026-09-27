@@ -1,5 +1,6 @@
 import '../../domain/errors/catalog_exception.dart';
 import '../../domain/values/anime_season.dart';
+import '../../domain/values/broadcast.dart';
 import '../../domain/values/release_date.dart';
 
 /// Returns the `id` of a MyAnimeList anime node.
@@ -66,3 +67,35 @@ ReleaseDate? parseStartDate(Map<String, Object?> node) {
   }
   return null;
 }
+
+/// Parses `broadcast`, whose `start_time` is `HH:mm` in Japan Standard Time.
+///
+/// Returns null when there is no weekday, as with `other`, and a
+/// [Broadcast] without a time when `start_time` is missing or unreadable.
+Broadcast? parseBroadcast(Map<String, Object?> node) {
+  final int? weekday = switch (node) {
+    {'broadcast': {'day_of_the_week': final String day}} => _weekdays[day],
+    _ => null,
+  };
+  if (weekday == null) return null;
+  final List<int?> time = switch (node) {
+    {'broadcast': {'start_time': final String raw}} =>
+      raw.split(':').map(int.tryParse).toList(),
+    _ => const <int?>[],
+  };
+  if (time case [final int hour, final int minute]
+      when hour >= 0 && hour < 24 && minute >= 0 && minute < 60) {
+    return Broadcast(weekday: weekday, hour: hour, minute: minute);
+  }
+  return Broadcast(weekday: weekday);
+}
+
+const Map<String, int> _weekdays = <String, int>{
+  'monday': DateTime.monday,
+  'tuesday': DateTime.tuesday,
+  'wednesday': DateTime.wednesday,
+  'thursday': DateTime.thursday,
+  'friday': DateTime.friday,
+  'saturday': DateTime.saturday,
+  'sunday': DateTime.sunday,
+};

@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/errors/catalog_exception.dart';
 import '../../domain/ports/anime_catalog.dart';
+import '../../domain/values/anime_season.dart';
 import 'mal_client.dart';
 import 'mal_mapping.dart';
 
@@ -11,8 +12,14 @@ import 'mal_mapping.dart';
 /// Queries shorter than [minQueryLength] return no results without a request,
 /// because MyAnimeList rejects them. Search sends `nsfw=true` because without
 /// it MyAnimeList also leaves out anime rated `gray`, which includes ordinary
-/// films and series; results rated `black` are hentai, which the app does not
-/// list. A search result without an id or a title is skipped.
+/// films and series. The app does not list hentai: anime with the `black`
+/// flag or the `rx` rating, since MyAnimeList flags some hentai only `gray`.
+/// Ecchi rated `r+` stays. A search result without an id or a title is
+/// skipped.
+///
+/// The season endpoint only lists the anime that premiere in that season, so
+/// [airingIn] adds the `airing` ranking, which holds everything currently
+/// airing whenever it started.
 class MalCatalog implements AnimeCatalog {
   MalCatalog(this._client);
 
@@ -25,7 +32,25 @@ class MalCatalog implements AnimeCatalog {
   static const String _searchFields =
       'alternative_titles,num_episodes,status,start_season,start_date';
 
+  /// What [_nodesOf] reads to leave out hentai.
+  static const String _contentFields = 'nsfw,rating';
+
   static const String _detailFields = '$_searchFields,synopsis,genres,studios';
+
+  static const String _airingFields =
+      '$_searchFields,$_contentFields,media_type,broadcast,num_list_users';
+
+  /// Media types listed by [airingIn]; the rest are films, specials, music
+  /// videos and commercials.
+  static const Set<String> _seriesTypes = <String>{'tv', 'ona'};
+
+  /// Page size of the season and ranking lists, which allow more than
+  /// search.
+  static const int _airingPageSize = 500;
+
+  /// Pages read per airing list. A season holds a few hundred anime, so the
+  /// second page is a margin that is rarely requested.
+  static const int _maxAiringPages = 2;
 
   final MalClient _client;
 
@@ -48,23 +73,13 @@ class MalCatalog implements AnimeCatalog {
       <String, String>{
         'q': term,
         'limit': '${min(limit, _maxLimit)}',
-        'fields': '$_searchFields,nsfw',
+        'fields': '$_searchFields,$_contentFields',
         'nsfw': 'true',
       },
     );
-    final List<CatalogAnime> results = switch (body) {
-      {'data': final List<Object?> data} => List<CatalogAnime>.unmodifiable(
-        <CatalogAnime>[
-          for (final Object? item in data)
-            if (item case {'node': final Map<String, Object?> node}
-                when node['id'] is int &&
-                    parseTitle(node) != null &&
-                    node['nsfw'] != 'black')
-              _toCatalogAnime(node),
-        ],
-      ),
-      _ => throw const CatalogResponseException('Malformed search response'),
-    };
+    final List<CatalogAnime> results = List<CatalogAnime>.unmodifiable(
+      _nodesOf(body).map(_toCatalogAnime),
+    );
 
     return _searchCache[cacheKey] = results;
   }
@@ -77,6 +92,67 @@ class MalCatalog implements AnimeCatalog {
     );
     if (body == null) throw CatalogNotFoundException(malId);
     return _toCatalogAnime(body);
+  }
+
+  @override
+  Future<List<CatalogAnime>> airingIn(int year, AnimeSeason season) async {
+    final List<List<Map<String, Object?>>> lists = await Future.wait(
+      <Future<List<Map<String, Object?>>>>[
+        _airingList('anime/season/$year/${season.name}', <String, String>{}),
+        _airingList('anime/ranking', <String, String>{
+          'ranking_type': 'airing',
+        }),
+      ],
+    );
+    final Map<int, CatalogAnime> byId = <int, CatalogAnime>{};
+    for (final Map<String, Object?> node in lists.expand((l) => l)) {
+      if (!_seriesTypes.contains(node['media_type']) ||
+          node['status'] == 'finished_airing') {
+        continue;
+      }
+      byId.putIfAbsent(parseId(node), () => _toCatalogAnime(node));
+    }
+    return List<CatalogAnime>.unmodifiable(byId.values);
+  }
+
+  Future<List<Map<String, Object?>>> _airingList(
+    String path,
+    Map<String, String> query,
+  ) async {
+    final List<Map<String, Object?>> nodes = <Map<String, Object?>>[];
+    for (int page = 0; page < _maxAiringPages; page++) {
+      final Map<String, Object?>? body = await _client.get(
+        path,
+        <String, String>{
+          ...query,
+          'limit': '$_airingPageSize',
+          'offset': '${page * _airingPageSize}',
+          'fields': _airingFields,
+          'nsfw': 'true',
+        },
+      );
+      nodes.addAll(_nodesOf(body));
+      if (body case {'paging': {'next': String()}}) continue;
+      break;
+    }
+    return nodes;
+  }
+
+  /// Returns the anime nodes of a list response, skipping those without an
+  /// id or a title and hentai.
+  static Iterable<Map<String, Object?>> _nodesOf(Map<String, Object?>? body) {
+    return switch (body) {
+      {'data': final List<Object?> data} => <Map<String, Object?>>[
+        for (final Object? item in data)
+          if (item case {'node': final Map<String, Object?> node}
+              when node['id'] is int &&
+                  parseTitle(node) != null &&
+                  node['nsfw'] != 'black' &&
+                  node['rating'] != 'rx')
+            node,
+      ],
+      _ => throw const CatalogResponseException('Malformed list response'),
+    };
   }
 
   static CatalogAnime _toCatalogAnime(Map<String, Object?> node) {
@@ -105,6 +181,11 @@ class MalCatalog implements AnimeCatalog {
       ]),
       studioName: switch (node) {
         {'studios': [{'name': final String name}, ...]} => name,
+        _ => null,
+      },
+      broadcast: parseBroadcast(node),
+      memberCount: switch (node) {
+        {'num_list_users': final int count} when count >= 0 => count,
         _ => null,
       },
     );

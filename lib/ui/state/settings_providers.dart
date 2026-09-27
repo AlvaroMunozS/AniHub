@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../report_error.dart';
 import '../theme/accents.dart';
+import '../week_start.dart';
 
 /// The app language the user picked.
 enum AppLanguage {
@@ -18,6 +19,14 @@ enum AppLanguage {
 
   /// The locale the app is set to, or null to follow the device languages.
   final Locale? locale;
+}
+
+/// The first day of the week the user picked.
+enum FirstWeekday {
+  /// The one of the device's region.
+  region,
+  monday,
+  sunday,
 }
 
 /// An enum preference stored by name in `SharedPreferences`.
@@ -71,6 +80,33 @@ appLanguageProvider =
         AppLanguage.system,
       ),
     );
+
+final NotifierProvider<EnumPreferenceNotifier<FirstWeekday>, FirstWeekday>
+firstWeekdayPreferenceProvider =
+    NotifierProvider<EnumPreferenceNotifier<FirstWeekday>, FirstWeekday>(
+      () => EnumPreferenceNotifier<FirstWeekday>(
+        'general.firstWeekday',
+        FirstWeekday.values,
+        FirstWeekday.region,
+      ),
+    );
+
+/// The first day of the week of the device's region, read from its first
+/// language, whose country is the region set in Android.
+final Provider<int> regionFirstWeekdayProvider = Provider<int>(
+  (Ref ref) => firstWeekdayOfRegion(
+    WidgetsBinding.instance.platformDispatcher.locales.firstOrNull?.countryCode,
+  ),
+);
+
+/// The first day of the week, as [DateTime.monday] or [DateTime.sunday].
+final Provider<int> firstWeekdayProvider = Provider<int>(
+  (Ref ref) => switch (ref.watch(firstWeekdayPreferenceProvider)) {
+    FirstWeekday.region => ref.watch(regionFirstWeekdayProvider),
+    FirstWeekday.monday => DateTime.monday,
+    FirstWeekday.sunday => DateTime.sunday,
+  },
+);
 
 const String _pureBlackPrefsKey = 'appearance.pureBlack';
 
