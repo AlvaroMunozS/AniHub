@@ -6,10 +6,17 @@ for approval in the `release` environment before it runs.
 
 ## Steps
 
-0. Before the first release, and before any release with substantially new
-   functionality, notify MyAnimeList through its
-   [support form](https://help.myanimelist.net/hc/en-us/requests/new), as its API license
-   requires.
+0. Before the first release, and before any release with major upgrades or
+   substantially new functionality, notify MyAnimeList through its
+   [support form](https://help.myanimelist.net/hc/en-us/requests/new), as
+   section 4(b) of its [API license](https://myanimelist.net/static/apiagreement.html)
+   requires. Its examples include the app becoming commercial, adding ads,
+   showing substantially different content, or changes that could
+   significantly increase the load on MyAnimeList's servers. This project
+   does not count a feature that shows the same kind of content in another
+   way, or adds a few requests. Earning money through the app also needs
+   MyAnimeList's written authorization, requested through the same form
+   (section 3(a)(xiv)).
 1. Open a pull request titled `chore: release X.Y.Z` that:
    - renames `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`,
      adds a new empty `## [Unreleased]` above it and updates the comparison
