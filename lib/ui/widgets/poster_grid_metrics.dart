@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
+import 'poster_card.dart';
 
 /// Resolved geometry of a poster grid, shared by every poster grid so they
 /// all line up.
@@ -69,6 +70,7 @@ class GridMetrics {
 double _twoLineHeight(TextStyle style, TextScaler textScaler) {
   final TextPainter painter = TextPainter(
     text: TextSpan(text: 'Ag\nAg', style: style),
+    strutStyle: PosterCard.titleStrutOf(style),
     textDirection: TextDirection.ltr,
     textScaler: textScaler,
     maxLines: 2,
