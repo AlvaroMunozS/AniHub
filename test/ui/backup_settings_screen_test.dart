@@ -2,16 +2,20 @@ import 'dart:async';
 
 import 'package:anihub/domain/entities/entry.dart';
 import 'package:anihub/domain/errors/backup_format_exception.dart';
-import 'package:anihub/domain/ports/library_backup_source.dart';
+import 'package:anihub/domain/ports/library_backups.dart';
 import 'package:anihub/domain/values/watch_status.dart';
+import 'package:anihub/ui/providers.dart';
 import 'package:anihub/ui/router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import '../support/fake_library_backups.dart';
 import '../support/in_memory_entry_repository.dart';
-import 'support/fake_library_backup_source.dart';
 import 'support/pump_app.dart';
+
+final DateTime _now = DateTime(2026, 9, 27, 18);
 
 Entry _entry({required int malId, required String title, DateTime? updatedAt}) {
   return Entry(
@@ -22,25 +26,33 @@ Entry _entry({required int malId, required String title, DateTime? updatedAt}) {
   );
 }
 
-/// Returns the entries passed to [completer] once it completes, so a test
-/// can act while the file is being picked.
-class _PendingBackupSource implements LibraryBackupSource {
-  final Completer<List<Entry>?> completer = Completer<List<Entry>?>();
+/// Completes a pick with [picked] and a save with [saved] only when the test
+/// says so, so it can act while a file dialog is open.
+class _PendingBackups implements LibraryBackups {
+  final Completer<List<Entry>?> picked = Completer<List<Entry>?>();
+  final Completer<bool> saved = Completer<bool>();
 
   @override
-  Future<List<Entry>?> pickLibrary() => completer.future;
+  Future<List<Entry>?> pickLibrary() => picked.future;
+
+  @override
+  Future<bool> saveLibrary(
+    List<Entry> entries, {
+    required DateTime exportedAt,
+  }) => saved.future;
 }
 
 Future<GoRouter> _pumpBackup(
   WidgetTester tester, {
   InMemoryEntryRepository? repo,
-  LibraryBackupSource? backupSource,
+  LibraryBackups? backups,
 }) {
   return pumpApp(
     tester,
     repo: repo,
-    backupSource: backupSource,
+    backups: backups,
     initialLocation: RoutePaths.backupSettings,
+    overrides: <Override>[clockProvider.overrideWithValue(() => _now)],
   );
 }
 
@@ -50,7 +62,127 @@ Future<void> _import(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _export(WidgetTester tester) async {
+  await tester.tap(find.text('Exportar biblioteca'));
+  await tester.pump();
+  await tester.pumpAndSettle();
+}
+
+ListTile _tile(WidgetTester tester, String title) {
+  return tester.widget<ListTile>(
+    find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
+  );
+}
+
 void main() {
+  testWidgets('shows the export section above the restore section', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBackup(tester);
+
+    expect(
+      tester.getTopLeft(find.text('Exportar')).dy,
+      lessThan(tester.getTopLeft(find.text('Restaurar')).dy),
+    );
+  });
+
+  testWidgets('exports the library and reports how many anime it holds', (
+    WidgetTester tester,
+  ) async {
+    final InMemoryEntryRepository repo = inMemoryLibrary(<Entry>[
+      _entry(malId: 1, title: 'Frieren'),
+      _entry(malId: 2, title: 'One Piece'),
+    ]);
+    final FakeLibraryBackups backups = FakeLibraryBackups(saveResult: true);
+
+    await _pumpBackup(tester, repo: repo, backups: backups);
+    await _export(tester);
+
+    expect(find.text('Biblioteca exportada: 2 anime'), findsOneWidget);
+    expect(backups.savedEntries, await repo.findAll());
+    expect(backups.savedAt, _now);
+  });
+
+  testWidgets('says the library is empty without opening the save dialog', (
+    WidgetTester tester,
+  ) async {
+    final FakeLibraryBackups backups = FakeLibraryBackups(saveResult: true);
+
+    await _pumpBackup(tester, backups: backups);
+    await _export(tester);
+
+    expect(find.text('Tu biblioteca está vacía'), findsOneWidget);
+    expect(backups.savedEntries, isNull);
+  });
+
+  testWidgets('does nothing when the save is cancelled', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBackup(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_entry(malId: 1, title: 'Frieren')]),
+    );
+    await _export(tester);
+
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('reports an export failure', (WidgetTester tester) async {
+    await _pumpBackup(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_entry(malId: 1, title: 'Frieren')]),
+      backups: FakeLibraryBackups(saveError: StateError('write failed')),
+    );
+    await _export(tester);
+
+    expect(tester.takeException(), isA<StateError>());
+    expect(find.text('No se pudo exportar la biblioteca'), findsOneWidget);
+  });
+
+  testWidgets('finishes an export after the user leaves the screen', (
+    WidgetTester tester,
+  ) async {
+    final _PendingBackups backups = _PendingBackups();
+    final GoRouter router = await _pumpBackup(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_entry(malId: 1, title: 'Frieren')]),
+      backups: backups,
+    );
+
+    await tester.tap(find.text('Exportar biblioteca'));
+    await tester.pump();
+    router.go(RoutePaths.library);
+    await tester.pumpAndSettle();
+    backups.saved.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Biblioteca exportada: 1 anime'), findsOneWidget);
+  });
+
+  testWidgets('disables both actions while one is running', (
+    WidgetTester tester,
+  ) async {
+    final _PendingBackups backups = _PendingBackups();
+    await _pumpBackup(
+      tester,
+      repo: inMemoryLibrary(<Entry>[_entry(malId: 1, title: 'Frieren')]),
+      backups: backups,
+    );
+
+    await tester.tap(find.text('Exportar biblioteca'));
+    await tester.pump();
+
+    expect(_tile(tester, 'Exportar biblioteca').onTap, isNull);
+    expect(_tile(tester, 'Importar biblioteca').onTap, isNull);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    backups.saved.complete(false);
+    await tester.pumpAndSettle();
+
+    expect(_tile(tester, 'Exportar biblioteca').onTap, isNotNull);
+    expect(_tile(tester, 'Importar biblioteca').onTap, isNotNull);
+  });
+
   testWidgets('imports the picked file and reports a summary', (
     WidgetTester tester,
   ) async {
@@ -61,7 +193,7 @@ void main() {
     await _pumpBackup(
       tester,
       repo: repo,
-      backupSource: FakeLibraryBackupSource(
+      backups: FakeLibraryBackups(
         entries: <Entry>[
           _entry(malId: 1, title: 'Unchanged', updatedAt: DateTime(2024)),
           _entry(malId: 2, title: 'New', updatedAt: DateTime(2024, 6)),
@@ -85,8 +217,8 @@ void main() {
     await _pumpBackup(
       tester,
       repo: repo,
-      backupSource: const FakeLibraryBackupSource(
-        error: BackupFormatException('invalid format'),
+      backups: FakeLibraryBackups(
+        error: const BackupFormatException('invalid format'),
       ),
     );
     await _import(tester);
@@ -103,7 +235,7 @@ void main() {
   ) async {
     await _pumpBackup(
       tester,
-      backupSource: FakeLibraryBackupSource(error: StateError('read failed')),
+      backups: FakeLibraryBackups(error: StateError('read failed')),
     );
     await _import(tester);
 
@@ -115,18 +247,18 @@ void main() {
     WidgetTester tester,
   ) async {
     final InMemoryEntryRepository repo = inMemoryLibrary();
-    final _PendingBackupSource source = _PendingBackupSource();
+    final _PendingBackups backups = _PendingBackups();
     final GoRouter router = await _pumpBackup(
       tester,
       repo: repo,
-      backupSource: source,
+      backups: backups,
     );
 
     await tester.tap(find.text('Importar biblioteca'));
     await tester.pump();
     router.go(RoutePaths.library);
     await tester.pumpAndSettle();
-    source.completer.complete(<Entry>[_entry(malId: 2, title: 'New')]);
+    backups.picked.complete(<Entry>[_entry(malId: 2, title: 'New')]);
     await tester.pumpAndSettle();
 
     expect(await repo.findAll(), hasLength(1));

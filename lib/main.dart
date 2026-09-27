@@ -11,7 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'infrastructure/backup/file_picker_library_backup_source.dart';
+import 'infrastructure/backup/file_picker_library_backups.dart';
 import 'infrastructure/cache/caching_anime_relations.dart';
 import 'infrastructure/cache/relations_cache_database.dart';
 import 'infrastructure/cache/sqflite_relations_store.dart';
@@ -79,8 +79,8 @@ Future<void> main() async {
         entryRepositoryProvider.overrideWith(
           (Ref ref) => SqfliteEntryRepository(database),
         ),
-        libraryBackupSourceProvider.overrideWithValue(
-          const FilePickerLibraryBackupSource(),
+        libraryBackupsProvider.overrideWithValue(
+          const FilePickerLibraryBackups(),
         ),
         imageCacheManagerProvider.overrideWithValue(imageCache),
         imageCacheStorageProvider.overrideWithValue(

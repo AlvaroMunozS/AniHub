@@ -7,6 +7,7 @@ library;
 
 export 'add_entry.dart';
 export 'change_status.dart';
+export 'export_library.dart';
 export 'filter_library.dart';
 export 'filter_mode.dart';
 export 'find_started_entries.dart';

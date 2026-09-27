@@ -11,7 +11,7 @@ import '../domain/ports/app_installer.dart';
 import '../domain/ports/entry_repository.dart';
 import '../domain/ports/external_links.dart';
 import '../domain/ports/image_cache_storage.dart';
-import '../domain/ports/library_backup_source.dart';
+import '../domain/ports/library_backups.dart';
 import '../domain/ports/release_source.dart';
 
 // Providers that throw have no default implementation, so `lib/ui` never
@@ -47,9 +47,9 @@ final Provider<AnimeRelations> animeRelationsProvider =
       (Ref ref) => _notOverridden('animeRelationsProvider'),
     );
 
-final Provider<LibraryBackupSource> libraryBackupSourceProvider =
-    Provider<LibraryBackupSource>(
-      (Ref ref) => _notOverridden('libraryBackupSourceProvider'),
+final Provider<LibraryBackups> libraryBackupsProvider =
+    Provider<LibraryBackups>(
+      (Ref ref) => _notOverridden('libraryBackupsProvider'),
     );
 
 /// Disk cache for the covers shown by `CoverImage`.
@@ -82,6 +82,13 @@ final Provider<CheckForUpdate> checkForUpdateProvider =
 
 final Provider<ImportLibrary> importLibraryProvider = Provider<ImportLibrary>(
   (Ref ref) => ImportLibrary(ref.watch(entryRepositoryProvider)),
+);
+
+final Provider<ExportLibrary> exportLibraryProvider = Provider<ExportLibrary>(
+  (Ref ref) => ExportLibrary(
+    ref.watch(entryRepositoryProvider),
+    ref.watch(libraryBackupsProvider),
+  ),
 );
 
 final FutureProvider<PackageInfo> packageInfoProvider =
