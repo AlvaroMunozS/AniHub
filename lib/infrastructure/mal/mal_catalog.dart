@@ -12,8 +12,10 @@ import 'mal_mapping.dart';
 /// Queries shorter than [minQueryLength] return no results without a request,
 /// because MyAnimeList rejects them. Search sends `nsfw=true` because without
 /// it MyAnimeList also leaves out anime rated `gray`, which includes ordinary
-/// films and series; results rated `black` are hentai, which the app does not
-/// list. A search result without an id or a title is skipped.
+/// films and series. The app does not list hentai: anime with the `black`
+/// flag or the `rx` rating, since MyAnimeList flags some hentai only `gray`.
+/// Ecchi rated `r+` stays. A search result without an id or a title is
+/// skipped.
 ///
 /// The season endpoint only lists the anime that premiere in that season, so
 /// [airingIn] adds the `airing` ranking, which holds everything currently
@@ -30,10 +32,13 @@ class MalCatalog implements AnimeCatalog {
   static const String _searchFields =
       'alternative_titles,num_episodes,status,start_season,start_date';
 
+  /// What [_nodesOf] reads to leave out hentai.
+  static const String _contentFields = 'nsfw,rating';
+
   static const String _detailFields = '$_searchFields,synopsis,genres,studios';
 
   static const String _airingFields =
-      '$_searchFields,nsfw,media_type,broadcast,num_list_users';
+      '$_searchFields,$_contentFields,media_type,broadcast,num_list_users';
 
   /// Media types listed by [airingIn]; the rest are films, specials, music
   /// videos and commercials.
@@ -68,7 +73,7 @@ class MalCatalog implements AnimeCatalog {
       <String, String>{
         'q': term,
         'limit': '${min(limit, _maxLimit)}',
-        'fields': '$_searchFields,nsfw',
+        'fields': '$_searchFields,$_contentFields',
         'nsfw': 'true',
       },
     );
@@ -134,7 +139,7 @@ class MalCatalog implements AnimeCatalog {
   }
 
   /// Returns the anime nodes of a list response, skipping those without an
-  /// id or a title and those rated `black`.
+  /// id or a title and hentai.
   static Iterable<Map<String, Object?>> _nodesOf(Map<String, Object?>? body) {
     return switch (body) {
       {'data': final List<Object?> data} => <Map<String, Object?>>[
@@ -142,7 +147,8 @@ class MalCatalog implements AnimeCatalog {
           if (item case {'node': final Map<String, Object?> node}
               when node['id'] is int &&
                   parseTitle(node) != null &&
-                  node['nsfw'] != 'black')
+                  node['nsfw'] != 'black' &&
+                  node['rating'] != 'rx')
             node,
       ],
       _ => throw const CatalogResponseException('Malformed list response'),

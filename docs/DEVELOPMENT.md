@@ -171,8 +171,9 @@ an incompatible change may simply empty the table. On its first load,
   does not send them.
 - Without `nsfw=true`, search returns only anime rated `white`, which leaves
   out ordinary titles rated `gray`. The app sends it, asks for the `nsfw`
-  field and skips results rated `black` (hentai), so a search can return
-  fewer than `limit` results.
+  and `rating` fields and skips hentai, so a search can return fewer than
+  `limit` results. Hentai is flagged `black` or rated `rx`; some of it is
+  flagged only `gray`, so the flag alone misses it. Ecchi (`r+`) is kept.
 - `num_episodes` is `0` when the count is unknown. `start_date` may be `YYYY`,
   `YYYY-MM` or `YYYY-MM-DD`, and `start_season` may be missing.
 - There is no banner image; the details screen uses the cover as background.

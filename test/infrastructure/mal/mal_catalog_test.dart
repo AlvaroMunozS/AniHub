@@ -190,35 +190,48 @@ void main() {
       expect(request.queryParameters['q'], 'fullmetal');
       expect(request.queryParameters['limit'], '5');
       expect(request.queryParameters['nsfw'], 'true');
-      expect(request.queryParameters['fields']!.split(','), contains('nsfw'));
+      expect(
+        request.queryParameters['fields']!.split(','),
+        containsAll(<String>['nsfw', 'rating']),
+      );
     });
 
-    test(
-      'keeps anime rated white or gray and skips those rated black',
-      () async {
-        final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
-          _page(<Map<String, Object?>>[
-            <String, Object?>{
-              'id': 1,
-              'title': 'Cowboy Bebop',
-              'nsfw': 'white',
-            },
-            <String, Object?>{
-              'id': 50594,
-              'title': 'Suzume no Tojimari',
-              'nsfw': 'gray',
-            },
-            <String, Object?>{'id': 3, 'title': 'Hentai', 'nsfw': 'black'},
-            <String, Object?>{'id': 4, 'title': 'Unrated'},
-          ]),
-        ]);
+    test('keeps ecchi and skips hentai, flagged black or rated rx', () async {
+      final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
+        _page(<Map<String, Object?>>[
+          <String, Object?>{'id': 1, 'title': 'Cowboy Bebop', 'nsfw': 'white'},
+          <String, Object?>{
+            'id': 50594,
+            'title': 'Suzume no Tojimari',
+            'nsfw': 'gray',
+          },
+          <String, Object?>{
+            'id': 5042,
+            'title': 'Kiss x Sis',
+            'nsfw': 'gray',
+            'rating': 'r+',
+          },
+          <String, Object?>{'id': 3, 'title': 'Hentai', 'nsfw': 'black'},
+          <String, Object?>{
+            'id': 50622,
+            'title': 'Kemonokko Tsuushin',
+            'nsfw': 'gray',
+            'rating': 'rx',
+          },
+          <String, Object?>{'id': 4, 'title': 'Unrated'},
+        ]),
+      ]);
 
-        final List<CatalogAnime> results = await MalCatalog(server.client())
-            .search('anime');
+      final List<CatalogAnime> results = await MalCatalog(server.client())
+          .search('anime');
 
-        expect(results.map((CatalogAnime a) => a.malId), <int>[1, 50594, 4]);
-      },
-    );
+      expect(results.map((CatalogAnime a) => a.malId), <int>[
+        1,
+        50594,
+        5042,
+        4,
+      ]);
+    });
 
     test('caps the page size at 100', () async {
       final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
@@ -298,6 +311,7 @@ void main() {
       String status = 'currently_airing',
       Map<String, Object?>? broadcast,
       String? nsfw,
+      String? rating,
       int? members,
     }) => <String, Object?>{
       'id': id,
@@ -306,6 +320,7 @@ void main() {
       'status': status,
       'broadcast': ?broadcast,
       'nsfw': ?nsfw,
+      'rating': ?rating,
       'num_list_users': ?members,
     };
 
@@ -343,6 +358,7 @@ void main() {
             'media_type',
             'nsfw',
             'num_list_users',
+            'rating',
             'status',
           ]),
         );
@@ -369,7 +385,7 @@ void main() {
     });
 
     test(
-      'lists only series that have not finished, rated white or gray',
+      'lists only series that have not finished and are not hentai',
       () async {
         final FakeMalApi server = api(
           season: <Map<String, Object?>>[
@@ -379,6 +395,7 @@ void main() {
             series(4, 'Music video', mediaType: 'music'),
             series(5, 'Ended', status: 'finished_airing'),
             series(6, 'Hentai', nsfw: 'black'),
+            series(7, 'Hentai flagged gray', nsfw: 'gray', rating: 'rx'),
           ],
         );
 
