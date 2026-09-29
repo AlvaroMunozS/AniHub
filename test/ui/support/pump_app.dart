@@ -125,12 +125,13 @@ InMemoryEntryRepository inMemoryLibrary([
 
 /// Pumps [child] alone inside the app theme of [brightness] and a
 /// [Scaffold], in Spanish, with covers served by [cacheManager] and the
-/// providers in [overrides].
+/// providers in [overrides], with text scaled by [textScale].
 Future<void> pumpInScaffold(
   WidgetTester tester,
   Widget child, {
   BaseCacheManager? cacheManager,
   Brightness brightness = Brightness.dark,
+  double textScale = 1,
   List<Override> overrides = const <Override>[],
 }) {
   return tester.pumpWidget(
@@ -150,6 +151,11 @@ Future<void> pumpInScaffold(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: _testLocale,
+        builder: (BuildContext context, Widget? app) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: app!,
+        ),
         home: Scaffold(body: child),
       ),
     ),

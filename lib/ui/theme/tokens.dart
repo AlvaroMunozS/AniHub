@@ -64,7 +64,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       border: const Color(0xFFD4D4DA),
       textPrimary: const Color(0xFF17171A),
       textSecondary: const Color(0xFF5A5A64),
-      textFaint: const Color(0xFF8A8A94),
+      textFaint: const Color(0xFF6A6A74),
       accent: accent.light,
       onAccent: onAccentFor(accent.light),
       danger: const Color(0xFFC8404A),
@@ -77,7 +77,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const Color _darkBorder = Color(0xFF2E2E34);
   static const Color _darkTextPrimary = Color(0xFFF4F4F5);
   static const Color _darkTextSecondary = Color(0xFFA0A0AB);
-  static const Color _darkTextFaint = Color(0xFF6B6B75);
+  static const Color _darkTextFaint = Color(0xFF8A8A94);
   static const Color _darkDanger = Color(0xFFE5646B);
   static const Color _darkSuccess = Color(0xFF6FB08A);
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
@@ -16,13 +17,28 @@ const List<WatchStatus> _order = <WatchStatus>[
   WatchStatus.completed,
 ];
 
-/// Fits a [StatusActionButton]: an [AppSizes.iconLg] icon above a
-/// `labelMedium` label.
-const double _height = 64;
+/// Least height of the selector, which grows with the text scale.
+const double _minHeight = 64;
 
 /// Animation value below which, while closing, the other statuses are fully
 /// transparent. See [_StatusSelectorState._sideOpacity].
 const double _closeFadeThreshold = 0.6;
+
+/// Height of a [StatusActionButton] at the current text scale.
+///
+/// Measures a one-line label, which is what the button shows (`maxLines: 1`);
+/// change both together if the label may wrap.
+double _actionButtonHeight(BuildContext context) {
+  final TextPainter label = TextPainter(
+    text: TextSpan(text: 'A', style: Theme.of(context).textTheme.labelMedium),
+    textScaler: MediaQuery.textScalerOf(context),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final double height =
+      2 * AppSpacing.s8 + AppSizes.iconLg + AppSpacing.s4 + label.height;
+  label.dispose();
+  return height;
+}
 
 /// Expanding status picker.
 ///
@@ -102,6 +118,7 @@ class _StatusSelectorState extends State<StatusSelector>
 
   @override
   Widget build(BuildContext context) {
+    final double height = math.max(_minHeight, _actionButtonHeight(context));
     return TapRegion(
       onTapOutside: (PointerDownEvent _) => _collapse(),
       child: AnimatedBuilder(
@@ -117,7 +134,7 @@ class _StatusSelectorState extends State<StatusSelector>
           final double slot = widget.expandedWidth / _order.length;
 
           return SizedBox(
-            height: _height,
+            height: height,
             width: width,
             child: Stack(
               clipBehavior: Clip.none,
@@ -239,6 +256,7 @@ class StatusActionButton extends StatelessWidget {
         children: <Widget>[
           Icon(icon, size: AppSizes.iconLg, color: color),
           const SizedBox(height: AppSpacing.s4),
+          // One line, as `_actionButtonHeight` measures.
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium
