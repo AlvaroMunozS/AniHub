@@ -188,25 +188,22 @@ void main() {
     expect(result.isFavorite, isTrue);
   });
 
-  test(
-    'keeps a local edit made after importing a future-dated entry',
-    () async {
-      final List<Entry> file = <Entry>[
-        _entry(malId: 1, updatedAt: DateTime.utc(2027, 9, 29)),
-      ];
-      await importLibrary(file);
+  test('does not revert a local edit when the same future-dated file is imported again', () async {
+    final List<Entry> file = <Entry>[
+      _entry(malId: 1, updatedAt: DateTime.utc(2027, 9, 29)),
+    ];
+    await importLibrary(file);
 
-      now = now.add(const Duration(hours: 1));
-      final Entry imported = (await repository.findAll()).single;
-      await repository.save(imported.withStatus(WatchStatus.completed));
-      now = now.add(const Duration(hours: 1));
+    now = now.add(const Duration(hours: 1));
+    final Entry imported = (await repository.findAll()).single;
+    await repository.save(imported.withStatus(WatchStatus.completed));
+    now = now.add(const Duration(hours: 1));
 
-      final ImportSummary summary = await importLibrary(file);
+    final ImportSummary summary = await importLibrary(file);
 
-      expect(summary.updated, 0);
-      expect((await repository.findAll()).single.status, WatchStatus.completed);
-    },
-  );
+    expect(summary.updated, 0);
+    expect((await repository.findAll()).single.status, WatchStatus.completed);
+  });
 
   test('keeps an incoming date within the clock tolerance as it is', () async {
     final DateTime ahead = now.add(const Duration(hours: 23));
@@ -231,4 +228,37 @@ void main() {
       expect(summary.updated, 0);
     },
   );
+
+  test('stores a new future-dated entry with the current time', () async {
+    await importLibrary(<Entry>[
+      _entry(malId: 1, updatedAt: DateTime.utc(2027, 9, 29)),
+    ]);
+
+    expect((await repository.findAll()).single.updatedAt, now);
+  });
+
+  test('leaves a local entry unchanged for a future-dated one', () async {
+    seed(<Entry>[
+      _entry(
+        id: 'local-1',
+        malId: 1,
+        title: 'Old title',
+        updatedAt: DateTime.utc(2020),
+      ),
+    ]);
+
+    final ImportSummary summary = await importLibrary(<Entry>[
+      _entry(
+        malId: 1,
+        title: 'New title',
+        updatedAt: DateTime.utc(2027, 9, 29),
+      ),
+    ]);
+
+    expect(summary.unchanged, 1);
+    expect(summary.updated, 0);
+    final Entry result = (await repository.findAll()).single;
+    expect(result.title, 'Old title');
+    expect(result.updatedAt, DateTime.utc(2020));
+  });
 }
