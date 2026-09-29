@@ -171,5 +171,8 @@
   "aboutUpdateRateLimited": "GitHub is limiting requests. Try again later",
   "aboutUpdateDownloadFailed": "Could not download the update",
   "aboutUpdateChecksumFailed": "The download is corrupted. Try again",
-  "aboutUpdateInstallFailed": "Could not install the update"
+  "aboutUpdateInstallFailed": "Could not install the update",
+
+  "startupErrorTitle": "Could not open your library",
+  "startupErrorMessage": "Close the app and open it again. If it keeps happening, restart your phone or free up storage space. Your library has not been deleted."
 }
