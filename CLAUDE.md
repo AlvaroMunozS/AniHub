@@ -57,20 +57,23 @@ is in [CONTRIBUTING.md](CONTRIBUTING.md#scope).
 
 ## Superpowers
 
-- New features and bug fixes follow `brainstorming`, `writing-plans` and
-  `test-driven-development`, executed with `subagent-driven-development`, or
-  `executing-plans` for small changes.
-- Every behaviour change starts with a test that fails for the expected
+- Every new feature and bug fix, whatever its size, is written with the
+  Superpowers skill `test-driven-development`.
+- Larger changes first go through `brainstorming` and `writing-plans`, and the
+  plan is executed with `subagent-driven-development`. Small changes need no
+  plan: the maintainer approves a short design in the conversation.
+- Every behavior change starts with a test that fails for the expected
   reason; show the failing and then the passing output before calling it done.
   A bug fix starts with a test that reproduces the bug.
 - Specs and plans are saved as `PLAN-<topic>.md` at the repository root, never
   under `docs/superpowers/`, and are not committed. The maintainer approves
   them before implementation starts.
-- The rule applies to what a change touches. Existing code and tests are not
-  rewritten only to meet it.
-- The review in Workflow 6 uses `requesting-code-review`.
-  `finishing-a-development-branch` always takes the pull request option; never
-  merge locally.
+- The test-first rule applies to what a change touches. Existing code and
+  tests are not rewritten only to meet it.
+- The review in Workflow 6 uses `requesting-code-review`. The agent that opens
+  the pull request runs `finishing-a-development-branch` and always takes the
+  pull request option, never a local merge; in parallel tracks, track agents
+  stop and report instead.
 
 ## Commands
 
