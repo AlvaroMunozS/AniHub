@@ -9,26 +9,22 @@ import 'sqflite_relations_store.dart';
 
 /// Opens the relations store on `cache.db`, or one held in memory when the
 /// file cannot be opened.
-Future<RelationsStore> openRelationsStore(SharedPreferences prefs) async {
-  return openRelationsStoreAt(
-    databaseFactory,
-    await relationsCachePath(),
-    prefs,
-  );
-}
-
-/// Like [openRelationsStore], with the [factory] and [path] to open.
 ///
 /// The cache is optional: without it relations are fetched again on every
-/// launch, which is better than an app that does not start.
-Future<RelationsStore> openRelationsStoreAt(
-  DatabaseFactory factory,
-  String path,
-  SharedPreferences prefs,
-) async {
+/// launch, which is better than an app that does not start. That includes not
+/// finding where the file lives, so [locate] runs inside the guard. [factory]
+/// and [locate] default to the device's; tests pass their own.
+Future<RelationsStore> openRelationsStore(
+  SharedPreferences prefs, {
+  DatabaseFactory? factory,
+  Future<String> Function() locate = relationsCachePath,
+}) async {
   try {
     return SqfliteRelationsStore(
-      await openRelationsCacheDatabaseAt(factory, path),
+      await openRelationsCacheDatabaseAt(
+        factory ?? databaseFactory,
+        await locate(),
+      ),
       prefs,
     );
   } on Object catch (error) {

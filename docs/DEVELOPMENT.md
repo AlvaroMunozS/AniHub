@@ -100,8 +100,10 @@ The relation graph from MyAnimeList is cached in a second database,
 `cache.db`, opened by `openRelationsStore()` in
 `lib/infrastructure/cache/relations_store_opener.dart`. A corrupt file is
 deleted and recreated; if it still cannot be opened the app runs with an
-in-memory store. `library.db` is never deleted: if it cannot be opened the
-app shows an error screen (`StartupErrorApp`). The cache holds one row per
+in-memory store, also when the database folder cannot be found. `library.db`
+is never deleted: if it cannot be opened, or any other startup step fails
+(`startAniHub` in `lib/main.dart`), the app shows an error screen
+(`StartupErrorApp`) instead of the splash. The cache holds one row per
 anime, so each fetched chunk writes only its own nodes:
 
 ```sql

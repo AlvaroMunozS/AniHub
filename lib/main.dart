@@ -64,72 +64,76 @@ void _registerFontLicense() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _registerFontLicense();
+  runApp(await startAniHub(_buildApp));
+}
+
+/// Builds the app with [build], or the error screen when any startup step
+/// throws, so that a failure never leaves the splash screen up.
+@visibleForTesting
+Future<Widget> startAniHub(Future<Widget> Function() build) async {
+  try {
+    return await build();
+  } on Object catch (error, stack) {
+    debugPrint('Startup failed: $error\n$stack');
+    return const StartupErrorApp();
+  }
+}
+
+Future<Widget> _buildApp() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   // Opened once for the lifetime of the process and never closed explicitly;
   // the OS releases them when the process dies. The library file is never
-  // deleted, so a failure to open it stops here with a message instead of
-  // leaving the splash screen up.
-  final Database database;
-  try {
-    database = await openAniHubDatabase();
-  } on Object catch (error, stack) {
-    debugPrint('Library database could not be opened: $error\n$stack');
-    runApp(const StartupErrorApp());
-    return;
-  }
+  // deleted, so a failure to open it ends in the error screen.
+  final Database database = await openAniHubDatabase();
   final RelationsStore relationsStore = await openRelationsStore(prefs);
   final Directory cacheDir = await getTemporaryDirectory();
   final AniHubImageCache imageCache = AniHubImageCache();
-  runApp(
-    ProviderScope(
-      overrides: <Override>[
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        entryRepositoryProvider.overrideWith(
-          (Ref ref) => SqfliteEntryRepository(database),
+  return ProviderScope(
+    overrides: <Override>[
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entryRepositoryProvider.overrideWith(
+        (Ref ref) => SqfliteEntryRepository(database),
+      ),
+      libraryBackupsProvider.overrideWithValue(
+        const FilePickerLibraryBackups(),
+      ),
+      imageCacheManagerProvider.overrideWithValue(imageCache),
+      imageCacheStorageProvider.overrideWithValue(
+        CacheManagerImageCacheStorage(
+          imageCache,
+          // Where `flutter_cache_manager` keeps the files of a cache by
+          // default.
+          Directory(p.join(cacheDir.path, AniHubImageCache.key)),
         ),
-        libraryBackupsProvider.overrideWithValue(
-          const FilePickerLibraryBackups(),
-        ),
-        imageCacheManagerProvider.overrideWithValue(imageCache),
-        imageCacheStorageProvider.overrideWithValue(
-          CacheManagerImageCacheStorage(
-            imageCache,
-            // Where `flutter_cache_manager` keeps the files of a cache by
-            // default.
-            Directory(p.join(cacheDir.path, AniHubImageCache.key)),
-          ),
-        ),
-        externalLinksProvider.overrideWithValue(
-          const UrlLauncherExternalLinks(),
-        ),
-        releaseSourceProvider.overrideWith((Ref ref) {
-          return GitHubReleaseSource(
+      ),
+      externalLinksProvider.overrideWithValue(const UrlLauncherExternalLinks()),
+      releaseSourceProvider.overrideWith((Ref ref) {
+        return GitHubReleaseSource(
+          ref.watch(_httpClientProvider),
+          timeout: const Duration(seconds: 10),
+        );
+      }),
+      appInstallerProvider.overrideWith((Ref ref) {
+        return AndroidAppInstaller(
+          ApkDownloader(
             ref.watch(_httpClientProvider),
-            timeout: const Duration(seconds: 10),
-          );
-        }),
-        appInstallerProvider.overrideWith((Ref ref) {
-          return AndroidAppInstaller(
-            ApkDownloader(
-              ref.watch(_httpClientProvider),
-              directory: cacheDir,
-              timeout: const Duration(seconds: 30),
-            ),
-            const PlatformPackageInstaller(),
-          );
-        }),
-        animeCatalogProvider.overrideWith((Ref ref) {
-          return MalCatalog(ref.watch(_malClientProvider));
-        }),
-        animeRelationsProvider.overrideWith((Ref ref) {
-          return CachingAnimeRelations(
-            MalRelations(ref.watch(_malClientProvider)),
-            relationsStore,
-          );
-        }),
-      ],
-      child: const AniHubApp(),
-    ),
+            directory: cacheDir,
+            timeout: const Duration(seconds: 30),
+          ),
+          const PlatformPackageInstaller(),
+        );
+      }),
+      animeCatalogProvider.overrideWith((Ref ref) {
+        return MalCatalog(ref.watch(_malClientProvider));
+      }),
+      animeRelationsProvider.overrideWith((Ref ref) {
+        return CachingAnimeRelations(
+          MalRelations(ref.watch(_malClientProvider)),
+          relationsStore,
+        );
+      }),
+    ],
+    child: const AniHubApp(),
   );
 }
 

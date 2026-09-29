@@ -44,10 +44,13 @@ Future<Database> openRelationsCacheDatabaseAt(
   }
 }
 
-// SQLITE_CORRUPT and SQLITE_NOTADB.
+// SQLITE_CORRUPT and SQLITE_NOTADB. Android and ffi report extended result
+// codes, whose low byte is the primary one.
 bool _isCorruption(DatabaseException error) {
   final int? code = error.getResultCode();
-  return code == 11 || code == 26;
+  if (code == null) return false;
+  final int primary = code & 0xFF;
+  return primary == 11 || primary == 26;
 }
 
 /// Creates the relation cache tables and indexes in an empty [db].
