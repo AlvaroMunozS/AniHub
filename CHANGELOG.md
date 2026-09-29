@@ -14,6 +14,7 @@ All notable changes to AniHub are documented here. The format follows
 
 ### Fixed
 
+- *Browse* airing times now follow daylight saving changes and time zone changes when you reopen the app, instead of staying wrong until it restarts. Episodes that already aired today now show next week's time.
 - The app no longer stays on the splash screen when it fails to start. If the library cannot be opened it says so, and a damaged relations cache no longer keeps the app from opening.
 - *Import library* no longer lets an entry with a date in the future overwrite your later changes on every import.
 - With a large system text size, the status picker on the detail screen no longer overflows, and hints and secondary labels are easier to read.

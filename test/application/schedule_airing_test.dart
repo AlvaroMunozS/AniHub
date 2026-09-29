@@ -83,6 +83,106 @@ void main() {
     expect(asked, <DateTime>[DateTime.utc(2026, 9, 25, 16)]);
   });
 
+  test(
+    'converts a slot after a daylight saving change with the new offset',
+    () {
+      // Madrid leaves summer time on 25 October 2026 at 01:00 UTC.
+      final ScheduleAiring madrid = ScheduleAiring(
+        localOffset: (DateTime utc) =>
+            utc.isBefore(DateTime.utc(2026, 10, 25, 1))
+            ? const Duration(hours: 2)
+            : const Duration(hours: 1),
+      );
+
+      final AiringSchedule schedule = madrid(<CatalogAnime>[
+        _anime(
+          1,
+          'Kaiju',
+          const Broadcast(weekday: DateTime.monday, hour: 0, minute: 30),
+        ),
+      ], now: DateTime.utc(2026, 10, 22, 12));
+
+      final ScheduledAnime item = schedule.byWeekday[DateTime.sunday]!.single;
+      expect((item.hour, item.minute), (16, 30));
+    },
+  );
+
+  test('rolls a slot that has passed today to next week', () {
+    // It is 21:00 in Japan on Thursday, an hour after the slot.
+    final List<DateTime> asked = <DateTime>[];
+    ScheduleAiring(
+      localOffset: (DateTime utc) {
+        asked.add(utc);
+        return Duration.zero;
+      },
+    )(<CatalogAnime>[
+      _anime(
+        1,
+        'Frieren',
+        const Broadcast(weekday: DateTime.thursday, hour: 20, minute: 0),
+      ),
+    ], now: _now);
+
+    expect(asked, <DateTime>[DateTime.utc(2026, 10, 1, 11)]);
+  });
+
+  test('rolls a slot that airs at this very instant to next week', () {
+    final List<DateTime> asked = <DateTime>[];
+    ScheduleAiring(
+      localOffset: (DateTime utc) {
+        asked.add(utc);
+        return Duration.zero;
+      },
+    )(<CatalogAnime>[
+      _anime(
+        1,
+        'Frieren',
+        const Broadcast(weekday: DateTime.thursday, hour: 20, minute: 0),
+      ),
+    ], now: DateTime.utc(2026, 9, 24, 11));
+
+    expect(asked, <DateTime>[DateTime.utc(2026, 10, 1, 11)]);
+  });
+
+  test('uses next week\'s offset for a slot that has passed today', () {
+    // It is 21:00 in Japan on Saturday 24 October; Madrid changes its clocks
+    // that night.
+    final ScheduleAiring madrid = ScheduleAiring(
+      localOffset: (DateTime utc) => utc.isBefore(DateTime.utc(2026, 10, 25, 1))
+          ? const Duration(hours: 2)
+          : const Duration(hours: 1),
+    );
+
+    final AiringSchedule schedule = madrid(<CatalogAnime>[
+      _anime(
+        1,
+        'Frieren',
+        const Broadcast(weekday: DateTime.saturday, hour: 20, minute: 0),
+      ),
+    ], now: DateTime.utc(2026, 10, 24, 12));
+
+    final ScheduledAnime item = schedule.byWeekday[DateTime.saturday]!.single;
+    expect((item.hour, item.minute), (12, 0));
+  });
+
+  test('looks ahead to a weekday later in the week, never back', () {
+    final List<DateTime> asked = <DateTime>[];
+    ScheduleAiring(
+      localOffset: (DateTime utc) {
+        asked.add(utc);
+        return Duration.zero;
+      },
+    )(<CatalogAnime>[
+      _anime(
+        1,
+        'Frieren',
+        const Broadcast(weekday: DateTime.tuesday, hour: 20, minute: 0),
+      ),
+    ], now: _now);
+
+    expect(asked, <DateTime>[DateTime.utc(2026, 9, 29, 11)]);
+  });
+
   test('orders each day by members, then by title, unknown counts last', () {
     const Broadcast sunday = Broadcast(
       weekday: DateTime.sunday,
