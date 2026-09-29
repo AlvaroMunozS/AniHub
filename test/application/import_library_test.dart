@@ -194,12 +194,12 @@ void main() {
       final List<Entry> file = <Entry>[
         _entry(malId: 1, updatedAt: DateTime.utc(2027, 9, 29)),
       ];
-      seed(const <Entry>[]);
       await importLibrary(file);
 
       now = now.add(const Duration(hours: 1));
       final Entry imported = (await repository.findAll()).single;
       await repository.save(imported.withStatus(WatchStatus.completed));
+      now = now.add(const Duration(hours: 1));
 
       final ImportSummary summary = await importLibrary(file);
 
@@ -215,4 +215,20 @@ void main() {
 
     expect((await repository.findAll()).single.updatedAt, ahead);
   });
+
+  test(
+    'reports an unedited future-dated entry as unchanged on re-import',
+    () async {
+      final List<Entry> file = <Entry>[
+        _entry(malId: 1, updatedAt: DateTime.utc(2027, 9, 29)),
+      ];
+      await importLibrary(file);
+      now = now.add(const Duration(hours: 1));
+
+      final ImportSummary summary = await importLibrary(file);
+
+      expect(summary.unchanged, 1);
+      expect(summary.updated, 0);
+    },
+  );
 }
