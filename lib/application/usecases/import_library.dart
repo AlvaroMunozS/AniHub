@@ -24,12 +24,24 @@ class ImportSummary {
 /// one (keeping the local `id`) if its `updatedAt` is strictly newer, and is
 /// ignored otherwise. Local entries are never deleted.
 ///
+/// An incoming `updatedAt` more than [futureTolerance] ahead of the clock is
+/// taken as now, so a file from a device with a fast clock cannot keep
+/// overwriting later local edits.
+///
 /// Writes go through [EntryRepository.upsertAll] so that imported timestamps
 /// are preserved.
 class ImportLibrary {
-  const ImportLibrary(this._repository);
+  const ImportLibrary(this._repository, this._now);
+
+  static const Duration futureTolerance = Duration(hours: 24);
 
   final EntryRepository _repository;
+  final DateTime Function() _now;
+
+  Entry _clamped(Entry entry, DateTime now) =>
+      entry.updatedAt.isAfter(now.add(futureTolerance))
+      ? entry.copyWith(updatedAt: now)
+      : entry;
 
   Future<ImportSummary> call(List<Entry> entries) async {
     final List<Entry> existing = await _repository.findAll();
@@ -37,12 +49,14 @@ class ImportLibrary {
       for (final Entry entry in existing) entry.malId: entry,
     };
 
+    final DateTime now = _now();
     final List<Entry> toPersist = <Entry>[];
     int added = 0;
     int updated = 0;
     int unchanged = 0;
 
-    for (final Entry incoming in entries) {
+    for (final Entry raw in entries) {
+      final Entry incoming = _clamped(raw, now);
       final Entry? current = byMalId[incoming.malId];
       if (current == null) {
         toPersist.add(incoming);

@@ -26,15 +26,19 @@ Entry _entry({
 void main() {
   late InMemoryEntryRepository repository;
   late ImportLibrary importLibrary;
+  late DateTime now;
 
   // Seeds through the constructor because `save` overwrites `updatedAt`.
   void seed(List<Entry> local) {
-    repository = InMemoryEntryRepository(seed: local);
+    repository = InMemoryEntryRepository(seed: local, now: () => now);
     addTearDown(repository.dispose);
-    importLibrary = ImportLibrary(repository);
+    importLibrary = ImportLibrary(repository, () => now);
   }
 
-  setUp(() => seed(const <Entry>[]));
+  setUp(() {
+    now = DateTime.utc(2026, 9, 29);
+    seed(const <Entry>[]);
+  });
 
   test('adds every entry to an empty library with a fresh id', () async {
     final ImportSummary summary = await importLibrary(<Entry>[
@@ -182,5 +186,33 @@ void main() {
     final Entry result = (await repository.findAll()).single;
     expect(result.status, WatchStatus.completed);
     expect(result.isFavorite, isTrue);
+  });
+
+  test(
+    'keeps a local edit made after importing a future-dated entry',
+    () async {
+      final List<Entry> file = <Entry>[
+        _entry(malId: 1, updatedAt: DateTime.utc(2027, 9, 29)),
+      ];
+      seed(const <Entry>[]);
+      await importLibrary(file);
+
+      now = now.add(const Duration(hours: 1));
+      final Entry imported = (await repository.findAll()).single;
+      await repository.save(imported.withStatus(WatchStatus.completed));
+
+      final ImportSummary summary = await importLibrary(file);
+
+      expect(summary.updated, 0);
+      expect((await repository.findAll()).single.status, WatchStatus.completed);
+    },
+  );
+
+  test('keeps an incoming date within the clock tolerance as it is', () async {
+    final DateTime ahead = now.add(const Duration(hours: 23));
+
+    await importLibrary(<Entry>[_entry(malId: 1, updatedAt: ahead)]);
+
+    expect((await repository.findAll()).single.updatedAt, ahead);
   });
 }

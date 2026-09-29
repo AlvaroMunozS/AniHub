@@ -151,6 +151,9 @@ and *Import library* reads one:
   is used.
 - Entries are merged by `malId`. New series are added. An existing entry is
   replaced only when the file's `updatedAt` is newer. Nothing is deleted.
+- An `updatedAt` more than 24 hours ahead of the device's clock is read as the
+  current time, so a file with a wrong date cannot keep overwriting later
+  edits.
 
 The export saves every entry, in every status, through the system's save
 dialog, so the file can go to the device or to a cloud storage app.

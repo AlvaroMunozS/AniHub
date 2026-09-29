@@ -170,7 +170,10 @@ void main() {
       final List<Entry> decoded = decodeLibraryBackup(
         encodeLibraryBackup(stored, exportedAt: _exportedAt),
       );
-      final ImportSummary summary = await ImportLibrary(repository)(decoded);
+      final ImportSummary summary = await ImportLibrary(
+        repository,
+        DateTime.now,
+      )(decoded);
 
       expect(decoded, unorderedEquals(stored.map(_withoutId)));
       expect(summary.added, 0);

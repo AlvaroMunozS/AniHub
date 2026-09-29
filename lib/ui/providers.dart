@@ -81,7 +81,10 @@ final Provider<CheckForUpdate> checkForUpdateProvider =
     );
 
 final Provider<ImportLibrary> importLibraryProvider = Provider<ImportLibrary>(
-  (Ref ref) => ImportLibrary(ref.watch(entryRepositoryProvider)),
+  (Ref ref) => ImportLibrary(
+    ref.watch(entryRepositoryProvider),
+    ref.watch(clockProvider),
+  ),
 );
 
 final Provider<ExportLibrary> exportLibraryProvider = Provider<ExportLibrary>(
