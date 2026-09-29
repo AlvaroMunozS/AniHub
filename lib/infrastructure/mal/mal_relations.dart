@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../domain/entities/anime_relation.dart';
 import '../../domain/entities/anime_relation_node.dart';
+import '../../domain/errors/catalog_exception.dart';
 import '../../domain/ports/anime_relations.dart';
 import '../../domain/values/relation_kind.dart';
 import 'mal_client.dart';
@@ -12,6 +13,11 @@ import 'mal_mapping.dart';
 /// MyAnimeList has no batch lookup, so each id costs one request. At most
 /// [concurrency] requests run at a time. Results are not cached here; wrap it
 /// in `CachingAnimeRelations` for that.
+///
+/// An id answered with an unexpected status or an unreadable or malformed body
+/// is left out of the result, unless no id resolved, in which case that
+/// failure is rethrown. Any other failure, such as a network error, a timeout,
+/// a rate limit or missing credentials, is rethrown at once.
 class MalRelations implements AnimeRelations {
   MalRelations(this._client, {this.concurrency = 4})
     : assert(concurrency > 0, 'concurrency must be positive');
@@ -29,6 +35,7 @@ class MalRelations implements AnimeRelations {
     final Set<int> ids = malIds.toSet();
     final Map<int, AnimeRelationNode> resolved = <int, AnimeRelationNode>{};
     final Iterator<int> pending = ids.iterator;
+    CatalogResponseException? lastSkipped;
     bool failed = false;
 
     Future<void> worker() async {
@@ -40,6 +47,11 @@ class MalRelations implements AnimeRelations {
             <String, String>{'fields': _fields},
           );
           if (body != null) resolved[id] = _toNode(body);
+        } on CatalogResponseException catch (error) {
+          // A response MyAnimeList cannot serve for this id only affects that
+          // id, and it would fail again on every load, so it must not block
+          // the others.
+          lastSkipped = error;
         } on Object {
           failed = true;
           rethrow;
@@ -50,6 +62,9 @@ class MalRelations implements AnimeRelations {
     await Future.wait(<Future<void>>[
       for (int i = 0; i < min(concurrency, ids.length); i++) worker(),
     ]);
+    // When nothing resolved, the failure is probably an outage rather than a
+    // bad id, and returning an empty result would hide it from the caller.
+    if (resolved.isEmpty && lastSkipped != null) throw lastSkipped!;
     return resolved;
   }
 
