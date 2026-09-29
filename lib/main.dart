@@ -13,8 +13,8 @@ import 'package:sqflite/sqflite.dart';
 
 import 'infrastructure/backup/file_picker_library_backups.dart';
 import 'infrastructure/cache/caching_anime_relations.dart';
-import 'infrastructure/cache/relations_cache_database.dart';
-import 'infrastructure/cache/sqflite_relations_store.dart';
+import 'infrastructure/cache/relations_store.dart';
+import 'infrastructure/cache/relations_store_opener.dart';
 import 'infrastructure/github/github_release_source.dart';
 import 'infrastructure/images/anihub_image_cache.dart';
 import 'infrastructure/images/cache_manager_image_cache_storage.dart';
@@ -30,6 +30,7 @@ import 'l10n/l10n.dart';
 import 'ui/locale_resolution.dart';
 import 'ui/providers.dart';
 import 'ui/router.dart';
+import 'ui/startup_error_app.dart';
 import 'ui/state/settings_providers.dart';
 import 'ui/theme/app_theme.dart';
 
@@ -65,11 +66,18 @@ Future<void> main() async {
   _registerFontLicense();
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   // Opened once for the lifetime of the process and never closed explicitly;
-  // the OS releases them when the process dies.
-  final (Database database, Database cacheDatabase) = await (
-    openAniHubDatabase(),
-    openRelationsCacheDatabase(),
-  ).wait;
+  // the OS releases them when the process dies. The library file is never
+  // deleted, so a failure to open it stops here with a message instead of
+  // leaving the splash screen up.
+  final Database database;
+  try {
+    database = await openAniHubDatabase();
+  } on Object catch (error, stack) {
+    debugPrint('Library database could not be opened: $error\n$stack');
+    runApp(const StartupErrorApp());
+    return;
+  }
+  final RelationsStore relationsStore = await openRelationsStore(prefs);
   final Directory cacheDir = await getTemporaryDirectory();
   final AniHubImageCache imageCache = AniHubImageCache();
   runApp(
@@ -116,10 +124,7 @@ Future<void> main() async {
         animeRelationsProvider.overrideWith((Ref ref) {
           return CachingAnimeRelations(
             MalRelations(ref.watch(_malClientProvider)),
-            SqfliteRelationsStore(
-              cacheDatabase,
-              ref.watch(sharedPreferencesProvider),
-            ),
+            relationsStore,
           );
         }),
       ],

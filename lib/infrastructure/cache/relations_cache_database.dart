@@ -12,23 +12,20 @@ const int _schemaVersion = 1;
 /// Table of cached relation nodes, one row per anime.
 const String relationNodesTable = 'relation_nodes';
 
-/// Opens the relation cache database, creating its schema on first launch.
+/// Where the relation cache database lives.
 ///
 /// Kept apart from the library database so that the cache never takes part
 /// in the library's migrations and can be dropped without touching it.
-Future<Database> openRelationsCacheDatabase() async {
-  return openRelationsCacheDatabaseAt(
-    databaseFactory,
-    p.join(await getDatabasesPath(), _databaseFileName),
-  );
-}
+Future<String> relationsCachePath() async =>
+    p.join(await getDatabasesPath(), _databaseFileName);
 
-/// Opens the relation cache database at [path] with [factory], deleting and
-/// recreating it once if it cannot be opened.
+/// Opens the relation cache database at [path] with [factory], creating its
+/// schema on first launch.
 ///
-/// Everything in the cache can be fetched again, so a corrupt file must not
-/// keep the app from starting. Public so that tests can pass their own
-/// factory and path.
+/// Everything in the cache can be fetched again, so a corrupt file is deleted
+/// and recreated once. Any other error, such as a full disk or a permission
+/// problem, is rethrown without touching the file, since deleting it would
+/// not help. Public so that tests can pass their own factory and path.
 Future<Database> openRelationsCacheDatabaseAt(
   DatabaseFactory factory,
   String path,
@@ -39,11 +36,18 @@ Future<Database> openRelationsCacheDatabaseAt(
   );
   try {
     return await factory.openDatabase(path, options: options);
-  } on Object catch (error) {
+  } on DatabaseException catch (error) {
+    if (!_isCorruption(error)) rethrow;
     debugPrint('Relations cache recreated: $error');
     await factory.deleteDatabase(path);
     return factory.openDatabase(path, options: options);
   }
+}
+
+// SQLITE_CORRUPT and SQLITE_NOTADB.
+bool _isCorruption(DatabaseException error) {
+  final int? code = error.getResultCode();
+  return code == 11 || code == 26;
 }
 
 /// Creates the relation cache tables and indexes in an empty [db].
