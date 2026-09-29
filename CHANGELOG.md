@@ -14,8 +14,10 @@ All notable changes to AniHub are documented here. The format follows
 
 ### Fixed
 
+- The app no longer stays on the splash screen when it fails to start. If the library cannot be opened it says so, and a damaged relations cache no longer keeps the app from opening.
 - *Import library* no longer lets an entry with a date in the future overwrite your later changes on every import.
 - With a large system text size, the status picker on the detail screen no longer overflows, and hints and secondary labels are easier to read.
+- One anime that MyAnimeList fails to serve no longer stops the rest of your library from being grouped with its related anime.
 
 ## [1.3.0] - 2026-09-25
 
