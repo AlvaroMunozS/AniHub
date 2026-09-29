@@ -41,8 +41,9 @@ class AiringSchedule {
 ///
 /// Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
 /// fall on the previous day elsewhere. Each one is converted at its next
-/// occurrence from `now`, so the offset in force then, daylight saving time
-/// included, is the one used.
+/// occurrence after `now`, so the offset in force then, daylight saving time
+/// included, is the one used. A slot that has already aired today counts as
+/// next week's.
 class ScheduleAiring {
   const ScheduleAiring({this.localOffset = _deviceOffset});
 
@@ -103,13 +104,22 @@ class ScheduleAiring {
     // device time zone.
     final DateTime nowJst = nowUtc.add(_jstOffset);
     final int daysAhead = (broadcast.weekday - nowJst.weekday) % 7;
-    final DateTime slotJst = DateTime.utc(
+    DateTime slotJst = DateTime.utc(
       nowJst.year,
       nowJst.month,
       nowJst.day + daysAhead,
       hour,
       minute,
     );
+    if (!slotJst.isAfter(nowJst)) {
+      slotJst = DateTime.utc(
+        slotJst.year,
+        slotJst.month,
+        slotJst.day + DateTime.daysPerWeek,
+        hour,
+        minute,
+      );
+    }
     final DateTime slotUtc = slotJst.subtract(_jstOffset);
     final DateTime local = slotUtc.add(localOffset(slotUtc));
     return (

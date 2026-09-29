@@ -447,6 +447,41 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('converts the times again when the time zone changes', (
+      WidgetTester tester,
+    ) async {
+      Duration offset = const Duration(hours: 2);
+      final FakeAnimeCatalog catalog = FakeAnimeCatalog(airing: _airing);
+      await pumpApp(
+        tester,
+        catalog: catalog,
+        initialLocation: RoutePaths.search,
+        overrides: <Override>[
+          clockProvider.overrideWithValue(() => _now),
+          scheduleAiringProvider.overrideWithValue(
+            ScheduleAiring(localOffset: (DateTime utc) => offset),
+          ),
+        ],
+      );
+      expect(find.text('15:00'), findsOneWidget);
+
+      offset = const Duration(hours: 9);
+      for (final AppLifecycleState state in <AppLifecycleState>[
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.text('22:00'), findsOneWidget);
+      expect(catalog.airingRequests, hasLength(1));
+    });
+
     testWidgets('keeps the list when a refresh fails, without retrying', (
       WidgetTester tester,
     ) async {

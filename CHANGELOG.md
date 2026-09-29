@@ -14,6 +14,7 @@ All notable changes to AniHub are documented here. The format follows
 
 ### Fixed
 
+- *Browse* airing times now follow daylight saving changes and time zone changes when you reopen the app, instead of staying wrong until it restarts. An episode that has already aired today is shown at next week's time.
 - *Import library* no longer lets an entry with a date in the future overwrite your later changes on every import.
 
 ## [1.3.0] - 2026-09-25

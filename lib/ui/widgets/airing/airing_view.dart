@@ -25,9 +25,10 @@ const double _todayDotSize = 5;
 /// This season's airing anime, one tab per local weekday, opening on today.
 ///
 /// Anime in [inLibrary] are dimmed, as in search results. The season and
-/// today are read from the clock on every build and again when the app
-/// returns to the foreground, since the app can stay open across midnight or
-/// into a new season.
+/// today are read from the clock on every build, and the broadcast times are
+/// converted again when the app returns to the foreground, since the app can
+/// stay open across midnight, a season, a daylight saving change or a move to
+/// another time zone.
 class AiringView extends ConsumerStatefulWidget {
   const AiringView({required this.inLibrary, super.key});
 
@@ -40,7 +41,12 @@ class AiringView extends ConsumerStatefulWidget {
 
 class _AiringViewState extends ConsumerState<AiringView> {
   late final AppLifecycleListener _lifecycle = AppLifecycleListener(
-    onResume: () => setState(() {}),
+    onResume: () {
+      ref.invalidate(
+        airingScheduleProvider(seasonAt(ref.read(clockProvider)())),
+      );
+      setState(() {});
+    },
   );
 
   @override
@@ -59,11 +65,11 @@ class _AiringViewState extends ConsumerState<AiringView> {
   Widget build(BuildContext context) {
     final DateTime now = ref.watch(clockProvider)();
     final AiringSeason season = seasonAt(now);
-    final AsyncValue<AiringSchedule> schedule = ref.watch(
-      airingScheduleProvider(season),
+    final AsyncValue<List<CatalogAnime>> airing = ref.watch(
+      airingAnimeProvider(season),
     );
     // A failed refresh keeps the last list; `_AiringGrid` reports it.
-    return schedule.when(
+    return airing.when(
       skipError: true,
       loading: () => const _AiringSkeleton(),
       error: (Object error, StackTrace stackTrace) => ContentColumn(
@@ -72,10 +78,13 @@ class _AiringViewState extends ConsumerState<AiringView> {
           title: context.l10n.searchAiringFailed,
           message: catalogErrorMessage(context.l10n, error),
           actionLabel: context.l10n.commonRetry,
-          onAction: () => ref.invalidate(airingScheduleProvider(season)),
+          onAction: () => ref.invalidate(airingAnimeProvider(season)),
         ),
       ),
-      data: (AiringSchedule schedule) {
+      data: (List<CatalogAnime> _) {
+        final AiringSchedule schedule = ref.watch(
+          airingScheduleProvider(season),
+        );
         if (schedule.isEmpty) {
           return ContentColumn(
             child: EmptyState(
@@ -282,8 +291,8 @@ class _AiringGrid extends ConsumerWidget {
   /// error.
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
     try {
-      final Future<AiringSchedule> reload = ref.refresh(
-        airingScheduleProvider(season).future,
+      final Future<List<CatalogAnime>> reload = ref.refresh(
+        airingAnimeProvider(season).future,
       );
       await reload;
     } on Object catch (error) {
