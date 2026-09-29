@@ -5,6 +5,8 @@ import 'package:anihub/ui/widgets/status_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/pump_app.dart';
+
 const double _collapsedWidth = 160;
 const double _expandedWidth = 264;
 
@@ -228,6 +230,39 @@ void main() {
     );
     semantics.dispose();
   });
+
+  for (final WatchStatus? current in <WatchStatus?>[
+    WatchStatus.watching,
+    null,
+  ]) {
+    testWidgets(
+      'does not overflow at double text size with ${current?.name ?? 'no status'}',
+      (WidgetTester tester) async {
+        await pumpInScaffold(
+          tester,
+          Align(
+            alignment: Alignment.topLeft,
+            child: StatusSelector(
+              current: current,
+              onSelected: (_) {},
+              collapsedWidth: _collapsedWidth,
+              expandedWidth: _expandedWidth,
+            ),
+          ),
+          textScale: 2,
+        );
+
+        await tester.tap(find.byType(StatusActionButton).first);
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getSize(find.byType(StatusSelector)).height,
+          greaterThanOrEqualTo(64),
+        );
+      },
+    );
+  }
 
   testWidgets('does not expand when disabled', (WidgetTester tester) async {
     await tester.pumpWidget(

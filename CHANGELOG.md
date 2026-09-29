@@ -15,6 +15,7 @@ All notable changes to AniHub are documented here. The format follows
 ### Fixed
 
 - *Import library* no longer lets an entry with a date in the future overwrite your later changes on every import.
+- With a large system text size, the status picker on the detail screen no longer overflows, and hints and secondary labels are easier to read.
 
 ## [1.3.0] - 2026-09-25
 
