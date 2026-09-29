@@ -32,9 +32,10 @@ is in [CONTRIBUTING.md](CONTRIBUTING.md#scope).
 ## Workflow
 
 1. Every change starts from a GitHub issue.
-2. Plans for larger changes go in `PLAN-<topic>.md` at the repository root.
-   These files are git-ignored and never committed. Writing a plan is not
-   approval to implement it.
+2. Plans and specs for larger changes go in `PLAN-<topic>.md` at the
+   repository root (see [Superpowers](#superpowers)). These files are
+   git-ignored and never committed. Writing a plan is not approval to
+   implement it.
 3. Work on a `feat/<topic>`, `fix/<topic>` or `chore/<topic>` branch from
    `main`. Direct pushes to `main` are blocked.
 4. Open a pull request with a Conventional Commits title (it becomes the squash
@@ -53,6 +54,23 @@ is in [CONTRIBUTING.md](CONTRIBUTING.md#scope).
 - Agents do not push, merge or open pull requests. The coordinating agent
   merges the tracks into `feat/<topic>` in the planned order and opens a single
   pull request.
+
+## Superpowers
+
+- New features and bug fixes follow `brainstorming`, `writing-plans` and
+  `test-driven-development`, executed with `subagent-driven-development`, or
+  `executing-plans` for small changes.
+- Every behaviour change starts with a test that fails for the expected
+  reason; show the failing and then the passing output before calling it done.
+  A bug fix starts with a test that reproduces the bug.
+- Specs and plans are saved as `PLAN-<topic>.md` at the repository root, never
+  under `docs/superpowers/`, and are not committed. The maintainer approves
+  them before implementation starts.
+- The rule applies to what a change touches. Existing code and tests are not
+  rewritten only to meet it.
+- The review in Workflow 6 uses `requesting-code-review`.
+  `finishing-a-development-branch` always takes the pull request option; never
+  merge locally.
 
 ## Commands
 
