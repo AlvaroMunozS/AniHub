@@ -258,7 +258,7 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(
           tester.getSize(find.byType(StatusSelector)).height,
-          greaterThanOrEqualTo(64),
+          greaterThan(64),
         );
       },
     );

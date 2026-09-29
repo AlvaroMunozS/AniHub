@@ -24,6 +24,22 @@ const double _minHeight = 64;
 /// transparent. See [_StatusSelectorState._sideOpacity].
 const double _closeFadeThreshold = 0.6;
 
+/// Height of a [StatusActionButton] at the current text scale.
+///
+/// Measures a one-line label, which is what the button shows (`maxLines: 1`);
+/// change both together if the label may wrap.
+double _actionButtonHeight(BuildContext context) {
+  final TextPainter label = TextPainter(
+    text: TextSpan(text: 'A', style: Theme.of(context).textTheme.labelMedium),
+    textScaler: MediaQuery.textScalerOf(context),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final double height =
+      2 * AppSpacing.s8 + AppSizes.iconLg + AppSpacing.s4 + label.height;
+  label.dispose();
+  return height;
+}
+
 /// Expanding status picker.
 ///
 /// Collapsed, it shows the current status, or an add button for an anime
@@ -102,10 +118,7 @@ class _StatusSelectorState extends State<StatusSelector>
 
   @override
   Widget build(BuildContext context) {
-    final double height = math.max(
-      _minHeight,
-      StatusActionButton.heightOf(context),
-    );
+    final double height = math.max(_minHeight, _actionButtonHeight(context));
     return TapRegion(
       onTapOutside: (PointerDownEvent _) => _collapse(),
       child: AnimatedBuilder(
@@ -234,19 +247,6 @@ class StatusActionButton extends StatelessWidget {
   final VoidCallback? onTap;
   final String? tooltip;
 
-  /// Height of a button with a one-line label at the current text scale.
-  static double heightOf(BuildContext context) {
-    final TextPainter label = TextPainter(
-      text: TextSpan(text: 'A', style: Theme.of(context).textTheme.labelMedium),
-      textScaler: MediaQuery.textScalerOf(context),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final double height =
-        2 * AppSpacing.s8 + AppSizes.iconLg + AppSpacing.s4 + label.height;
-    label.dispose();
-    return height;
-  }
-
   @override
   Widget build(BuildContext context) {
     final Widget content = Padding(
@@ -256,6 +256,7 @@ class StatusActionButton extends StatelessWidget {
         children: <Widget>[
           Icon(icon, size: AppSizes.iconLg, color: color),
           const SizedBox(height: AppSpacing.s4),
+          // One line, as `_actionButtonHeight` measures.
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium
