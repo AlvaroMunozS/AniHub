@@ -287,5 +287,8 @@
   "aboutUpdateRateLimited": "GitHub ha limitado las consultas. Prueba más tarde",
   "aboutUpdateDownloadFailed": "No se pudo descargar la actualización",
   "aboutUpdateChecksumFailed": "La descarga está dañada. Vuelve a intentarlo",
-  "aboutUpdateInstallFailed": "No se pudo instalar la actualización"
+  "aboutUpdateInstallFailed": "No se pudo instalar la actualización",
+
+  "startupErrorTitle": "No se pudo abrir tu biblioteca",
+  "startupErrorMessage": "Cierra la app y vuelve a abrirla. Si sigue igual, reinicia el teléfono o libera espacio de almacenamiento. Tu biblioteca no se ha borrado."
 }

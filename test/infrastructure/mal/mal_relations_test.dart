@@ -138,9 +138,55 @@ void main() {
     expect(maxInFlight, 3);
   });
 
-  test('rethrows a failure and starts no new requests after it', () async {
+  test('leaves out an id that always fails and loads the others', () async {
     final FakeMalApi api = FakeMalApi((Uri url) async {
-      if (url.pathSegments.last == '1') return http.Response('', 500);
+      final int id = int.parse(url.pathSegments.last);
+      if (id == 3) return http.Response('', 500);
+      return jsonResponse(_node(id, const <Map<String, Object?>>[]));
+    });
+
+    final Map<int, AnimeRelationNode> result = await MalRelations(
+      api.client(),
+      concurrency: 2,
+    ).forIds(List<int>.generate(6, (int i) => i + 1));
+
+    expect(result.keys, unorderedEquals(<int>[1, 2, 4, 5, 6]));
+    expect(
+      api.requests.map((Uri u) => u.pathSegments.last),
+      unorderedEquals(<String>['1', '2', '3', '4', '5', '6']),
+    );
+  });
+
+  test('leaves out an id whose 200 response is malformed', () async {
+    final FakeMalApi api = FakeMalApi((Uri url) async {
+      final int id = int.parse(url.pathSegments.last);
+      return switch (id) {
+        2 => jsonResponse(<String, Object?>{'id': 2}),
+        3 => http.Response('[]', 200),
+        _ => jsonResponse(_node(id, const <Map<String, Object?>>[])),
+      };
+    });
+
+    final Map<int, AnimeRelationNode> result = await MalRelations(api.client())
+        .forIds(<int>[1, 2, 3, 4]);
+
+    expect(result.keys, unorderedEquals(<int>[1, 4]));
+  });
+
+  test('rethrows when every id fails to be served', () async {
+    final FakeMalApi api = FakeMalApi(
+      (Uri url) async => http.Response('', 503),
+    );
+
+    await expectLater(
+      MalRelations(api.client()).forIds(<int>[1, 2, 3]),
+      throwsA(isA<CatalogResponseException>()),
+    );
+  });
+
+  test('rethrows unauthorized and starts no new requests after it', () async {
+    final FakeMalApi api = FakeMalApi((Uri url) async {
+      if (url.pathSegments.last == '1') return http.Response('', 401);
       await Future<void>.delayed(Duration.zero);
       final int id = int.parse(url.pathSegments.last);
       return jsonResponse(_node(id, const <Map<String, Object?>>[]));
@@ -151,8 +197,37 @@ void main() {
         api.client(),
         concurrency: 2,
       ).forIds(List<int>.generate(10, (int i) => i + 1)),
-      throwsA(isA<CatalogResponseException>()),
+      throwsA(isA<CatalogUnauthorizedException>()),
     );
     expect(api.requests, hasLength(2));
+  });
+
+  test('rethrows a rate limit and starts no new requests after it', () async {
+    final FakeMalApi api = FakeMalApi((Uri url) async {
+      if (url.pathSegments.last == '1') return http.Response('', 429);
+      await Future<void>.delayed(Duration.zero);
+      final int id = int.parse(url.pathSegments.last);
+      return jsonResponse(_node(id, const <Map<String, Object?>>[]));
+    });
+
+    await expectLater(
+      MalRelations(
+        api.client(),
+        concurrency: 2,
+      ).forIds(List<int>.generate(10, (int i) => i + 1)),
+      throwsA(isA<CatalogRateLimitException>()),
+    );
+    expect(api.requests, hasLength(2));
+  });
+
+  test('rethrows a network failure', () async {
+    final FakeMalApi api = FakeMalApi(
+      (Uri url) async => throw http.ClientException('offline'),
+    );
+
+    await expectLater(
+      MalRelations(api.client()).forIds(<int>[1, 2]),
+      throwsA(isA<CatalogNetworkException>()),
+    );
   });
 }
