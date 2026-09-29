@@ -138,9 +138,24 @@ void main() {
     expect(maxInFlight, 3);
   });
 
-  test('rethrows a failure and starts no new requests after it', () async {
+  test('leaves out an id that always fails and loads the others', () async {
     final FakeMalApi api = FakeMalApi((Uri url) async {
-      if (url.pathSegments.last == '1') return http.Response('', 500);
+      final int id = int.parse(url.pathSegments.last);
+      if (id == 3) return http.Response('', 500);
+      return jsonResponse(_node(id, const <Map<String, Object?>>[]));
+    });
+
+    final Map<int, AnimeRelationNode> result = await MalRelations(
+      api.client(),
+      concurrency: 2,
+    ).forIds(List<int>.generate(6, (int i) => i + 1));
+
+    expect(result.keys, unorderedEquals(<int>[1, 2, 4, 5, 6]));
+  });
+
+  test('rethrows a rate limit and starts no new requests after it', () async {
+    final FakeMalApi api = FakeMalApi((Uri url) async {
+      if (url.pathSegments.last == '1') return http.Response('', 429);
       await Future<void>.delayed(Duration.zero);
       final int id = int.parse(url.pathSegments.last);
       return jsonResponse(_node(id, const <Map<String, Object?>>[]));
@@ -151,8 +166,19 @@ void main() {
         api.client(),
         concurrency: 2,
       ).forIds(List<int>.generate(10, (int i) => i + 1)),
-      throwsA(isA<CatalogResponseException>()),
+      throwsA(isA<CatalogRateLimitException>()),
     );
     expect(api.requests, hasLength(2));
+  });
+
+  test('rethrows a network failure', () async {
+    final FakeMalApi api = FakeMalApi(
+      (Uri url) async => throw http.ClientException('offline'),
+    );
+
+    await expectLater(
+      MalRelations(api.client()).forIds(<int>[1, 2]),
+      throwsA(isA<CatalogNetworkException>()),
+    );
   });
 }
