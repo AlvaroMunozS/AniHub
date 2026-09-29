@@ -126,6 +126,24 @@ void main() {
     expect(asked, <DateTime>[DateTime.utc(2026, 10, 1, 11)]);
   });
 
+  test('rolls a slot that airs at this very instant to next week', () {
+    final List<DateTime> asked = <DateTime>[];
+    ScheduleAiring(
+      localOffset: (DateTime utc) {
+        asked.add(utc);
+        return Duration.zero;
+      },
+    )(<CatalogAnime>[
+      _anime(
+        1,
+        'Frieren',
+        const Broadcast(weekday: DateTime.thursday, hour: 20, minute: 0),
+      ),
+    ], now: DateTime.utc(2026, 9, 24, 11));
+
+    expect(asked, <DateTime>[DateTime.utc(2026, 10, 1, 11)]);
+  });
+
   test('uses next week\'s offset for a slot that has passed today', () {
     // It is 21:00 in Japan on Saturday 24 October; Madrid changes its clocks
     // that night.

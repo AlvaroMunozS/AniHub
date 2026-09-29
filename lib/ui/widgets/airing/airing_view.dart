@@ -42,6 +42,9 @@ class AiringView extends ConsumerStatefulWidget {
 class _AiringViewState extends ConsumerState<AiringView> {
   late final AppLifecycleListener _lifecycle = AppLifecycleListener(
     onResume: () {
+      // The season and today come from the clock, not from a provider, so
+      // `setState` rebuilds them; the conversion is cached in a provider, so
+      // it has to be invalidated as well.
       ref.invalidate(
         airingScheduleProvider(seasonAt(ref.read(clockProvider)())),
       );
