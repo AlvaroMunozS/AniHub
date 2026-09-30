@@ -35,7 +35,8 @@ class MalCatalog implements AnimeCatalog {
   /// What [_nodesOf] reads to leave out hentai.
   static const String _contentFields = 'nsfw,rating';
 
-  static const String _detailFields = '$_searchFields,synopsis,genres,studios';
+  static const String _detailFields =
+      '$_searchFields,$_contentFields,synopsis,genres,studios';
 
   static const String _airingFields =
       '$_searchFields,$_contentFields,media_type,broadcast,num_list_users';
@@ -90,7 +91,7 @@ class MalCatalog implements AnimeCatalog {
       'anime/$malId',
       <String, String>{'fields': _detailFields},
     );
-    if (body == null) throw CatalogNotFoundException(malId);
+    if (body == null || isHentai(body)) throw CatalogNotFoundException(malId);
     return _toCatalogAnime(body);
   }
 
@@ -147,8 +148,7 @@ class MalCatalog implements AnimeCatalog {
           if (item case {'node': final Map<String, Object?> node}
               when node['id'] is int &&
                   parseTitle(node) != null &&
-                  node['nsfw'] != 'black' &&
-                  node['rating'] != 'rx')
+                  !isHentai(node))
             node,
       ],
       _ => throw const CatalogResponseException('Malformed list response'),

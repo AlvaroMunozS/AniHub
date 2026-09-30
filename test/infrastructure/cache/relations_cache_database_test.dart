@@ -45,6 +45,27 @@ void main() {
     expect(await namesOf(db, 'index'), contains('idx_relation_nodes_saved_at'));
   });
 
+  test('empties a version 1 cache, which kept relations to hentai', () async {
+    final Database old = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: (Database db, int _) => createRelationsCacheSchema(db),
+      ),
+    );
+    await old.insert(relationNodesTable, <String, Object?>{
+      'mal_id': 1,
+      'saved_at': 0,
+      'node': '{}',
+    });
+    await old.close();
+
+    final Database db = await open();
+
+    expect(await db.query(relationNodesTable), isEmpty);
+    expect(await namesOf(db, 'index'), contains('idx_relation_nodes_saved_at'));
+  });
+
   test('recreates a file that is not a database', () async {
     final List<String?> logs = <String?>[];
     final DebugPrintCallback originalDebugPrint = debugPrint;

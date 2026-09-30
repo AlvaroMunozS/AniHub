@@ -153,6 +153,53 @@ void main() {
       );
     });
 
+    test('asks for the fields that tell hentai apart', () async {
+      final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
+        jsonResponse(_fullNode),
+      ]);
+
+      await MalCatalog(server.client()).byId(5114);
+
+      expect(
+        server.requests.single.queryParameters['fields']!.split(','),
+        containsAll(<String>['nsfw', 'rating']),
+      );
+    });
+
+    test(
+      'throws a not found error for hentai, flagged black or rated rx',
+      () async {
+        for (final Map<String, Object?> flags in <Map<String, Object?>>[
+          <String, Object?>{'nsfw': 'black'},
+          <String, Object?>{'nsfw': 'gray', 'rating': 'rx'},
+        ]) {
+          final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
+            jsonResponse(<String, Object?>{..._fullNode, ...flags}),
+          ]);
+
+          await expectLater(
+            MalCatalog(server.client()).byId(5114),
+            throwsA(isA<CatalogNotFoundException>()),
+            reason: '$flags',
+          );
+        }
+      },
+    );
+
+    test('keeps ecchi when looking an anime up by id', () async {
+      final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
+        jsonResponse(<String, Object?>{
+          ..._fullNode,
+          'nsfw': 'gray',
+          'rating': 'r+',
+        }),
+      ]);
+
+      final CatalogAnime anime = await MalCatalog(server.client()).byId(5114);
+
+      expect(anime.malId, 5114);
+    });
+
     test('throws a response error for a node without id or title', () async {
       for (final Map<String, Object?> node in <Map<String, Object?>>[
         <String, Object?>{'title': 'No id'},

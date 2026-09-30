@@ -37,6 +37,54 @@ FakeMalApi _api(Map<int, Map<String, Object?>> nodes) =>
     });
 
 void main() {
+  test('asks for the fields that tell hentai apart on related anime', () async {
+    final FakeMalApi api = _api(<int, Map<String, Object?>>{
+      10: _node(10, <Map<String, Object?>>[]),
+    });
+
+    await MalRelations(api.client()).forIds(<int>[10]);
+
+    expect(
+      api.requests.single.queryParameters['fields'],
+      contains('related_anime{node{nsfw,rating,'),
+    );
+  });
+
+  test(
+    'leaves hentai, flagged black or rated rx, out of the relations',
+    () async {
+      Map<String, Object?> related(int id, Map<String, Object?> flags) {
+        final Map<String, Object?> edge = _edge(
+          id,
+          'sequel',
+          title: 'Anime $id',
+        );
+        (edge['node']! as Map<String, Object?>).addAll(flags);
+        return edge;
+      }
+
+      final FakeMalApi api = _api(<int, Map<String, Object?>>{
+        10: _node(10, <Map<String, Object?>>[
+          related(11, <String, Object?>{'nsfw': 'white', 'rating': 'pg_13'}),
+          related(12, <String, Object?>{'nsfw': 'black'}),
+          related(13, <String, Object?>{'nsfw': 'gray', 'rating': 'rx'}),
+          related(14, <String, Object?>{'nsfw': 'gray', 'rating': 'r+'}),
+          related(15, <String, Object?>{}),
+        ]),
+      });
+
+      final Map<int, AnimeRelationNode> result = await MalRelations(
+        api.client(),
+      ).forIds(<int>[10]);
+
+      expect(result[10]!.relations.map((AnimeRelation r) => r.malId), <int>[
+        11,
+        14,
+        15,
+      ]);
+    },
+  );
+
   test('maps a node with its release date and relations', () async {
     final FakeMalApi api = _api(<int, Map<String, Object?>>{
       10: _node(10, <Map<String, Object?>>[

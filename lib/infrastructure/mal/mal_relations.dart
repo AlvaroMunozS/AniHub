@@ -24,7 +24,8 @@ class MalRelations implements AnimeRelations {
 
   static const String _fields =
       'alternative_titles,start_season,start_date,'
-      'related_anime{node{alternative_titles,start_season,start_date}}';
+      'related_anime{node{nsfw,rating,alternative_titles,start_season,'
+      'start_date}}';
 
   final MalClient _client;
 
@@ -85,8 +86,8 @@ class MalRelations implements AnimeRelations {
     );
   }
 
-  // Drops self-references, unknown relation types and nodes without an id or
-  // a title.
+  // Drops self-references, unknown relation types, hentai and nodes without an
+  // id or a title.
   static AnimeRelation? _toRelation(int rootId, Object? edge) {
     if (edge case {
       'relation_type': final String type,
@@ -95,7 +96,10 @@ class MalRelations implements AnimeRelations {
       final RelationKind? kind = RelationKind.tryFromWire(type);
       final String? title = parseTitle(node);
       if (node case {'id': final int id}
-          when id != rootId && kind != null && title != null) {
+          when id != rootId &&
+              kind != null &&
+              title != null &&
+              !isHentai(node)) {
         return AnimeRelation(
           malId: id,
           kind: kind,
