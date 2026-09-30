@@ -89,6 +89,7 @@ Future<Widget> _buildApp() async {
   final Directory cacheDir = await getTemporaryDirectory();
   final AniHubImageCache imageCache = AniHubImageCache();
   return ProviderScope(
+    retry: noProviderRetry,
     overrides: <Override>[
       sharedPreferencesProvider.overrideWithValue(prefs),
       entryRepositoryProvider.overrideWith(

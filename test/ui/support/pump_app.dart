@@ -83,6 +83,7 @@ Future<GoRouter> pumpApp(
 
   await tester.pumpWidget(
     ProviderScope(
+      retry: noProviderRetry,
       overrides: <Override>[
         sharedPreferencesProvider.overrideWithValue(preferences),
         entryRepositoryProvider.overrideWithValue(repository),

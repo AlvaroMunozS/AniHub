@@ -24,6 +24,15 @@ Never _notOverridden(String name) {
   );
 }
 
+/// Retry policy of the app's `ProviderScope`: a failing provider is not
+/// retried.
+///
+/// Riverpod's default retries any `Exception` ten times over about 38 s and
+/// reports `loading` meanwhile, which hides the error and repeats requests to
+/// MyAnimeList. A provider that should try again does so itself, as
+/// `LibraryRelations` does, or offers the user a retry button.
+Duration? noProviderRetry(int retryCount, Object error) => null;
+
 /// The current time, fixed by tests.
 final Provider<DateTime Function()> clockProvider =
     Provider<DateTime Function()>((Ref ref) => DateTime.now);
