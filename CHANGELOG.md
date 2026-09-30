@@ -19,6 +19,7 @@ All notable changes to AniHub are documented here. The format follows
 - *Import library* no longer lets an entry with a date in the future overwrite your later changes on every import.
 - With a large system text size, the status picker on the detail screen no longer overflows, and hints and secondary labels are easier to read.
 - One anime that MyAnimeList fails to serve no longer stops the rest of your library from being grouped with its related anime.
+- A failed load, such as an anime that no longer exists or no connection, now shows its error right away instead of a loading skeleton for about 40 seconds, and no longer repeats the request ten times in a row. A failed lookup is asked again when you come back to the screen.
 - Hentai no longer appears among related anime, and opening one from a link now says it is not available. Related anime are fetched again once after updating.
 
 ## [1.3.0] - 2026-09-25

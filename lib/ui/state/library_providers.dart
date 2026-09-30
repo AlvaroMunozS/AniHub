@@ -96,28 +96,38 @@ class LibraryRelations extends StreamNotifier<Map<int, AnimeRelationNode>> {
     final LinkFranchiseChains linkChains = ref.watch(
       linkFranchiseChainsProvider,
     );
-    final Map<int, AnimeRelationNode> graph = await reportingUnexpected(
-      relations.forIds(ids),
-      isExpected: (Object error) => error is CatalogException,
-    );
+    Map<int, AnimeRelationNode> graph = const <int, AnimeRelationNode>{};
+    bool fetched = true;
+    try {
+      graph = await reportingUnexpected(
+        relations.forIds(ids),
+        isExpected: (Object error) => error is CatalogException,
+      );
+    } on CatalogException {
+      // The groups show ungrouped, or as they were, until a retry succeeds;
+      // failing the stream would leave nothing to schedule it.
+      fetched = false;
+    }
     final Map<int, AnimeRelationNode> shown = previous == null
         ? graph
         : <int, AnimeRelationNode>{...previous, ...graph};
     yield shown;
 
-    bool complete = ids.every(graph.containsKey);
-    try {
-      final FranchiseChains chains = await linkChains(
-        graph,
-        ids.toSet(),
-        isCancelled: () => !ref.mounted,
-      );
-      complete = complete && chains.complete;
-      if (!mapEquals(chains.graph, shown)) yield chains.graph;
-    } on Object catch (error, stack) {
-      // The direct graph is already shown; an unexpected failure only leaves
-      // the chains unlinked, and retrying would fail the same way.
-      reportUiError(error, stack);
+    bool complete = fetched && ids.every(graph.containsKey);
+    if (fetched) {
+      try {
+        final FranchiseChains chains = await linkChains(
+          graph,
+          ids.toSet(),
+          isCancelled: () => !ref.mounted,
+        );
+        complete = complete && chains.complete;
+        if (!mapEquals(chains.graph, shown)) yield chains.graph;
+      } on Object catch (error, stack) {
+        // The direct graph is already shown; an unexpected failure only
+        // leaves the chains unlinked, and retrying would fail the same way.
+        reportUiError(error, stack);
+      }
     }
     if (ref.mounted && _retries < retryDelays.length && !complete) {
       final Timer retry = Timer(retryDelays[_retries++], ref.invalidateSelf);

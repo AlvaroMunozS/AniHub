@@ -15,22 +15,30 @@ import 'library_providers.dart';
 /// revisits are instant without holding every visited anime in memory.
 const Duration _detailCacheDuration = Duration(minutes: 10);
 
-void _keepAliveFor(Ref ref, Duration duration) {
+/// Keeps the result of [future] for [duration] after the last listener
+/// leaves, unless it fails: a failure is dropped with the last listener, so
+/// coming back to the screen asks again instead of showing the old error.
+Future<T> _cachingFor<T>(Ref ref, Duration duration, Future<T> future) {
   final KeepAliveLink link = ref.keepAlive();
   final Timer timer = Timer(duration, link.close);
   ref.onDispose(timer.cancel);
+  unawaited(future.then<void>((_) {}, onError: (Object _) => link.close()));
+  return future;
 }
 
 /// Fetches an anime's catalog metadata by id.
 final FutureProviderFamily<CatalogAnime, int> animeByIdProvider = FutureProvider
     .autoDispose
-    .family<CatalogAnime, int>((Ref ref, int malId) {
-      _keepAliveFor(ref, _detailCacheDuration);
-      return reportingUnexpected(
-        ref.watch(animeCatalogProvider).byId(malId),
-        isExpected: _isCatalogError,
-      );
-    });
+    .family<CatalogAnime, int>(
+      (Ref ref, int malId) => _cachingFor(
+        ref,
+        _detailCacheDuration,
+        reportingUnexpected(
+          ref.watch(animeCatalogProvider).byId(malId),
+          isExpected: _isCatalogError,
+        ),
+      ),
+    );
 
 /// Fetches the relation graph node of an anime.
 ///
@@ -41,10 +49,13 @@ final FutureProviderFamily<AnimeRelationNode?, int> animeRelationsByIdProvider =
       Ref ref,
       int malId,
     ) async {
-      _keepAliveFor(ref, _detailCacheDuration);
-      final Map<int, AnimeRelationNode> result = await reportingUnexpected(
-        ref.watch(animeRelationsProvider).forIds(<int>[malId]),
-        isExpected: _isCatalogError,
+      final Map<int, AnimeRelationNode> result = await _cachingFor(
+        ref,
+        _detailCacheDuration,
+        reportingUnexpected(
+          ref.watch(animeRelationsProvider).forIds(<int>[malId]),
+          isExpected: _isCatalogError,
+        ),
       );
       return result[malId];
     });
