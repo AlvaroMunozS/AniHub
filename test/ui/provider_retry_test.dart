@@ -1,10 +1,17 @@
+import 'package:anihub/domain/entities/anime_relation_node.dart';
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/entities/entry.dart';
 import 'package:anihub/domain/errors/catalog_exception.dart';
+import 'package:anihub/domain/ports/anime_relations.dart';
 import 'package:anihub/domain/ports/entry_repository.dart';
 import 'package:anihub/domain/values/watch_status.dart';
+import 'package:anihub/ui/providers.dart';
 import 'package:anihub/ui/router.dart';
+import 'package:anihub/ui/state/anime_detail_providers.dart';
 import 'package:anihub/ui/state/library_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_anime_catalog.dart';
@@ -18,6 +25,22 @@ class _CountingCatalog extends FakeAnimeCatalog {
   Future<CatalogAnime> byId(int malId) {
     byIdCalls++;
     return super.byId(malId);
+  }
+}
+
+/// Relations that fail while [failing] is set.
+class _FlakyRelations implements AnimeRelations {
+  bool failing = true;
+  int calls = 0;
+
+  @override
+  Future<Map<int, AnimeRelationNode>> forIds(Iterable<int> malIds) async {
+    calls++;
+    if (failing) throw const CatalogNetworkException('offline');
+    return <int, AnimeRelationNode>{
+      for (final int id in malIds)
+        id: AnimeRelationNode(malId: id, title: 'Anime $id'),
+    };
   }
 }
 
@@ -69,6 +92,7 @@ void main() {
 
     expect(tester.takeException(), isException);
     expect(repo.watchCalls, 1);
+    expect(find.widgetWithText(OutlinedButton, 'Reintentar'), findsOneWidget);
   });
 
   testWidgets('follows its own retry schedule when the relations fail', (
@@ -99,5 +123,59 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(relations.callCount, 2);
+  });
+
+  test('asks for the relations of an anime again after a failure', () async {
+    final _FlakyRelations relations = _FlakyRelations();
+    final ProviderContainer container = ProviderContainer(
+      retry: noProviderRetry,
+      overrides: <Override>[
+        animeRelationsProvider.overrideWithValue(relations),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final ProviderSubscription<AsyncValue<AnimeRelationNode?>> first = container
+        .listen(animeRelationsByIdProvider(1), (_, _) {});
+    await expectLater(
+      container.read(animeRelationsByIdProvider(1).future),
+      throwsA(isA<CatalogNetworkException>()),
+    );
+    first.close();
+    await Future<void>.delayed(Duration.zero);
+
+    relations.failing = false;
+    final AnimeRelationNode? node = await container.read(
+      animeRelationsByIdProvider(1).future,
+    );
+
+    expect(node?.malId, 1);
+    expect(relations.calls, 2);
+  });
+
+  test('asks for an anime again after a failure', () async {
+    final _CountingCatalog catalog = _CountingCatalog();
+    final ProviderContainer container = ProviderContainer(
+      retry: noProviderRetry,
+      overrides: <Override>[animeCatalogProvider.overrideWithValue(catalog)],
+    );
+    addTearDown(container.dispose);
+
+    final ProviderSubscription<AsyncValue<CatalogAnime>> first = container
+        .listen(animeByIdProvider(999999), (_, _) {});
+    await expectLater(
+      container.read(animeByIdProvider(999999).future),
+      throwsA(isA<CatalogNotFoundException>()),
+    );
+    first.close();
+    await Future<void>.delayed(Duration.zero);
+
+    container.listen(animeByIdProvider(999999), (_, _) {});
+    await expectLater(
+      container.read(animeByIdProvider(999999).future),
+      throwsA(isA<CatalogNotFoundException>()),
+    );
+
+    expect(catalog.byIdCalls, 2);
   });
 }
