@@ -116,7 +116,8 @@ CREATE INDEX idx_relation_nodes_saved_at ON relation_nodes (saved_at);
 ```
 
 Everything in it can be fetched again, so it is not part of the library and
-an incompatible change may simply empty the table. On its first load,
+an incompatible change may simply empty the table: the upgrade to version 2
+did, to drop the relations to hentai that version 1 had kept. On its first load,
 `SqfliteRelationsStore` moves the snapshot that older versions kept under the
 `anihub.relations.cache` preferences key into the table and removes the key.
 
@@ -196,6 +197,9 @@ dialog, so the file can go to the device or to a cloud storage app.
   and `rating` fields and skips hentai, so a search can return fewer than
   `limit` results. Hentai is flagged `black` or rated `rx`; some of it is
   flagged only `gray`, so the flag alone misses it. Ecchi (`r+`) is kept.
+  Related anime and lookups by id ask for the same fields: a hentai relation
+  is left out of the graph with its edge, and a hentai id is reported as not
+  found (`isHentai` in `mal_mapping.dart`).
 - `num_episodes` is `0` when the count is unknown. `start_date` may be `YYYY`,
   `YYYY-MM` or `YYYY-MM-DD`, and `start_season` may be missing.
 - There is no banner image; the details screen uses the cover as background.

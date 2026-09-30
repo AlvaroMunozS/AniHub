@@ -11,6 +11,14 @@ int parseId(Map<String, Object?> node) => switch (node) {
   _ => throw const CatalogResponseException('Anime node without an id'),
 };
 
+/// Whether [node] is hentai, which the app never lists.
+///
+/// MyAnimeList flags hentai `black` or rates it `rx`, but some of it is only
+/// flagged `gray`, so neither field alone is enough. Needs the `nsfw` and
+/// `rating` fields in the request; ecchi (`r+`) is not hentai.
+bool isHentai(Map<String, Object?> node) =>
+    node['nsfw'] == 'black' || node['rating'] == 'rx';
+
 /// Returns the English title when there is one, or the main title otherwise.
 ///
 /// Returns null if neither is set.

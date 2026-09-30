@@ -7,7 +7,7 @@ const String _databaseFileName = 'cache.db';
 // The `node` column holds the JSON of `encodeRelationNode`. An incompatible
 // change to it needs a new version whose upgrade empties the table, since
 // everything in it can be fetched again.
-const int _schemaVersion = 1;
+const int _schemaVersion = 2;
 
 /// Table of cached relation nodes, one row per anime.
 const String relationNodesTable = 'relation_nodes';
@@ -33,6 +33,9 @@ Future<Database> openRelationsCacheDatabaseAt(
   final OpenDatabaseOptions options = OpenDatabaseOptions(
     version: _schemaVersion,
     onCreate: (Database db, int _) => createRelationsCacheSchema(db),
+    // Version 1 kept relations to hentai, which are now dropped before they
+    // are cached.
+    onUpgrade: (Database db, int _, int _) => db.delete(relationNodesTable),
   );
   try {
     return await factory.openDatabase(path, options: options);
