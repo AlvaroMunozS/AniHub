@@ -33,8 +33,7 @@ Future<Database> openRelationsCacheDatabaseAt(
   final OpenDatabaseOptions options = OpenDatabaseOptions(
     version: _schemaVersion,
     onCreate: (Database db, int _) => createRelationsCacheSchema(db),
-    // Version 1 kept relations to hentai, which are now dropped before they
-    // are cached.
+    // Cached nodes may hold relations to hentai, which are no longer kept.
     onUpgrade: (Database db, int _, int _) => db.delete(relationNodesTable),
   );
   try {

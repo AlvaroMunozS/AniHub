@@ -116,8 +116,8 @@ CREATE INDEX idx_relation_nodes_saved_at ON relation_nodes (saved_at);
 ```
 
 Everything in it can be fetched again, so it is not part of the library and
-an incompatible change may simply empty the table: the upgrade to version 2
-did, to drop the relations to hentai that version 1 had kept. On its first load,
+an incompatible change may simply empty the table, as the upgrade to version 2
+does with relations to hentai, which are no longer kept. On its first load,
 `SqfliteRelationsStore` moves the snapshot that older versions kept under the
 `anihub.relations.cache` preferences key into the table and removes the key.
 
