@@ -285,8 +285,8 @@ tap installs it. Nothing is requested until the user taps.
   occurrence, so daylight saving time is applied as it is that week. Each
   day lists the most followed first, by how many MyAnimeList lists hold the
   anime, and anime in fewer than 5000 are left out: about three in four
-  airing series are niche web series or children's shows. The count is
-  never shown. Series being watched are listed whatever their count: the
+  airing series are niche web series or children's shows. No count is
+  shown. Series being watched are listed whatever their count: the
   threshold is there to find new series, not to hide the user's own. The
   *Mine* chip, remembered under `browse.airing.onlyMine`, shows only those,
   each day by local broadcast time, the ones without a time last; it only
@@ -304,6 +304,9 @@ tap installs it. Nothing is requested until the user taps.
   have not aired and even the awaited ones are in fewer lists. Browse goes
   back without a limit but only one season forward, the furthest MyAnimeList
   lists in useful numbers.
+  The season arrows float on a fade at the bottom of Browse, over the grid,
+  and the name takes the width of the widest season name of its year, so
+  the arrows never move while stepping or loading.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

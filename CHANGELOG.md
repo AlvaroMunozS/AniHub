@@ -14,6 +14,10 @@ All notable changes to AniHub are documented here. The format follows
 - *Appearance* lets you start the week on Monday or Sunday; by default it follows your phone's region.
 - *Settings → Backup → Export library* saves your library to a file, on your phone or in a cloud storage app, that *Import library* can restore on a new install or another phone.
 
+### Changed
+
+- The season arrows in *Browse* moved to the bottom of the screen, and the number of series is no longer shown.
+
 ### Fixed
 
 - *Browse* airing times now follow daylight saving changes and time zone changes when you reopen the app, instead of staying wrong until it restarts. Episodes that already aired today now show next week's time.

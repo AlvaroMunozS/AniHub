@@ -5,6 +5,8 @@ import 'package:anihub/domain/values/broadcast.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 import 'package:anihub/ui/providers.dart';
 import 'package:anihub/ui/router.dart';
+import 'package:anihub/ui/screens/anime_detail_screen.dart';
+import 'package:anihub/ui/theme/app_theme.dart';
 import 'package:anihub/ui/widgets/catalog_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -83,6 +85,17 @@ final List<Entry> _library = <Entry>[
   _entry(305, WatchStatus.planned),
 ];
 
+/// Twenty popular series on Thursday, more than a phone shows at once.
+final List<CatalogAnime> _longThursday = <CatalogAnime>[
+  for (int i = 0; i < 20; i++)
+    CatalogAnime(
+      malId: 400 + i,
+      title: 'Series $i',
+      broadcast: _thursday(21),
+      memberCount: 900000 - i,
+    ),
+];
+
 Future<void> _pumpBrowse(
   WidgetTester tester, {
   List<CatalogAnime>? airing,
@@ -131,7 +144,6 @@ void main() {
 
     expect(_titles(tester), <String>['Early mine', 'Niche mine', 'Late mine']);
     expect(_cards(tester).any((CatalogCard c) => c.inLibrary), isFalse);
-    expect(find.text('3 en emisión'), findsOneWidget);
     expect(_mineSelected(tester), isTrue);
   });
 
@@ -145,7 +157,12 @@ void main() {
     );
     expect(niche.inLibrary, isTrue);
     expect(find.widgetWithText(CatalogCard, 'Niche planned'), findsNothing);
-    expect(find.text('5 en emisión'), findsOneWidget);
+    expect(_titles(tester), <String>[
+      'Popular other',
+      'Late mine',
+      'Early mine',
+      'Niche mine',
+    ]);
   });
 
   testWidgets('says when none of your series airs on a day', (
@@ -265,7 +282,9 @@ void main() {
     expect(find.text(spanish.searchAiringEmptyTitle), findsOneWidget);
   });
 
-  testWidgets('fits the bookmark with large text', (WidgetTester tester) async {
+  testWidgets('fits the stepper and the bookmark with large text', (
+    WidgetTester tester,
+  ) async {
     tester.platformDispatcher.textScaleFactorTestValue = 2;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await _pumpBrowse(tester);
@@ -276,7 +295,8 @@ void main() {
     await _tap(tester, _mine);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('3 en emisión'), findsOneWidget);
+    expect(find.byTooltip(spanish.searchSeasonPrevious), findsOneWidget);
+    expect(_mine, findsOneWidget);
   });
 
   testWidgets('hides the bookmark while typing and shows it again when '
@@ -292,5 +312,45 @@ void main() {
     await _tap(tester, find.byTooltip(spanish.searchBarClear));
 
     expect(_mine, findsOneWidget);
+  });
+
+  testWidgets('lets the last row scroll above the season arrows', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBrowse(tester, airing: _longThursday);
+
+    await tester.fling(
+      find.byType(CatalogCard).first,
+      const Offset(0, -5000),
+      3000,
+    );
+    await tester.pumpAndSettle();
+
+    final Rect last = tester.getRect(
+      find.widgetWithText(CatalogCard, 'Series 19'),
+    );
+    expect(
+      last.bottom,
+      lessThanOrEqualTo(
+        tester.getRect(find.byTooltip(spanish.searchSeasonPrevious)).top,
+      ),
+    );
+  });
+
+  testWidgets('opens a poster under the fade beside the arrows', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBrowse(tester, airing: _longThursday);
+    final Rect previous = tester.getRect(
+      find.byTooltip(spanish.searchSeasonPrevious),
+    );
+
+    await tester.tapAt(Offset(AppSpacing.s24, previous.center.dy));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<AnimeDetailScreen>(find.byType(AnimeDetailScreen)).malId,
+      406,
+    );
   });
 }

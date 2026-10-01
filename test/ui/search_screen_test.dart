@@ -277,7 +277,6 @@ void main() {
         (2026, AnimeSeason.summer),
       ]);
       expect(find.text('Verano 2026'), findsOneWidget);
-      expect(find.text('3 en emisión'), findsOneWidget);
     });
 
     testWidgets('opens on today with the local broadcast times', (

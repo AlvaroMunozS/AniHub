@@ -109,12 +109,6 @@
 
   "searchHint": "Buscar en MyAnimeList",
   "searchFailed": "No se pudo buscar",
-  "searchAiringCount": "{count, plural, =1{1 en emisión} other{{count} en emisión}}",
-  "@searchAiringCount": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
   "searchAiringToday": "{day}, hoy",
   "@searchAiringToday": {
     "description": "Screen reader label of today's weekday tab; day is its short name.",
@@ -139,13 +133,6 @@
   "searchSeasonBackToCurrent": "Volver a la temporada actual",
   "@searchSeasonBackToCurrent": {
     "description": "Hint read by the screen reader on the season name when Browse shows another season."
-  },
-  "searchSeasonCount": "{count, plural, =1{1 serie} other{{count} series}}",
-  "@searchSeasonCount": {
-    "description": "How many series a past or upcoming season lists in Browse.",
-    "placeholders": {
-      "count": {"type": "int"}
-    }
   },
   "searchSeasonEmptyTitle": "Nada para esta temporada",
   "searchNothingMatching": "No hay nada para «{query}».",

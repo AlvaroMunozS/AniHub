@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,14 +20,17 @@ import '../../theme/app_theme.dart';
 import '../catalog_card.dart';
 import '../empty_state.dart';
 import '../poster_grid.dart';
-import '../skeleton.dart';
 
 /// Diameter of the dot that marks today's tab.
 const double _todayDotSize = 5;
 
+/// Height of the fade at the bottom of the view that holds the season
+/// arrows: their row plus a small margin above the navigation bar.
+const double _stepperHeight = kMinInteractiveDimension + AppSpacing.s8;
+
 /// The season running now, one tab per local weekday, opening on today; or,
-/// after stepping with the header's arrows, a past season or the next one as a
-/// single grid, most followed first.
+/// after stepping with the arrows at the bottom, a past season or the next one
+/// as a single grid, most followed first.
 ///
 /// Anime in [inLibrary] are dimmed, as in search results, unless the current
 /// season is filtered to the series being watched, which are then listed by
@@ -92,24 +97,9 @@ class _AiringViewState extends ConsumerState<AiringView> {
     final AiringSchedule? shown = mine
         ? schedule!.only(ref.watch(watchingIdsProvider))
         : schedule;
-    final String? count = switch ((shown, ranked)) {
-      (final AiringSchedule s, _) when !s.isEmpty =>
-        context.l10n.searchAiringCount(s.length),
-      (_, final List<CatalogAnime> r) when r.isNotEmpty =>
-        context.l10n.searchSeasonCount(r.length),
-      _ => null,
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Stack(
       children: <Widget>[
-        _SeasonHeader(
-          season: season,
-          offset: offset,
-          count: count,
-          loading: list.isLoading && loaded == null,
-        ),
-        Expanded(
+        Positioned.fill(
           // A failed refresh keeps the last list; the grid reports it.
           child: list.when(
             skipError: true,
@@ -163,6 +153,12 @@ class _AiringViewState extends ConsumerState<AiringView> {
               _ => const SizedBox.shrink(),
             },
           ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _SeasonStepper(season: season, offset: offset),
         ),
       ],
     );
@@ -340,6 +336,7 @@ class _AiringGrid extends ConsumerWidget {
               alignment: Alignment.topCenter,
               child: PosterGrid(
                 key: PageStorageKey<int>(storageKey),
+                bottomPadding: AppSpacing.s24 + _stepperHeight,
                 itemCount: anime.length,
                 itemBuilder: (BuildContext context, int index) {
                   final _AiringItem item = anime[index];
@@ -357,91 +354,103 @@ class _AiringGrid extends ConsumerWidget {
   }
 }
 
-/// The season shown, the arrows that step to another one and how many anime
-/// it lists.
-class _SeasonHeader extends ConsumerWidget {
-  const _SeasonHeader({
-    required this.season,
-    required this.offset,
-    required this.count,
-    required this.loading,
-  });
+/// The season shown and the arrows that step to another one, on a fade at
+/// the bottom of the view.
+///
+/// It stays whatever the view shows, and the name takes the width of the
+/// widest season name of its year, so the arrows never move.
+class _SeasonStepper extends ConsumerWidget {
+  const _SeasonStepper({required this.season, required this.offset});
 
   final YearSeason season;
 
   /// Seasons from the current one; see [BrowsedSeasonOffset].
   final int offset;
 
-  /// Null while loading, after a failure or when the season is empty.
-  final String? count;
-  final bool loading;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final BrowsedSeasonOffset stepper = ref.read(
       browsedSeasonOffsetProvider.notifier,
     );
-    return ContentColumn(
-      padded: false,
-      child: Padding(
-        // The arrow's glyph, not its tap target, lines up with the grid.
-        padding: const EdgeInsets.only(
-          left: ContentColumn.gutter - AppSpacing.s12,
-          right: ContentColumn.gutter,
-        ),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                IconButton(
-                  tooltip: context.l10n.searchSeasonPrevious,
-                  icon: const Icon(Icons.chevron_left, size: AppSizes.iconMd),
-                  onPressed: stepper.previous,
-                ),
-                // Shrinks and wraps instead of overflowing with large text.
-                Flexible(
-                  child: _SeasonTitle(
-                    season: season,
-                    offset: offset,
-                    onReset: stepper.reset,
-                  ),
-                ),
-                IconButton(
-                  tooltip: context.l10n.searchSeasonNext,
-                  icon: const Icon(Icons.chevron_right, size: AppSizes.iconMd),
-                  onPressed: offset < BrowsedSeasonOffset.max
-                      ? stepper.next
-                      : null,
-                ),
-              ],
-            ),
-            if (count != null || loading)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.s12),
-                // Wraps instead of overflowing with large text.
-                child: Wrap(
-                  spacing: AppSpacing.s8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: <Widget>[
-                    if (count case final String count)
-                      Text(
-                        count,
-                        style: AppTypography.caption.copyWith(
-                          color: context.palette.textFaint,
-                        ),
-                      )
-                    else if (loading)
-                      const Skeleton(width: 70, height: 12),
-                  ],
+    final Color background = context.palette.background;
+    return Stack(
+      children: <Widget>[
+        // The fade lets taps through to the posters beneath it.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[background.withValues(alpha: 0), background],
+                  stops: const <double>[0, 0.55],
                 ),
               ),
-          ],
+            ),
+          ),
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.s8),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double nameWidth = math.min(
+                _widestSeasonName(context, season.year) + 2 * AppSpacing.s4,
+                constraints.maxWidth - 2 * kMinInteractiveDimension,
+              );
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  IconButton(
+                    tooltip: context.l10n.searchSeasonPrevious,
+                    icon: const Icon(Icons.chevron_left, size: AppSizes.iconMd),
+                    onPressed: stepper.previous,
+                  ),
+                  SizedBox(
+                    width: nameWidth,
+                    child: _SeasonTitle(
+                      season: season,
+                      offset: offset,
+                      onReset: stepper.reset,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: context.l10n.searchSeasonNext,
+                    icon: const Icon(
+                      Icons.chevron_right,
+                      size: AppSizes.iconMd,
+                    ),
+                    onPressed: offset < BrowsedSeasonOffset.max
+                        ? stepper.next
+                        : null,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
+  }
+
+  /// Width of the widest season name of [year] as [_SeasonTitle] draws it.
+  static double _widestSeasonName(BuildContext context, int year) {
+    final TextStyle style = _SeasonTitle.styleOf(context);
+    double widest = 0;
+    for (final AnimeSeason name in AnimeSeason.values) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(
+          text: formatSeasonOf(context.l10n, name, year),
+          style: style,
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      widest = math.max(widest, painter.width);
+      painter.dispose();
+    }
+    return widest.ceilToDouble();
   }
 }
 
@@ -460,6 +469,15 @@ class _SeasonTitle extends StatefulWidget {
   final YearSeason season;
   final int offset;
   final VoidCallback onReset;
+
+  /// Tabular figures keep every year as wide, so measuring one year's names
+  /// is enough to hold the arrows still.
+  static TextStyle styleOf(BuildContext context) => Theme.of(context)
+      .textTheme
+      .titleMedium!
+      .copyWith(
+        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+      );
 
   @override
   State<_SeasonTitle> createState() => _SeasonTitleState();
@@ -491,7 +509,7 @@ class _SeasonTitleState extends State<_SeasonTitle> {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s4,
-            vertical: AppSpacing.s16,
+            vertical: AppSpacing.s12,
           ),
           child: AnimatedSwitcher(
             duration: MediaQuery.disableAnimationsOf(context)
@@ -500,7 +518,7 @@ class _SeasonTitleState extends State<_SeasonTitle> {
             switchInCurve: AppDuration.curve,
             switchOutCurve: AppDuration.curve,
             layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.center,
               // The outgoing name stays out of semantics so the live region
               // announces only the new one.
               children: <Widget>[
@@ -534,8 +552,9 @@ class _SeasonTitleState extends State<_SeasonTitle> {
                 widget.season.year,
               ),
               key: key,
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(color: away ? context.palette.accent : null),
+              textAlign: TextAlign.center,
+              style: _SeasonTitle.styleOf(context)
+                  .copyWith(color: away ? context.palette.accent : null),
             ),
           ),
         ),
@@ -578,6 +597,7 @@ class _SeasonGrid extends ConsumerWidget {
                 alignment: Alignment.topCenter,
                 child: PosterGrid(
                   key: PageStorageKey<YearSeason>(season),
+                  bottomPadding: AppSpacing.s24 + _stepperHeight,
                   itemCount: anime.length,
                   itemBuilder: (BuildContext context, int index) {
                     final CatalogAnime item = anime[index];
@@ -610,7 +630,10 @@ class _ScrollableEmpty extends StatelessWidget {
       slivers: <Widget>[
         SliverFillRemaining(
           hasScrollBody: false,
-          child: ContentColumn(alignment: Alignment.topCenter, child: child),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: _stepperHeight),
+            child: ContentColumn(alignment: Alignment.topCenter, child: child),
+          ),
         ),
       ],
     );
