@@ -43,6 +43,7 @@ void main() {
     final List<bool> toggled = <bool>[];
     await _pump(tester, onToggleMine: toggled.add);
 
+    expect(tester.getSemantics(_mine), isSemantics(isSelected: false));
     await tester.tap(_mine);
 
     expect(toggled, <bool>[true]);

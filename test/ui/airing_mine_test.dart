@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:anihub/application/usecases/usecases.dart';
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/entities/entry.dart';
+import 'package:anihub/domain/values/anime_season.dart';
 import 'package:anihub/domain/values/broadcast.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 import 'package:anihub/ui/providers.dart';
@@ -96,6 +99,21 @@ final List<CatalogAnime> _longThursday = <CatalogAnime>[
     ),
 ];
 
+/// An airing list for the first season asked for; the next ones stay
+/// loading until [pending] completes.
+class _PendingNextSeasonCatalog extends FakeAnimeCatalog {
+  _PendingNextSeasonCatalog() : super(airing: _airing);
+
+  final Completer<List<CatalogAnime>> pending = Completer<List<CatalogAnime>>();
+
+  @override
+  Future<List<CatalogAnime>> airingIn(int year, AnimeSeason season) {
+    if (airingRequests.isEmpty) return super.airingIn(year, season);
+    airingRequests.add((year, season));
+    return pending.future;
+  }
+}
+
 Future<void> _pumpBrowse(
   WidgetTester tester, {
   List<CatalogAnime>? airing,
@@ -115,6 +133,20 @@ Future<void> _pumpBrowse(
 
 /// The bookmark in the search bar that shows only the series being watched.
 Finder get _mine => find.byTooltip(spanish.searchAiringMine);
+
+/// Pumps Browse on a narrow phone with the text [scale] times as large.
+Future<void> _pumpLargeText(
+  WidgetTester tester, {
+  List<CatalogAnime>? airing,
+  double scale = 2,
+}) async {
+  tester.platformDispatcher.textScaleFactorTestValue = scale;
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  await _pumpBrowse(tester, airing: airing);
+  tester.view.physicalSize =
+      const Size(360, 800) * tester.view.devicePixelRatio;
+  await tester.pumpAndSettle();
+}
 
 bool _mineSelected(WidgetTester tester) => tester
     .widget<IconButton>(
@@ -288,12 +320,7 @@ void main() {
   testWidgets('fits the stepper and the bookmark with large text', (
     WidgetTester tester,
   ) async {
-    tester.platformDispatcher.textScaleFactorTestValue = 2;
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await _pumpBrowse(tester);
-    tester.view.physicalSize =
-        const Size(360, 800) * tester.view.devicePixelRatio;
-    await tester.pumpAndSettle();
+    await _pumpLargeText(tester);
 
     await _tap(tester, _mine);
 
@@ -351,10 +378,8 @@ void main() {
     await tester.tapAt(Offset(AppSpacing.s24, previous.center.dy));
     await tester.pumpAndSettle();
 
-    expect(
-      tester.widget<AnimeDetailScreen>(find.byType(AnimeDetailScreen)).malId,
-      406,
-    );
+    expect(find.byType(AnimeDetailScreen), findsOneWidget);
+    expect(find.text('Verano 2026', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('dims the days none of your series airs', (
@@ -376,5 +401,75 @@ void main() {
       tester.getCenter(find.byTooltip(spanish.searchSeasonPrevious)),
       arrow,
     );
+  });
+
+  testWidgets('loads the new season when it changes while the app is open', (
+    WidgetTester tester,
+  ) async {
+    DateTime now = DateTime(2026, 9, 30, 23);
+    final _PendingNextSeasonCatalog catalog = _PendingNextSeasonCatalog();
+    await pumpApp(
+      tester,
+      catalog: catalog,
+      repo: inMemoryLibrary(_library),
+      prefs: <String, Object>{'browse.airing.onlyMine': true},
+      initialLocation: RoutePaths.search,
+      overrides: <Override>[
+        clockProvider.overrideWithValue(() => now),
+        scheduleAiringProvider.overrideWithValue(
+          ScheduleAiring(
+            localOffset: (DateTime utc) => const Duration(hours: 2),
+          ),
+        ),
+      ],
+    );
+
+    now = DateTime(2026, 10, 1, 0, 30);
+    await tester.enterText(find.byType(TextField), 'f');
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(tester.takeException(), isNull);
+    catalog.pending.complete(_airing);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('lets the last row scroll above the season arrows with large '
+      'text', (WidgetTester tester) async {
+    await _pumpLargeText(tester, airing: _longThursday);
+
+    await tester.fling(
+      find.byType(CatalogCard).first,
+      const Offset(0, -5000),
+      3000,
+    );
+    await tester.pumpAndSettle();
+
+    final double last = tester
+        .getRect(find.widgetWithText(CatalogCard, 'Series 19'))
+        .bottom;
+    expect(
+      last,
+      lessThanOrEqualTo(
+        tester.getRect(find.byTooltip(spanish.searchSeasonPrevious)).top,
+      ),
+    );
+    expect(
+      last,
+      lessThanOrEqualTo(tester.getRect(find.text('Verano 2026')).top),
+    );
+  });
+
+  testWidgets('keeps the arrows in place when only the widest season name '
+      'wraps', (WidgetTester tester) async {
+    await _pumpLargeText(tester, scale: 1.5);
+    Offset previous() =>
+        tester.getCenter(find.byTooltip(spanish.searchSeasonPrevious));
+    Offset next() => tester.getCenter(find.byTooltip(spanish.searchSeasonNext));
+    final (Offset, Offset) inSummer = (previous(), next());
+
+    await _tap(tester, find.byTooltip(spanish.searchSeasonPrevious));
+
+    expect(find.text('Primavera 2026'), findsOneWidget);
+    expect((previous(), next()), inSummer);
   });
 }

@@ -438,4 +438,33 @@ void main() {
     catalog.pending.complete(_premieres);
     await tester.pumpAndSettle();
   });
+
+  testWidgets('keeps Retry clear of the season arrows in landscape', (
+    WidgetTester tester,
+  ) async {
+    final FakeAnimeCatalog catalog = _catalog()
+      ..premiereError = const CatalogNetworkException('down');
+    await _pumpBrowse(tester, catalog: catalog);
+    tester.view.physicalSize =
+        const Size(800, 360) * tester.view.devicePixelRatio;
+    await tester.pumpAndSettle();
+
+    await _previous(tester);
+    await tester.fling(
+      find.text(spanish.searchAiringFailed),
+      const Offset(0, -1000),
+      3000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester
+          .getRect(find.widgetWithText(OutlinedButton, spanish.commonRetry))
+          .bottom,
+      lessThanOrEqualTo(
+        tester.getRect(find.byTooltip(spanish.searchSeasonPrevious)).top,
+      ),
+    );
+  });
 }
