@@ -183,7 +183,7 @@
 
   "settingsNotifications": "Notifications",
   "notificationsAiring": "Airing",
-  "notificationsAiringReminders": "Remind me when it airs",
+  "notificationsAiringReminders": "Remind me when a series I am watching airs",
   "notificationsBlocked": "Android isn't allowing AniHub to send notifications.",
   "notificationsOpenSystemSettings": "Open settings",
   "reminderChannelName": "Airing",

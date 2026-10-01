@@ -300,7 +300,7 @@
 
   "settingsNotifications": "Notificaciones",
   "notificationsAiring": "Emisiones",
-  "notificationsAiringReminders": "Avisar cuando se emita",
+  "notificationsAiringReminders": "Avisar cuando se emita una serie que estoy viendo",
   "notificationsBlocked": "Android no permite notificaciones a AniHub.",
   "notificationsOpenSystemSettings": "Abrir ajustes",
   "reminderChannelName": "Emisiones",
