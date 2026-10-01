@@ -166,3 +166,7 @@ final Provider<ScheduleAiring> scheduleAiringProvider =
     Provider<ScheduleAiring>((Ref ref) {
       return const ScheduleAiring();
     });
+
+final Provider<RankSeason> rankSeasonProvider = Provider<RankSeason>((Ref ref) {
+  return const RankSeason();
+});
