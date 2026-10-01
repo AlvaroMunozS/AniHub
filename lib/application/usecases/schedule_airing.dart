@@ -28,16 +28,54 @@ class AiringSchedule {
       });
 
   bool get isEmpty => length == 0;
+
+  /// Returns a schedule with only the anime in [malIds], each day by local
+  /// broadcast time, the ones without a time last.
+  ///
+  /// Read as a timetable of the user's own series, so the order is the
+  /// clock's; anime at the same time keep the most followed first.
+  AiringSchedule only(Set<int> malIds) {
+    final Map<int, List<ScheduledAnime>> kept = <int, List<ScheduledAnime>>{};
+    for (final MapEntry<int, List<ScheduledAnime>> day in byWeekday.entries) {
+      final List<ScheduledAnime> mine = <ScheduledAnime>[
+        for (final ScheduledAnime item in day.value)
+          if (malIds.contains(item.anime.malId)) item,
+      ]..sort(_byTime);
+      if (mine.isNotEmpty) {
+        kept[day.key] = List<ScheduledAnime>.unmodifiable(mine);
+      }
+    }
+    return AiringSchedule(byWeekday: kept);
+  }
+
+  static int _byTime(ScheduledAnime a, ScheduledAnime b) {
+    final int? aMinutes = _minuteOfDay(a);
+    final int? bMinutes = _minuteOfDay(b);
+    if (aMinutes != bMinutes) {
+      if (aMinutes == null) return 1;
+      if (bMinutes == null) return -1;
+      return aMinutes.compareTo(bMinutes);
+    }
+    return compareRelevance(a.anime, b.anime);
+  }
+
+  static int? _minuteOfDay(ScheduledAnime item) {
+    final int? hour = item.hour;
+    final int? minute = item.minute;
+    if (hour == null || minute == null) return null;
+    return hour * Duration.minutesPerHour + minute;
+  }
 }
 
 /// Sorts the better known airing anime into the local weekdays they air on.
 ///
 /// Anime in fewer than [minMembers] MyAnimeList lists are left out: most
 /// airing series are short web series or children's shows that few people
-/// follow, and they would bury the ones worth finding. Anime without a
-/// weekly slot are left out too, since they have no day to go under; most are
-/// Chinese series MyAnimeList has no schedule for, or series released all at
-/// once.
+/// follow, and they would bury the ones worth finding. The threshold is there
+/// to find new series, not to hide the user's own, so the caller can name
+/// anime that are always kept. Anime without a weekly slot are left out too,
+/// since they have no day to go under; most are Chinese series MyAnimeList
+/// has no schedule for, or series released all at once.
 ///
 /// Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
 /// fall on the previous day elsewhere. Each one is converted at its next
@@ -61,12 +99,19 @@ class ScheduleAiring {
 
   /// Returns [anime] by local weekday, most followed first. An anime with a
   /// day but no time stays on its day in Japan, since the time cannot be
-  /// converted.
-  AiringSchedule call(List<CatalogAnime> anime, {required DateTime now}) {
+  /// converted. The anime in [keep] are listed however few lists hold them.
+  AiringSchedule call(
+    List<CatalogAnime> anime, {
+    required DateTime now,
+    Set<int> keep = const <int>{},
+  }) {
     final Map<int, List<ScheduledAnime>> byWeekday =
         <int, List<ScheduledAnime>>{};
     for (final CatalogAnime item in anime) {
-      if ((item.memberCount ?? minMembers) < minMembers) continue;
+      if (!keep.contains(item.malId) &&
+          (item.memberCount ?? minMembers) < minMembers) {
+        continue;
+      }
       final Broadcast? broadcast = item.broadcast;
       if (broadcast == null) continue;
       final (int weekday, ScheduledAnime scheduled) = _toLocal(

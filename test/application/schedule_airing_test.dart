@@ -239,4 +239,59 @@ void main() {
     expect(_titles(schedule.byWeekday[DateTime.friday]), <String>['Frieren']);
     expect(schedule.length, 1);
   });
+
+  test('keeps the given anime even in too few lists', () {
+    const Broadcast monday = Broadcast(weekday: DateTime.monday);
+    final AiringSchedule schedule = _at(Duration.zero)(
+      <CatalogAnime>[
+        _anime(1, 'Followed', monday, ScheduleAiring.minMembers - 1),
+        _anime(2, 'Niche', monday, ScheduleAiring.minMembers - 1),
+      ],
+      now: _now,
+      keep: <int>{1},
+    );
+
+    expect(_titles(schedule.byWeekday[DateTime.monday]), <String>['Followed']);
+  });
+
+  test('leaves out a kept anime without a weekly slot', () {
+    final AiringSchedule schedule = _at(Duration.zero)(
+      <CatalogAnime>[_anime(1, 'Alpha', null, 9000)],
+      now: _now,
+      keep: <int>{1},
+    );
+
+    expect(schedule.isEmpty, isTrue);
+  });
+
+  test('only keeps the given anime and drops the days left empty', () {
+    final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
+      _anime(1, 'Mine', const Broadcast(weekday: DateTime.monday), 9000),
+      _anime(2, 'Theirs', const Broadcast(weekday: DateTime.monday), 9000),
+      _anime(3, 'Elsewhere', const Broadcast(weekday: DateTime.tuesday), 9000),
+    ], now: _now).only(<int>{1});
+
+    expect(_titles(schedule.byWeekday[DateTime.monday]), <String>['Mine']);
+    expect(schedule.byWeekday.containsKey(DateTime.tuesday), isFalse);
+    expect(schedule.length, 1);
+  });
+
+  test('only orders each day by time, unknown times last, ties by members', () {
+    // With no offset, these Sunday evening slots in Japan stay on Sunday.
+    Broadcast sunday(int hour) =>
+        Broadcast(weekday: DateTime.sunday, hour: hour, minute: 0);
+    final AiringSchedule schedule = _at(Duration.zero)(<CatalogAnime>[
+      _anime(1, 'Late', sunday(22), 900000),
+      _anime(2, 'No time', const Broadcast(weekday: DateTime.sunday), 900000),
+      _anime(3, 'Early, less followed', sunday(18), 6000),
+      _anime(4, 'Early, more followed', sunday(18), 80000),
+    ], now: _now).only(<int>{1, 2, 3, 4});
+
+    expect(_titles(schedule.byWeekday[DateTime.sunday]), <String>[
+      'Early, more followed',
+      'Early, less followed',
+      'Late',
+      'No time',
+    ]);
+  });
 }
