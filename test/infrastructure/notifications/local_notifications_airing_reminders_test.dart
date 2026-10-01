@@ -22,10 +22,10 @@ void main() {
   // The plugin validates against the real clock, so the test one is relative.
   final DateTime now = DateTime.now().toUtc();
 
-  LocalNotificationsAiringReminders build() =>
+  LocalNotificationsAiringReminders build({DateTime Function()? clock}) =>
       LocalNotificationsAiringReminders(
         AndroidFlutterLocalNotificationsPlugin(),
-        now: () => now,
+        now: clock ?? () => now,
       );
 
   AiringReminder reminder(int malId, DateTime at) =>
@@ -146,6 +146,86 @@ void main() {
         .toSet();
     expect(ids, hasLength(3));
   });
+
+  test('never shares an id between two series', () async {
+    // The minute-based XOR of the old formula collided for these two.
+    final int a =
+        (((now.add(const Duration(days: 1))).millisecondsSinceEpoch ~/
+                Duration.millisecondsPerMinute) |
+            0x3FFF) +
+        1;
+    DateTime atMinute(int minute) => DateTime.fromMillisecondsSinceEpoch(
+      minute * Duration.millisecondsPerMinute,
+      isUtc: true,
+    );
+
+    await build().replaceAll(<AiringReminder>[
+      reminder(50000, atMinute(a)),
+      reminder(49698, atMinute(a + 9390)),
+    ], _texts);
+
+    final Set<Object?> ids = called('zonedSchedule')
+        .map((MethodCall c) => (c.arguments as Map<Object?, Object?>)['id'])
+        .toSet();
+    expect(ids, hasLength(2));
+  });
+
+  test(
+    'keeps scheduling after a reminder became past during the loop',
+    () async {
+      final List<DateTime> readings = <DateTime>[
+        now,
+        now.add(const Duration(hours: 2)),
+        now.add(const Duration(hours: 2)),
+      ];
+      int next = 0;
+
+      await build(clock: () => readings[next++]).replaceAll(<AiringReminder>[
+        reminder(1, now.add(const Duration(hours: 1))),
+        reminder(2, now.add(const Duration(hours: 1, minutes: 1))),
+        reminder(3, now.add(const Duration(hours: 3))),
+      ], _texts);
+
+      expect(
+        called('zonedSchedule').map(
+          (MethodCall c) => (c.arguments as Map<Object?, Object?>)['payload'],
+        ),
+        <String>['1', '3'],
+      );
+    },
+  );
+
+  test('keeps scheduling when the plugin rejects a reminder as past', () async {
+    // The adapter's clock is behind the plugin's, so the check passes and the
+    // plugin throws.
+    final DateTime behind = DateTime.now().toUtc().subtract(
+      const Duration(hours: 1),
+    );
+
+    await build(clock: () => behind).replaceAll(<AiringReminder>[
+      reminder(1, DateTime.now().toUtc().subtract(const Duration(seconds: 1))),
+      reminder(2, DateTime.now().toUtc().add(const Duration(days: 1))),
+    ], _texts);
+
+    expect(
+      called('zonedSchedule').map(
+        (MethodCall c) => (c.arguments as Map<Object?, Object?>)['payload'],
+      ),
+      <String>['2'],
+    );
+  });
+
+  test(
+    'only cancels pending reminders when there is nothing to schedule',
+    () async {
+      await build().replaceAll(<AiringReminder>[], _texts);
+
+      expect(calls.map((MethodCall c) => c.method).toList(), <String>[
+        'initialize',
+        'cancelAllPendingNotifications',
+      ]);
+    },
+  );
 
   test('falls back to whether notifications are enabled when the system '
       'does not ask', () async {

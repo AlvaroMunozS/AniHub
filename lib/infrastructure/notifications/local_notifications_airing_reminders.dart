@@ -66,6 +66,7 @@ class LocalNotificationsAiringReminders implements AiringReminders {
     await _ready;
     // Pending only: a reminder already in the tray stays until dismissed.
     await _plugin.cancelAllPendingNotifications();
+    if (reminders.isEmpty) return;
     // Creating it again renames it when the app language changes.
     await _plugin.createNotificationChannel(
       AndroidNotificationChannel(
@@ -81,29 +82,35 @@ class LocalNotificationsAiringReminders implements AiringReminders {
       icon: _icon,
       category: AndroidNotificationCategory.reminder,
     );
-    final DateTime now = _now();
     for (final AiringReminder reminder in reminders) {
-      // The plugin rejects a time in the past.
-      if (!reminder.at.isAfter(now)) continue;
-      await _plugin.zonedSchedule(
-        id: _idOf(reminder),
-        title: reminder.title,
-        body: texts.body,
-        scheduledDate: tz.TZDateTime.from(reminder.at, tz.UTC),
-        payload: '${reminder.malId}',
-        notificationDetails: details,
-        scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
+      // Read per reminder: scheduling takes time, and the plugin rejects a
+      // time in the past.
+      if (!reminder.at.isAfter(_now())) continue;
+      try {
+        await _plugin.zonedSchedule(
+          id: _idOf(reminder),
+          title: reminder.title,
+          body: texts.body,
+          scheduledDate: tz.TZDateTime.from(reminder.at, tz.UTC),
+          payload: '${reminder.malId}',
+          notificationDetails: details,
+          scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } on ArgumentError {
+        // Became past between the check and the plugin's own: the rest
+        // still count.
+        continue;
+      }
     }
   }
 
-  /// Stable for a broadcast, so a reminder scheduled again replaces itself
-  /// instead of one in the tray for another series.
+  /// A series has at most one broadcast a day and its reminders are a week
+  /// apart, so the day modulo 64 repeats only after 64 weeks, and different
+  /// series never share an id. Scheduling again replaces a reminder instead
+  /// of piling it up.
   static int _idOf(AiringReminder reminder) =>
-      (reminder.malId * 31 ^
-          reminder.at.millisecondsSinceEpoch ~/
-              Duration.millisecondsPerMinute) &
-      0x7fffffff;
+      reminder.malId * 64 +
+      (reminder.at.millisecondsSinceEpoch ~/ Duration.millisecondsPerDay) % 64;
 
   static int? _malIdOf(String? payload) =>
       payload == null ? null : int.tryParse(payload);
