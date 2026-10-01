@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    show AndroidFlutterLocalNotificationsPlugin;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:http/http.dart' as http;
@@ -23,6 +25,7 @@ import 'infrastructure/local/sqflite_entry_repository.dart';
 import 'infrastructure/mal/mal_catalog.dart';
 import 'infrastructure/mal/mal_client.dart';
 import 'infrastructure/mal/mal_relations.dart';
+import 'infrastructure/notifications/local_notifications_airing_reminders.dart';
 import 'infrastructure/update/android_app_installer.dart';
 import 'infrastructure/update/apk_downloader.dart';
 import 'infrastructure/update/platform_package_installer.dart';
@@ -30,6 +33,7 @@ import 'l10n/l10n.dart';
 import 'ui/locale_resolution.dart';
 import 'ui/providers.dart';
 import 'ui/router.dart';
+import 'ui/shell/airing_reminders_sync.dart';
 import 'ui/startup_error_app.dart';
 import 'ui/state/settings_providers.dart';
 import 'ui/theme/app_theme.dart';
@@ -127,6 +131,11 @@ Future<Widget> _buildApp() async {
       animeCatalogProvider.overrideWith((Ref ref) {
         return MalCatalog(ref.watch(_malClientProvider));
       }),
+      airingRemindersProvider.overrideWithValue(
+        LocalNotificationsAiringReminders(
+          AndroidFlutterLocalNotificationsPlugin(),
+        ),
+      ),
       animeRelationsProvider.overrideWith((Ref ref) {
         return CachingAnimeRelations(
           MalRelations(ref.watch(_malClientProvider)),
@@ -163,7 +172,7 @@ class AniHubApp extends ConsumerWidget {
       builder: (BuildContext context, Widget? child) {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: systemOverlayStyleFor(Theme.of(context).brightness),
-          child: child!,
+          child: AiringRemindersSync(child: child!),
         );
       },
       localizationsDelegates: AppLocalizations.localizationsDelegates,
