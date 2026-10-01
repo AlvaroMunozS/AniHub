@@ -127,6 +127,9 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
+Color? _dayColor(WidgetTester tester, String day) =>
+    tester.widget<Text>(find.text(day)).style?.color;
+
 List<CatalogCard> _cards(WidgetTester tester) =>
     tester.widgetList<CatalogCard>(find.byType(CatalogCard)).toList();
 
@@ -351,6 +354,27 @@ void main() {
     expect(
       tester.widget<AnimeDetailScreen>(find.byType(AnimeDetailScreen)).malId,
       406,
+    );
+  });
+
+  testWidgets('dims the days none of your series airs', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBrowse(tester);
+    final Color faint = tester.element(find.text('vie')).palette.textFaint;
+    final Offset arrow = tester.getCenter(
+      find.byTooltip(spanish.searchSeasonPrevious),
+    );
+
+    expect(_dayColor(tester, 'vie'), isNot(faint));
+
+    await _tap(tester, _mine);
+
+    expect(_dayColor(tester, 'vie'), faint);
+    expect(_dayColor(tester, 'jue'), isNot(faint));
+    expect(
+      tester.getCenter(find.byTooltip(spanish.searchSeasonPrevious)),
+      arrow,
     );
   });
 }

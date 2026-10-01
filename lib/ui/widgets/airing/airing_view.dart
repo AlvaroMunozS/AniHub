@@ -138,6 +138,16 @@ class _AiringViewState extends ConsumerState<AiringView> {
               ),
               (AiringSchedule(), _) => _AiringTabs(
                 season: season,
+                dimmedWeekdays: mine
+                    ? <int>{
+                        for (
+                          int day = DateTime.monday;
+                          day <= DateTime.sunday;
+                          day++
+                        )
+                          if (!shown!.byWeekday.containsKey(day)) day,
+                      }
+                    : const <int>{},
                 today: now.weekday,
                 schedule: shown!,
                 inLibrary: mine ? const <int>{} : widget.inLibrary,
@@ -172,6 +182,7 @@ class _AiringTabs extends ConsumerWidget {
     required this.schedule,
     required this.inLibrary,
     required this.dayEmptyTitle,
+    required this.dimmedWeekdays,
   });
 
   final YearSeason season;
@@ -184,6 +195,10 @@ class _AiringTabs extends ConsumerWidget {
 
   /// Shown on a day without anime.
   final String dayEmptyTitle;
+
+  /// Weekdays whose label is faint, since none of the user's series airs
+  /// on them.
+  final Set<int> dimmedWeekdays;
 
   /// Weekdays from [DateTime.monday] to [DateTime.sunday], starting on
   /// [first].
@@ -218,6 +233,7 @@ class _AiringTabs extends ConsumerWidget {
                   _DayTab(
                     label: dayName.format(_dateOnWeekday(weekday)),
                     isToday: weekday == today,
+                    dimmed: dimmedWeekdays.contains(weekday),
                   ),
               ],
             ),
@@ -263,16 +279,27 @@ class _AiringTabs extends ConsumerWidget {
   }
 }
 
-/// A weekday tab; today's carries a dot in the accent color.
+/// A weekday tab; today's carries a dot in the accent color, and a day
+/// without the user's series is faint while only those are shown.
 class _DayTab extends StatelessWidget {
-  const _DayTab({required this.label, required this.isToday});
+  const _DayTab({
+    required this.label,
+    required this.isToday,
+    required this.dimmed,
+  });
 
   final String label;
   final bool isToday;
 
+  /// Whether the label is faint.
+  final bool dimmed;
+
   @override
   Widget build(BuildContext context) {
-    if (!isToday) return Tab(text: label);
+    final TextStyle? style = dimmed
+        ? TextStyle(color: context.palette.textFaint)
+        : null;
+    if (!isToday) return Tab(child: Text(label, style: style));
     return Tab(
       child: Semantics(
         label: context.l10n.searchAiringToday(label),
@@ -280,7 +307,7 @@ class _DayTab extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(label),
+            Text(label, style: style),
             const SizedBox(width: AppSpacing.s4),
             Container(
               width: _todayDotSize,
