@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart'
     show FutureProviderFamily, ProviderFamily;
 
 import '../../application/usecases/usecases.dart';
 import '../../domain/entities/catalog_anime.dart';
+import '../../domain/entities/entry.dart';
 import '../../domain/errors/catalog_exception.dart';
 import '../../domain/values/anime_season.dart';
+import '../../domain/values/watch_status.dart';
 import '../providers.dart';
 import '../report_error.dart';
+import 'library_providers.dart';
 
 /// Returns the season running at [now].
 YearSeason seasonAt(DateTime now) =>
@@ -37,11 +42,15 @@ final FutureProviderFamily<List<CatalogAnime>, YearSeason> airingAnimeProvider =
 /// the conversion is kept apart from the request: invalidating this provider
 /// converts the cached list again without requesting it. Read it only while
 /// [airingAnimeProvider] has a value.
+///
+/// The series being watched are listed however few lists hold them, so it is
+/// converted again when the library changes; a few hundred anime cost little.
 final ProviderFamily<AiringSchedule, YearSeason> airingScheduleProvider =
     Provider.family<AiringSchedule, YearSeason>((Ref ref, YearSeason season) {
       return ref.watch(scheduleAiringProvider)(
         ref.watch(airingAnimeProvider(season)).requireValue,
         now: ref.watch(clockProvider)(),
+        keep: ref.watch(watchingIdsProvider),
       );
     });
 
@@ -82,3 +91,35 @@ class BrowsedSeasonOffset extends Notifier<int> {
 
 final NotifierProvider<BrowsedSeasonOffset, int> browsedSeasonOffsetProvider =
     NotifierProvider<BrowsedSeasonOffset, int>(BrowsedSeasonOffset.new);
+
+/// MyAnimeList ids of the series being watched, pending changes included, so
+/// a status changed a moment ago is already reflected; empty while the
+/// library loads.
+final Provider<Set<int>> watchingIdsProvider = Provider<Set<int>>((Ref ref) {
+  final List<Entry> entries =
+      ref.watch(visibleLibraryEntriesProvider).value ?? const <Entry>[];
+  return <int>{
+    for (final Entry entry in entries)
+      if (entry.status == WatchStatus.watching) entry.malId,
+  };
+});
+
+const String _onlyMinePrefsKey = 'browse.airing.onlyMine';
+
+/// Whether the current season's airing view shows only the series being
+/// watched.
+class AiringOnlyMineNotifier extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref.watch(sharedPreferencesProvider).getBool(_onlyMinePrefsKey) ?? false;
+
+  void set(bool value) {
+    state = value;
+    unawaited(
+      ref.read(sharedPreferencesProvider).setBool(_onlyMinePrefsKey, value),
+    );
+  }
+}
+
+final NotifierProvider<AiringOnlyMineNotifier, bool> airingOnlyMineProvider =
+    NotifierProvider<AiringOnlyMineNotifier, bool>(AiringOnlyMineNotifier.new);
