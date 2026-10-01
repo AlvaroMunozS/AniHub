@@ -6,6 +6,8 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-02
+
 ### Added
 
 - *Settings → Notifications* can remind you when a series you are watching airs in Japan. It is off by default; the time is the Japanese TV broadcast, so streaming services may publish the episode later.
@@ -83,7 +85,8 @@ First public release.
 - Offline use: the library and cover images are stored on the device.
 - Library import from an `anihub-library` JSON file.
 
-[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/AlvaroMunozS/AniHub/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/AlvaroMunozS/AniHub/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/AlvaroMunozS/AniHub/compare/v1.1.0...v1.2.0
