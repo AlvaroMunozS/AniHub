@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../application/updates/check_for_update.dart';
 import '../application/usecases/usecases.dart';
+import '../domain/ports/airing_reminders.dart';
 import '../domain/ports/anime_catalog.dart';
 import '../domain/ports/anime_relations.dart';
 import '../domain/ports/app_installer.dart';
@@ -70,6 +71,11 @@ final Provider<BaseCacheManager> imageCacheManagerProvider =
 final Provider<ImageCacheStorage> imageCacheStorageProvider =
     Provider<ImageCacheStorage>(
       (Ref ref) => _notOverridden('imageCacheStorageProvider'),
+    );
+
+final Provider<AiringReminders> airingRemindersProvider =
+    Provider<AiringReminders>(
+      (Ref ref) => _notOverridden('airingRemindersProvider'),
     );
 
 final Provider<ReleaseSource> releaseSourceProvider = Provider<ReleaseSource>(
@@ -165,6 +171,11 @@ final Provider<FindStartedEntries> findStartedEntriesProvider =
 final Provider<ScheduleAiring> scheduleAiringProvider =
     Provider<ScheduleAiring>((Ref ref) {
       return const ScheduleAiring();
+    });
+
+final Provider<PlanAiringReminders> planAiringRemindersProvider =
+    Provider<PlanAiringReminders>((Ref ref) {
+      return const PlanAiringReminders();
     });
 
 final Provider<RankSeason> rankSeasonProvider = Provider<RankSeason>((Ref ref) {

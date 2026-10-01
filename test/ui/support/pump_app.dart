@@ -1,4 +1,5 @@
 import 'package:anihub/domain/entities/entry.dart';
+import 'package:anihub/domain/ports/airing_reminders.dart';
 import 'package:anihub/domain/ports/anime_catalog.dart';
 import 'package:anihub/domain/ports/anime_relations.dart';
 import 'package:anihub/domain/ports/app_installer.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/fake_airing_reminders.dart';
 import '../../support/fake_anime_catalog.dart';
 import '../../support/fake_anime_relations.dart';
 import '../../support/fake_app_installer.dart';
@@ -46,7 +48,8 @@ final AppLocalizations spanish = lookupAppLocalizations(_testLocale);
 /// [FakeAnimeCatalog], [relations] to a graph without relations and
 /// [backups] to cancelled file dialogs, [releaseSource] to no releases,
 /// [installer] to one that never finishes, [links] to links that open and
-/// [imageCacheStorage] to an empty cache.
+/// [imageCacheStorage] to an empty cache and [reminders] to
+/// [FakeAiringReminders].
 /// Preferences start as [prefs] and the device languages are
 /// [deviceLocales]. The app starts at [initialLocation], or on the library
 /// through the app's own [routerProvider]. [overrides] replace any other
@@ -61,6 +64,7 @@ Future<GoRouter> pumpApp(
   AppInstaller? installer,
   ExternalLinks? links,
   ImageCacheStorage? imageCacheStorage,
+  AiringReminders? reminders,
   Map<String, Object> prefs = const <String, Object>{},
   List<Locale> deviceLocales = const <Locale>[_testLocale],
   String? initialLocation,
@@ -103,6 +107,9 @@ Future<GoRouter> pumpApp(
         ),
         appInstallerProvider.overrideWithValue(installer ?? FakeAppInstaller()),
         externalLinksProvider.overrideWithValue(links ?? FakeExternalLinks()),
+        airingRemindersProvider.overrideWithValue(
+          reminders ?? FakeAiringReminders(),
+        ),
         if (router != null) routerProvider.overrideWithValue(router),
         ...overrides,
       ],
