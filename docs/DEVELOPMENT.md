@@ -12,6 +12,7 @@
 | Images | `cached_network_image` with a long-lived disk cache |
 | Localization | `flutter_localizations` and `intl`, generated from ARB files |
 | Preferences | `shared_preferences` |
+| Notifications | `flutter_local_notifications`, inexact alarms |
 | Updates | GitHub Releases, installed with Android's `PackageInstaller` |
 
 ## Architecture
@@ -296,8 +297,9 @@ tap installs it. Nothing is requested until the user taps.
   week data (`lib/ui/week_start.dart`), since the language alone cannot tell the
   United States from the United Kingdom. The list is requested once per season
   and session, and not cached on disk: it changes every week and is only useful
-  online. The season and today are read again whenever the app returns to the
-  foreground, since it can stay open across a change.
+  online. With airing reminders on it is also requested when the app starts,
+  not only when *Browse* opens. The season and today are read again whenever
+  the app returns to the foreground, since it can stay open across a change.
   Other seasons are one grid, most followed first: the series that
   premiered in a past season, finished or not, and those announced for the
   next one. The next season uses a threshold of 1000 lists, since its series
@@ -312,8 +314,24 @@ tap installs it. Nothing is requested until the user taps.
 - **One layout.** A single phone layout, also used in landscape and on
   tablets, where content is capped in width and centered instead of
   stretching (`ContentColumn`).
+- **Airing reminders.** *Settings → Notifications* turns on a local
+  notification at the Japanese broadcast time of each series in *Watching*,
+  stored under `notifications.airing` and off by default. `PlanAiringReminders`
+  plans the next 14 days from the airing list, and `AiringRemindersSync`
+  replaces all the scheduled reminders when the library, the preference or the
+  airing list change, when the app returns to the foreground and when the
+  language changes, since the texts come from the app's strings. Nothing is
+  replaced until the library and the airing list have loaded, so a slow or
+  offline start keeps the reminders already scheduled. They go through
+  Android's alarm manager as inexact alarms, which need no special permission
+  but may fire a little late, and the plugin's boot receiver schedules them
+  again after a restart. The app asks for `POST_NOTIFICATIONS` on Android 13
+  and later. The time is the Japanese broadcast, so streaming services may
+  publish later.
 - **Manual updates.** The app looks for a new version only when asked, so it
-  makes no request the user did not expect and needs no background work.
+  makes no request the user did not expect. It does no background network
+  work: the airing list behind the reminders is requested only while the app is
+  open.
 - **Long image cache.** A MyAnimeList cover URL always serves the same file, so
   images are cached for a year (up to 3000 files) and load offline.
   *More → Settings → Storage* shows its size and clears it.

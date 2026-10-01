@@ -20,6 +20,10 @@ client id, and are handled under
 Covers of an imported library are loaded from the addresses in the imported
 file.
 
+If you turn on *Settings → Notifications → Remind me when it airs*, the app
+also asks MyAnimeList for the airing list each time it opens. The reminders
+are local notifications scheduled on the device: nothing is sent anywhere else.
+
 The app connects to GitHub only when you tap *Check for updates* in
 *More → About*, or install the update it finds:
 
@@ -37,7 +41,8 @@ The links in *About* open in your browser.
 The library, the app preferences and the cached anime data are stored in the
 app's private storage. They are included in Android's system backup when it is
 enabled on the device. Cover images are cached in the app's cache, which is not
-backed up. Uninstalling the app deletes all of them.
+backed up. Uninstalling the app deletes all of them. Scheduled reminders are
+kept by Android on the device.
 
 *Export library* in *Settings → Backup* saves the library to a file wherever
 you choose in the system's save dialog, which may be a cloud storage app. That
