@@ -9,6 +9,7 @@ All notable changes to AniHub are documented here. The format follows
 ### Added
 
 - *Browse* shows the best-known anime airing this season, by day of the week, most popular first, with the broadcast time in your time zone. It opens on today, and anime already in your library are dimmed.
+- *Browse* has arrows next to the season to look at past seasons and the next one, most popular first. Tap the season's name to go back to the current one.
 - *Appearance* lets you start the week on Monday or Sunday; by default it follows your phone's region.
 - *Settings → Backup → Export library* saves your library to a file, on your phone or in a cloud storage app, that *Import library* can restore on a new install or another phone.
 

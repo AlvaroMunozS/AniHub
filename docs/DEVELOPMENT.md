@@ -293,6 +293,12 @@ tap installs it. Nothing is requested until the user taps.
   season and session, and not cached on disk: it changes every week and is
   only useful online. The season and today are read again whenever the app
   returns to the foreground, since it can stay open across a change.
+  Other seasons are one grid, most followed first: the series that
+  premiered in a past season, finished or not, and those announced for the
+  next one. The next season uses a threshold of 1000 lists, since its series
+  have not aired and even the awaited ones are in fewer lists. Browse goes
+  back without a limit but only one season forward, the furthest MyAnimeList
+  lists in useful numbers.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on
