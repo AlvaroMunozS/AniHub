@@ -130,6 +130,46 @@ void main() {
     ]);
   });
 
+  test('includes the premiere day from its first minute in Japan', () {
+    const Broadcast thursday2330 = Broadcast(
+      weekday: DateTime.thursday,
+      hour: 23,
+      minute: 30,
+    );
+    const Broadcast friday0030 = Broadcast(
+      weekday: DateTime.friday,
+      hour: 0,
+      minute: 30,
+    );
+    const ReleaseDate premiere = ReleaseDate(year: 2026, month: 10, day: 2);
+
+    final List<AiringReminder> reminders = plan(
+      <CatalogAnime>[
+        _anime(
+          1,
+          'Day before',
+          broadcast: thursday2330,
+          isAiring: false,
+          start: premiere,
+        ),
+        _anime(
+          2,
+          'Premiere day',
+          broadcast: friday0030,
+          isAiring: false,
+          start: premiere,
+        ),
+      ],
+      watching: <int>{1, 2},
+      now: _now,
+    );
+
+    expect(
+      reminders.map((AiringReminder r) => (r.malId, r.at)),
+      <(int, DateTime)>[(2, DateTime.utc(2026, 10, 1, 15, 30))],
+    );
+  });
+
   test('waits for a full premiere date before reminding a series that has not '
       'aired', () {
     final List<AiringReminder> monthOnly = plan(

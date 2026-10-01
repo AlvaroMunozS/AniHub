@@ -61,6 +61,7 @@ void main() {
       ],
     );
     container.listen(airingReminderPlanProvider, (_, _) {});
+    await Future<void>.delayed(Duration.zero);
 
     expect(container.read(airingReminderPlanProvider), isEmpty);
     expect(catalog.airingRequests, isEmpty);

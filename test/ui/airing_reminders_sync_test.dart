@@ -123,13 +123,13 @@ void main() {
   testWidgets('leaves reminders alone when the airing list fails', (
     WidgetTester tester,
   ) async {
-    await pump(
-      tester,
-      catalog: FakeAnimeCatalog(
-        airingError: const CatalogNetworkException('offline'),
-      ),
+    final FakeAnimeCatalog catalog = FakeAnimeCatalog(
+      airingError: const CatalogNetworkException('offline'),
     );
+    await pump(tester, catalog: catalog);
 
+    expect(catalog.airingRequests, isNotEmpty);
+    expect(_container(tester).read(airingReminderPlanProvider), isNull);
     expect(fake.replaced, isEmpty);
   });
 

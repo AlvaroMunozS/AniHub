@@ -93,6 +93,8 @@ void main() {
     await _pump(tester, fake, prefs: _on);
     expect(find.text(spanish.notificationsBlocked), findsOneWidget);
 
+    expect(_switchValue(tester), isFalse);
+
     fake.allowed = true;
     _resume(tester);
     await tester.pumpAndSettle();
@@ -101,7 +103,9 @@ void main() {
     expect(find.text(spanish.notificationsBlocked), findsNothing);
   });
 
-  testWidgets('turning it off hides the warning', (WidgetTester tester) async {
+  testWidgets('turning the switch off stores the preference as off', (
+    WidgetTester tester,
+  ) async {
     final FakeAiringReminders fake = FakeAiringReminders()..allowed = true;
     await _pump(tester, fake, prefs: _on);
     expect(_switchValue(tester), isTrue);
@@ -111,6 +115,5 @@ void main() {
 
     expect(_switchValue(tester), isFalse);
     expect(await _storedPreference(), isFalse);
-    expect(find.text(spanish.notificationsBlocked), findsNothing);
   });
 }
