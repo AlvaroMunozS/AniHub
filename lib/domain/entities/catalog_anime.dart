@@ -1,6 +1,7 @@
 import '../support/list_equality.dart';
 import '../values/anime_season.dart';
 import '../values/broadcast.dart';
+import '../values/release_date.dart';
 
 /// Read-only anime metadata from the catalog.
 ///
@@ -22,6 +23,7 @@ class CatalogAnime {
     this.studioName,
     this.broadcast,
     this.memberCount,
+    this.startDate,
   });
 
   final int malId;
@@ -52,6 +54,9 @@ class CatalogAnime {
   /// well known it is; never shown, since the app has no statistics.
   final int? memberCount;
 
+  /// When the first episode airs, as precise as MyAnimeList knows it.
+  final ReleaseDate? startDate;
+
   @override
   bool operator ==(Object other) =>
       other is CatalogAnime &&
@@ -66,7 +71,8 @@ class CatalogAnime {
       sameElements(other.genres, genres) &&
       other.studioName == studioName &&
       other.broadcast == broadcast &&
-      other.memberCount == memberCount;
+      other.memberCount == memberCount &&
+      other.startDate == startDate;
 
   @override
   int get hashCode => Object.hash(
@@ -82,6 +88,7 @@ class CatalogAnime {
     studioName,
     broadcast,
     memberCount,
+    startDate,
   );
 
   @override

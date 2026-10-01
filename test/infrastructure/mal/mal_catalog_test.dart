@@ -2,6 +2,7 @@ import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/errors/catalog_exception.dart';
 import 'package:anihub/domain/values/anime_season.dart';
 import 'package:anihub/domain/values/broadcast.dart';
+import 'package:anihub/domain/values/release_date.dart';
 import 'package:anihub/infrastructure/mal/mal_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -62,6 +63,7 @@ void main() {
           description: "Two brothers search for the Philosopher's Stone.",
           genres: <String>['Action', 'Adventure'],
           studioName: 'Bones',
+          startDate: ReleaseDate(year: 2009, month: 4, day: 5),
         ),
       );
       expect(server.requests.single.path, '/v2/anime/5114');
@@ -360,6 +362,7 @@ void main() {
       String? nsfw,
       String? rating,
       int? members,
+      String? startDate,
     }) => <String, Object?>{
       'id': id,
       'title': title,
@@ -369,6 +372,7 @@ void main() {
       'nsfw': ?nsfw,
       'rating': ?rating,
       'num_list_users': ?members,
+      'start_date': ?startDate,
     };
 
     /// Answers the season and the ranking with [season] and [ranking].
@@ -503,6 +507,28 @@ void main() {
       expect(anime.map((CatalogAnime a) => a.memberCount), <int?>[
         334883,
         null,
+      ]);
+    });
+
+    test('reads the start date of each anime', () async {
+      final FakeMalApi server = api(
+        season: <Map<String, Object?>>[
+          series(
+            1,
+            'Premiere',
+            status: 'not_yet_aired',
+            startDate: '2026-10-04',
+          ),
+          series(2, 'Vague', status: 'not_yet_aired', startDate: '2026-10'),
+        ],
+      );
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .airingIn(2026, AnimeSeason.fall);
+
+      expect(anime.map((CatalogAnime a) => a.startDate), <ReleaseDate>[
+        const ReleaseDate(year: 2026, month: 10, day: 4),
+        const ReleaseDate(year: 2026, month: 10),
       ]);
     });
 
