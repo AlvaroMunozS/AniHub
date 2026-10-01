@@ -300,7 +300,8 @@
 
   "settingsNotifications": "Notificaciones",
   "notificationsAiring": "Emisiones",
-  "notificationsAiringReminders": "Avisar cuando se emita una serie que estoy viendo",
+  "notificationsAiringReminders": "Avisar de capítulos nuevos",
+  "notificationsAiringRemindersSubtitle": "Envía una notificación cada vez que un capítulo de un anime que estás viendo se emita",
   "notificationsBlocked": "Android no permite notificaciones a AniHub.",
   "notificationsOpenSystemSettings": "Abrir ajustes",
   "reminderChannelName": "Emisiones",

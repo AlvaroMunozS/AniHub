@@ -20,7 +20,7 @@ client id, and are handled under
 Covers of an imported library are loaded from the addresses in the imported
 file.
 
-If you turn on *Settings → Notifications → Remind me when a series I am watching airs*, the app
+If you turn on *Settings → Notifications → Notify of new episodes*, the app
 also asks MyAnimeList for the airing list each time it starts. The reminders
 are local notifications scheduled on the device: nothing is sent anywhere else.
 
