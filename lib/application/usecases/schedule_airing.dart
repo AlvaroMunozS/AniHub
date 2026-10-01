@@ -91,8 +91,6 @@ class ScheduleAiring {
 
   static Duration _deviceOffset(DateTime utc) => utc.toLocal().timeZoneOffset;
 
-  static const Duration _jstOffset = Duration(hours: 9);
-
   /// Fewest MyAnimeList lists an anime must be in to be listed. Anime whose
   /// count is unknown are listed.
   static const int minMembers = 5000;
@@ -140,32 +138,10 @@ class ScheduleAiring {
     Broadcast broadcast,
     DateTime nowUtc,
   ) {
-    final int? hour = broadcast.hour;
-    final int? minute = broadcast.minute;
-    if (hour == null || minute == null) {
+    final DateTime? slotUtc = broadcast.nextAfter(nowUtc);
+    if (slotUtc == null) {
       return (broadcast.weekday, ScheduledAnime(anime));
     }
-    // Japan's clock, written as UTC so that date arithmetic ignores the
-    // device time zone.
-    final DateTime nowJst = nowUtc.add(_jstOffset);
-    final int daysAhead = (broadcast.weekday - nowJst.weekday) % 7;
-    DateTime slotJst = DateTime.utc(
-      nowJst.year,
-      nowJst.month,
-      nowJst.day + daysAhead,
-      hour,
-      minute,
-    );
-    if (!slotJst.isAfter(nowJst)) {
-      slotJst = DateTime.utc(
-        slotJst.year,
-        slotJst.month,
-        slotJst.day + DateTime.daysPerWeek,
-        hour,
-        minute,
-      );
-    }
-    final DateTime slotUtc = slotJst.subtract(_jstOffset);
     final DateTime local = slotUtc.add(localOffset(slotUtc));
     return (
       local.weekday,
