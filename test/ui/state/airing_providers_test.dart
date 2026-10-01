@@ -146,4 +146,58 @@ void main() {
 
     expect(container.read(airingScheduleProvider(season)).isEmpty, isTrue);
   });
+
+  group('filtering to the series being watched', () {
+    const YearSeason season = (year: 2026, season: AnimeSeason.summer);
+
+    ProviderContainer open(FakeAnimeCatalog catalog) {
+      final InMemoryEntryRepository repo = InMemoryEntryRepository();
+      addTearDown(repo.dispose);
+      final ProviderContainer container = ProviderContainer.test(
+        overrides: [
+          entryRepositoryProvider.overrideWithValue(repo),
+          animeCatalogProvider.overrideWithValue(catalog),
+          clockProvider.overrideWithValue(() => DateTime(2026, 9, 24, 12)),
+        ],
+      );
+      container.listen(airingCanFilterProvider, (_, _) {});
+      return container;
+    }
+
+    test('applies to the current season once something airs', () async {
+      final ProviderContainer container = open(
+        FakeAnimeCatalog(
+          airing: const <CatalogAnime>[
+            CatalogAnime(
+              malId: 1,
+              title: 'Hit',
+              memberCount: 900000,
+              broadcast: Broadcast(
+                weekday: DateTime.thursday,
+                hour: 22,
+                minute: 0,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(container.read(airingCanFilterProvider), isFalse);
+      await container.read(airingAnimeProvider(season).future);
+      expect(container.read(airingCanFilterProvider), isTrue);
+
+      container.read(browsedSeasonOffsetProvider.notifier).previous();
+      expect(container.read(airingCanFilterProvider), isFalse);
+    });
+
+    test('does not apply when nothing airs', () async {
+      final ProviderContainer container = open(
+        FakeAnimeCatalog(airing: const <CatalogAnime>[]),
+      );
+
+      await container.read(airingAnimeProvider(season).future);
+
+      expect(container.read(airingCanFilterProvider), isFalse);
+    });
+  });
 }

@@ -123,3 +123,17 @@ class AiringOnlyMineNotifier extends Notifier<bool> {
 
 final NotifierProvider<AiringOnlyMineNotifier, bool> airingOnlyMineProvider =
     NotifierProvider<AiringOnlyMineNotifier, bool>(AiringOnlyMineNotifier.new);
+
+/// Whether the airing view can show only the series being watched: Browse
+/// is on the current season and something airs in it.
+///
+/// The search bar, which holds the toggle, and the airing view, which
+/// filters, read this one rule. The season comes from the clock when it is
+/// first read; the airing view invalidates it when the app returns to the
+/// foreground, as it does the schedule.
+final Provider<bool> airingCanFilterProvider = Provider<bool>((Ref ref) {
+  if (ref.watch(browsedSeasonOffsetProvider) != 0) return false;
+  final YearSeason season = seasonAt(ref.watch(clockProvider)());
+  if (!ref.watch(airingAnimeProvider(season)).hasValue) return false;
+  return !ref.watch(airingScheduleProvider(season)).isEmpty;
+});
