@@ -18,9 +18,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     final AppLocalizations l10n = context.l10n;
     final bool enabled = ref.watch(airingRemindersEnabledProvider);
     final AsyncValue<bool> system = ref.watch(airingRemindersAllowedProvider);
-    // While the system answer loads, the switch shows the stored choice so
-    // it does not flicker.
-    final bool allowed = system.value ?? enabled;
+    // The switch shows the stored choice even when the system blocks it, so
+    // the user can still turn it off and dismiss the warning.
     final bool blocked = enabled && system.value == false;
     final AiringRemindersEnabledNotifier reminders = ref.read(
       airingRemindersEnabledProvider.notifier,
@@ -45,7 +44,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                       ? TextStyle(color: Theme.of(context).colorScheme.error)
                       : null,
                 ),
-                value: enabled && allowed,
+                value: enabled,
                 onChanged: (bool on) =>
                     on ? unawaited(reminders.enable()) : reminders.disable(),
               ),

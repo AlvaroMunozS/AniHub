@@ -67,7 +67,7 @@ void main() {
     expect(find.text(spanish.notificationsBlocked), findsNothing);
   });
 
-  testWidgets('stays off and says why when the permission is denied', (
+  testWidgets('stays on and says why when the permission is denied', (
     WidgetTester tester,
   ) async {
     final FakeAiringReminders fake = FakeAiringReminders()
@@ -77,7 +77,7 @@ void main() {
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
 
-    expect(_switchValue(tester), isFalse);
+    expect(_switchValue(tester), isTrue);
     expect(find.text(spanish.notificationsBlocked), findsOneWidget);
 
     await tester.tap(find.text(spanish.notificationsOpenSystemSettings));
@@ -86,20 +86,33 @@ void main() {
     expect(fake.settingsOpened, 1);
   });
 
-  testWidgets('turns on by itself when allowed in the system after a denial', (
+  testWidgets('clears the warning when allowed in the system after a denial', (
     WidgetTester tester,
   ) async {
     final FakeAiringReminders fake = FakeAiringReminders();
     await _pump(tester, fake, prefs: _on);
     expect(find.text(spanish.notificationsBlocked), findsOneWidget);
-
-    expect(_switchValue(tester), isFalse);
+    expect(_switchValue(tester), isTrue);
 
     fake.allowed = true;
     _resume(tester);
     await tester.pumpAndSettle();
 
     expect(_switchValue(tester), isTrue);
+    expect(find.text(spanish.notificationsBlocked), findsNothing);
+  });
+
+  testWidgets('can be turned off while the permission is denied', (
+    WidgetTester tester,
+  ) async {
+    await _pump(tester, FakeAiringReminders(), prefs: _on);
+    expect(find.text(spanish.notificationsBlocked), findsOneWidget);
+
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+
+    expect(_switchValue(tester), isFalse);
+    expect(await _storedPreference(), isFalse);
     expect(find.text(spanish.notificationsBlocked), findsNothing);
   });
 
