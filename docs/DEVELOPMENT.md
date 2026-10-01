@@ -293,10 +293,11 @@ tap installs it. Nothing is requested until the user taps.
   appears in the current season. The week starts on the day picked in
   *Appearance*, or else on the one of the device's region by the Unicode
   CLDR week data (`lib/ui/week_start.dart`), since the language alone
-  cannot tell the United States from the United Kingdom. The list is requested once per
-  season and session, and not cached on disk: it changes every week and is
-  only useful online. The season and today are read again whenever the app
-  returns to the foreground, since it can stay open across a change.
+  cannot tell the United States from the United Kingdom. The list is
+  requested once per season and session, and not cached on disk: it changes
+  every week and is only useful online. The season and today are read again
+  whenever the app returns to the foreground, since it can stay open across a
+  change.
   Other seasons are one grid, most followed first: the series that
   premiered in a past season, finished or not, and those announced for the
   next one. The next season uses a threshold of 1000 lists, since its series

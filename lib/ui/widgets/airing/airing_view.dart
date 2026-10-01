@@ -424,31 +424,34 @@ class _SeasonHeader extends ConsumerWidget {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.s12),
-              // Wraps instead of overflowing with large text.
-              child: Wrap(
-                spacing: AppSpacing.s8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: <Widget>[
-                  if (count case final String count)
-                    Text(
-                      count,
-                      style: AppTypography.caption.copyWith(
-                        color: context.palette.textFaint,
+            if (count != null || loading || mine != null)
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.s12),
+                // Wraps instead of overflowing with large text.
+                child: Wrap(
+                  spacing: AppSpacing.s8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: <Widget>[
+                    if (count case final String count)
+                      Text(
+                        count,
+                        style: AppTypography.caption.copyWith(
+                          color: context.palette.textFaint,
+                        ),
+                      )
+                    else if (loading)
+                      const Skeleton(width: 70, height: 12),
+                    if (mine case final bool selected)
+                      FilterChip(
+                        label: Text(context.l10n.searchAiringMine),
+                        selected: selected,
+                        onSelected: ref
+                            .read(airingOnlyMineProvider.notifier)
+                            .set,
                       ),
-                    )
-                  else if (loading)
-                    const Skeleton(width: 70, height: 12),
-                  if (mine case final bool selected)
-                    FilterChip(
-                      label: Text(context.l10n.searchAiringMine),
-                      selected: selected,
-                      onSelected: ref.read(airingOnlyMineProvider.notifier).set,
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),

@@ -1,5 +1,8 @@
+import 'package:anihub/application/usecases/usecases.dart';
+import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/entities/entry.dart';
 import 'package:anihub/domain/values/anime_season.dart';
+import 'package:anihub/domain/values/broadcast.dart';
 import 'package:anihub/domain/values/watch_status.dart';
 import 'package:anihub/ui/providers.dart';
 import 'package:anihub/ui/state/airing_providers.dart';
@@ -94,5 +97,53 @@ void main() {
     await container.read(libraryEntriesProvider.future);
 
     expect(container.read(watchingIdsProvider), <int>{1});
+  });
+
+  test('lists a series being watched however few lists hold it, until it is '
+      'no longer watched', () async {
+    final InMemoryEntryRepository repo = InMemoryEntryRepository(
+      seed: <Entry>[
+        Entry(
+          malId: 1,
+          title: 'Niche',
+          status: WatchStatus.watching,
+          updatedAt: DateTime(2026, 9),
+        ),
+      ],
+    );
+    addTearDown(repo.dispose);
+    final FakeAnimeCatalog catalog = FakeAnimeCatalog(
+      airing: const <CatalogAnime>[
+        CatalogAnime(
+          malId: 1,
+          title: 'Niche',
+          memberCount: ScheduleAiring.minMembers - 1,
+          broadcast: Broadcast(weekday: DateTime.thursday, hour: 22, minute: 0),
+        ),
+      ],
+    );
+    final ProviderContainer container = ProviderContainer.test(
+      overrides: [
+        entryRepositoryProvider.overrideWithValue(repo),
+        animeCatalogProvider.overrideWithValue(catalog),
+        clockProvider.overrideWithValue(() => DateTime(2026, 9, 24, 12)),
+      ],
+    );
+    const YearSeason season = (year: 2026, season: AnimeSeason.summer);
+
+    // Riverpod pauses a stream nobody listens to, so it would never emit.
+    container
+      ..listen(watchingIdsProvider, (_, _) {})
+      ..listen(airingScheduleProvider(season), (_, _) {});
+    await container.read(airingAnimeProvider(season).future);
+    await container.read(libraryEntriesProvider.future);
+
+    expect(container.read(airingScheduleProvider(season)).length, 1);
+
+    final Entry watching = (await repo.findAll()).single;
+    await repo.save(watching.withStatus(WatchStatus.planned));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(airingScheduleProvider(season)).isEmpty, isTrue);
   });
 }
