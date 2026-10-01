@@ -44,3 +44,41 @@ final ProviderFamily<AiringSchedule, YearSeason> airingScheduleProvider =
         now: ref.watch(clockProvider)(),
       );
     });
+
+/// The series that premiere in a season, finished or not, as MyAnimeList
+/// lists them.
+///
+/// Kept for the session and not retried on its own, for the same reasons as
+/// [airingAnimeProvider].
+final FutureProviderFamily<List<CatalogAnime>, YearSeason>
+seasonPremieresProvider = FutureProvider.family<List<CatalogAnime>, YearSeason>(
+  retry: (int retryCount, Object error) => null,
+  (Ref ref, YearSeason season) => reportingUnexpected(
+    ref.watch(animeCatalogProvider).premieringIn(season.year, season.season),
+    isExpected: (Object error) => error is CatalogException,
+  ),
+);
+
+/// How many seasons Browse is from the current one: negative for past
+/// seasons.
+///
+/// It lasts for the session. It is relative, so when the season changes while
+/// the app is open, Browse moves along with it.
+class BrowsedSeasonOffset extends Notifier<int> {
+  /// MyAnimeList lists few series further ahead than the next season.
+  static const int max = 1;
+
+  @override
+  int build() => 0;
+
+  void previous() => state--;
+
+  void next() {
+    if (state < max) state++;
+  }
+
+  void reset() => state = 0;
+}
+
+final NotifierProvider<BrowsedSeasonOffset, int> browsedSeasonOffsetProvider =
+    NotifierProvider<BrowsedSeasonOffset, int>(BrowsedSeasonOffset.new);
