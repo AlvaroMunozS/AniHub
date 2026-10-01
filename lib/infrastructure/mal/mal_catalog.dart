@@ -41,8 +41,8 @@ class MalCatalog implements AnimeCatalog {
   static const String _airingFields =
       '$_searchFields,$_contentFields,media_type,broadcast,num_list_users';
 
-  /// Media types listed by [airingIn] and [premieringIn]; the rest are films, specials, music
-  /// videos and commercials.
+  /// Media types listed by [airingIn] and [premieringIn]; the rest are films,
+  /// specials, music videos and commercials.
   static const Set<String> _seriesTypes = <String>{'tv', 'ona'};
 
   /// Page size of the season and ranking lists, which allow more than

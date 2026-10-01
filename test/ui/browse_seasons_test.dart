@@ -326,6 +326,24 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('announces only the new season while the name slides', (
+    WidgetTester tester,
+  ) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await _pumpBrowse(tester, catalog: _catalog());
+
+    await tester.tap(find.byTooltip(spanish.searchSeasonPrevious));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    expect(find.text('Verano 2026'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.text('Primavera 2026')),
+      isSemantics(isLiveRegion: true, label: 'Primavera 2026'),
+    );
+    semantics.dispose();
+  });
+
   testWidgets('slides the season name in', (WidgetTester tester) async {
     await _pumpBrowse(tester, catalog: _catalog());
 

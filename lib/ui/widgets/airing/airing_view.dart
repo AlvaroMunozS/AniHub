@@ -457,7 +457,7 @@ class _SeasonTitleState extends State<_SeasonTitle> {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s4,
-            vertical: AppSpacing.s12,
+            vertical: AppSpacing.s16,
           ),
           child: AnimatedSwitcher(
             duration: MediaQuery.disableAnimationsOf(context)
@@ -467,7 +467,14 @@ class _SeasonTitleState extends State<_SeasonTitle> {
             switchOutCurve: AppDuration.curve,
             layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
               alignment: Alignment.centerLeft,
-              children: <Widget>[...previous, ?current],
+              // The outgoing name stays out of semantics so the live region
+              // announces only the new one.
+              children: <Widget>[
+                ...previous.map(
+                  (Widget outgoing) => ExcludeSemantics(child: outgoing),
+                ),
+                ?current,
+              ],
             ),
             transitionBuilder: (Widget child, Animation<double> animation) {
               // The outgoing name runs the animation backwards, so it leaves
