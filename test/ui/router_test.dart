@@ -4,6 +4,7 @@ import 'package:anihub/ui/screens/anime_detail_screen.dart';
 import 'package:anihub/ui/screens/library_screen.dart';
 import 'package:anihub/ui/screens/settings/appearance_settings_screen.dart';
 import 'package:anihub/ui/screens/settings/backup_settings_screen.dart';
+import 'package:anihub/ui/screens/settings/notification_settings_screen.dart';
 import 'package:anihub/ui/screens/settings/settings_screen.dart';
 import 'package:anihub/ui/screens/settings/storage_settings_screen.dart';
 import 'package:flutter/widgets.dart';
@@ -58,6 +59,7 @@ void main() {
     for (final (String path, Type screen) in <(String, Type)>[
       (RoutePaths.settings, SettingsScreen),
       (RoutePaths.appearanceSettings, AppearanceSettingsScreen),
+      (RoutePaths.notificationSettings, NotificationSettingsScreen),
       (RoutePaths.backupSettings, BackupSettingsScreen),
       (RoutePaths.storageSettings, StorageSettingsScreen),
     ]) {

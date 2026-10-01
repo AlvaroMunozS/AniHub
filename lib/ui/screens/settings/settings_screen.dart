@@ -27,6 +27,11 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => context.go(RoutePaths.appearanceSettings),
               ),
               ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: Text(l10n.settingsNotifications),
+                onTap: () => context.go(RoutePaths.notificationSettings),
+              ),
+              ListTile(
                 leading: const Icon(Icons.settings_backup_restore),
                 title: Text(l10n.settingsBackup),
                 onTap: () => context.go(RoutePaths.backupSettings),
