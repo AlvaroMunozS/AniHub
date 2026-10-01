@@ -19,7 +19,8 @@ void main() {
 
   final List<MethodCall> calls = <MethodCall>[];
   final Map<String, Object?> answers = <String, Object?>{};
-  // The plugin validates against the real clock, so the test one is relative.
+  // The plugin checks the date against its own clock, which the test does not
+  // control, so the test uses margins of hours.
   final DateTime now = DateTime.now().toUtc();
 
   LocalNotificationsAiringReminders build({DateTime Function()? clock}) =>
@@ -148,7 +149,8 @@ void main() {
   });
 
   test('never shares an id between two series', () async {
-    // An id mixing the minute with the series by XOR repeats for these two.
+    // Two different series whose broadcasts are 9390 minutes apart must still
+    // get different ids.
     final int a =
         ((now.add(const Duration(days: 1)).millisecondsSinceEpoch ~/
                 Duration.millisecondsPerMinute) |

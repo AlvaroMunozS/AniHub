@@ -96,18 +96,17 @@ class LocalNotificationsAiringReminders implements AiringReminders {
           notificationDetails: details,
           scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
-      } on ArgumentError {
-        // Became past between the check and the plugin's own: the rest
-        // still count.
-        continue;
+      } on ArgumentError catch (e) {
+        // A reminder that becomes past while earlier ones are being scheduled
+        // must not drop the later ones.
+        if (e.name != 'scheduledDate') rethrow;
       }
     }
   }
 
   /// A series has at most one broadcast a day and its reminders are a week
   /// apart, so the day modulo 64 repeats only after 64 weeks, and different
-  /// series never share an id. Scheduling again replaces a reminder instead
-  /// of piling it up.
+  /// series never share an id.
   static int _idOf(AiringReminder reminder) =>
       reminder.malId * 64 +
       (reminder.at.millisecondsSinceEpoch ~/ Duration.millisecondsPerDay) % 64;
