@@ -301,7 +301,6 @@
   "settingsNotifications": "Notificaciones",
   "notificationsAiring": "Emisiones",
   "notificationsAiringReminders": "Avisar cuando se emita",
-  "notificationsAiringRemindersSubtitle": "Series en Viendo, a la hora de su emisión en Japón. Puede tardar más en llegar a tu plataforma.",
   "notificationsBlocked": "Android no permite notificaciones a AniHub.",
   "notificationsOpenSystemSettings": "Abrir ajustes",
   "reminderChannelName": "Emisiones",

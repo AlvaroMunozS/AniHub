@@ -184,7 +184,6 @@
   "settingsNotifications": "Notifications",
   "notificationsAiring": "Airing",
   "notificationsAiringReminders": "Remind me when it airs",
-  "notificationsAiringRemindersSubtitle": "Series you're watching, when they air in Japan. Streaming services may publish them later.",
   "notificationsBlocked": "Android isn't allowing AniHub to send notifications.",
   "notificationsOpenSystemSettings": "Open settings",
   "reminderChannelName": "Airing",

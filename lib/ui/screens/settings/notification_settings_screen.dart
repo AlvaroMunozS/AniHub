@@ -37,14 +37,14 @@ class NotificationSettingsScreen extends ConsumerWidget {
               SettingsSectionHeader(l10n.notificationsAiring),
               SwitchListTile(
                 title: Text(l10n.notificationsAiringReminders),
-                subtitle: Text(
-                  blocked
-                      ? l10n.notificationsBlocked
-                      : l10n.notificationsAiringRemindersSubtitle,
-                  style: blocked
-                      ? TextStyle(color: Theme.of(context).colorScheme.error)
-                      : null,
-                ),
+                subtitle: blocked
+                    ? Text(
+                        l10n.notificationsBlocked,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      )
+                    : null,
                 value: enabled && allowed,
                 onChanged: (bool on) =>
                     on ? unawaited(reminders.enable()) : reminders.disable(),
