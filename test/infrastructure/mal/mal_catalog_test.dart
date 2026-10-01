@@ -532,4 +532,80 @@ void main() {
       );
     });
   });
+
+  group('premieringIn', () {
+    Map<String, Object?> series(
+      int id,
+      String title, {
+      String mediaType = 'tv',
+      String status = 'finished_airing',
+      String? nsfw,
+      String? rating,
+    }) => <String, Object?>{
+      'id': id,
+      'title': title,
+      'media_type': mediaType,
+      'status': status,
+      'nsfw': ?nsfw,
+      'rating': ?rating,
+      'num_list_users': 6000,
+    };
+
+    test('asks only for the season list', () async {
+      final FakeMalApi server = FakeMalApi(
+        (Uri url) async => _page(const <Map<String, Object?>>[]),
+      );
+
+      await MalCatalog(server.client()).premieringIn(2025, AnimeSeason.spring);
+
+      expect(server.requests, hasLength(1));
+      final Uri request = server.requests.single;
+      expect(request.path, '/v2/anime/season/2025/spring');
+      expect(request.queryParameters['limit'], '500');
+      expect(request.queryParameters['nsfw'], 'true');
+      expect(
+        request.queryParameters['fields']!.split(','),
+        containsAll(<String>['media_type', 'num_list_users', 'nsfw', 'rating']),
+      );
+    });
+
+    test('keeps finished series and leaves out films and hentai', () async {
+      final FakeMalApi server = FakeMalApi(
+        (Uri url) async => _page(<Map<String, Object?>>[
+          series(1, 'Finished'),
+          series(2, 'Airing', mediaType: 'ona', status: 'currently_airing'),
+          series(3, 'Not yet', status: 'not_yet_aired'),
+          series(4, 'Film', mediaType: 'movie'),
+          series(5, 'Hentai', nsfw: 'black'),
+          series(6, 'Hentai flagged gray', nsfw: 'gray', rating: 'rx'),
+        ]),
+      );
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .premieringIn(2025, AnimeSeason.spring);
+
+      expect(anime.map((CatalogAnime a) => a.malId), <int>[1, 2, 3]);
+    });
+
+    test('lists an anime once when two pages repeat it', () async {
+      final FakeMalApi server = FakeMalApi.sequence(<http.Response>[
+        jsonResponse(<String, Object?>{
+          'data': <Object?>[
+            <String, Object?>{'node': series(1, 'Repeated')},
+          ],
+          'paging': <String, Object?>{'next': 'https://next'},
+        }),
+        jsonResponse(<String, Object?>{
+          'data': <Object?>[
+            <String, Object?>{'node': series(1, 'Repeated')},
+          ],
+        }),
+      ]);
+
+      final List<CatalogAnime> anime = await MalCatalog(server.client())
+          .premieringIn(2025, AnimeSeason.spring);
+
+      expect(anime.map((CatalogAnime a) => a.malId), <int>[1]);
+    });
+  });
 }

@@ -41,7 +41,7 @@ class MalCatalog implements AnimeCatalog {
   static const String _airingFields =
       '$_searchFields,$_contentFields,media_type,broadcast,num_list_users';
 
-  /// Media types listed by [airingIn]; the rest are films, specials, music
+  /// Media types listed by [airingIn] and [premieringIn]; the rest are films, specials, music
   /// videos and commercials.
   static const Set<String> _seriesTypes = <String>{'tv', 'ona'};
 
@@ -111,6 +111,20 @@ class MalCatalog implements AnimeCatalog {
           node['status'] == 'finished_airing') {
         continue;
       }
+      byId.putIfAbsent(parseId(node), () => _toCatalogAnime(node));
+    }
+    return List<CatalogAnime>.unmodifiable(byId.values);
+  }
+
+  @override
+  Future<List<CatalogAnime>> premieringIn(int year, AnimeSeason season) async {
+    final List<Map<String, Object?>> nodes = await _airingList(
+      'anime/season/$year/${season.name}',
+      <String, String>{},
+    );
+    final Map<int, CatalogAnime> byId = <int, CatalogAnime>{};
+    for (final Map<String, Object?> node in nodes) {
+      if (!_seriesTypes.contains(node['media_type'])) continue;
       byId.putIfAbsent(parseId(node), () => _toCatalogAnime(node));
     }
     return List<CatalogAnime>.unmodifiable(byId.values);
