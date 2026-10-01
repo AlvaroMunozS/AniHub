@@ -277,7 +277,6 @@ void main() {
         (2026, AnimeSeason.summer),
       ]);
       expect(find.text('Verano 2026'), findsOneWidget);
-      expect(find.text('3 en emisión'), findsOneWidget);
     });
 
     testWidgets('opens on today with the local broadcast times', (
@@ -329,8 +328,10 @@ void main() {
       );
 
       final List<String> tabs = <String>[
-        for (final Tab tab in tester.widgetList<Tab>(find.byType(Tab)))
-          if (tab.text case final String text) text,
+        for (final Text label in tester.widgetList<Text>(
+          find.descendant(of: find.byType(Tab), matching: find.byType(Text)),
+        ))
+          label.data!,
       ];
       expect(tabs.take(2), <String>['dom', 'lun']);
     });

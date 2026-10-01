@@ -11,11 +11,15 @@ class PosterGrid extends StatelessWidget {
   const PosterGrid({
     required this.itemCount,
     required this.itemBuilder,
+    this.bottomPadding = AppSpacing.s24,
     super.key,
   });
 
   final int itemCount;
   final IndexedWidgetBuilder itemBuilder;
+
+  /// Space after the last row, for anything laid over the end of the grid.
+  final double bottomPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +34,7 @@ class PosterGrid extends StatelessWidget {
           textScaler,
         );
         return GridView.builder(
-          padding: const EdgeInsets.only(bottom: AppSpacing.s24),
+          padding: EdgeInsets.only(bottom: bottomPadding),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: metrics.crossAxisCount,
             crossAxisSpacing: GridMetrics.crossAxisSpacing,

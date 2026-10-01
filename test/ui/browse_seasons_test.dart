@@ -112,7 +112,6 @@ void main() {
     expect(find.byType(Tab), findsNothing);
     expect(find.widgetWithText(CatalogCard, 'Dandadan'), findsOneWidget);
     expect(find.widgetWithText(CatalogCard, 'Upcoming'), findsNothing);
-    expect(find.text('1 serie'), findsOneWidget);
     expect(catalog.premiereRequests, <(int, AnimeSeason)>[
       (2026, AnimeSeason.spring),
     ]);
@@ -138,7 +137,6 @@ void main() {
     expect(find.text('Otoño 2026'), findsOneWidget);
     expect(find.widgetWithText(CatalogCard, 'Upcoming'), findsOneWidget);
     expect(find.widgetWithText(CatalogCard, 'Niche'), findsNothing);
-    expect(find.text('2 series'), findsOneWidget);
     final IconButton next = tester.widget<IconButton>(
       find.widgetWithIcon(IconButton, Icons.chevron_right),
     );
@@ -156,7 +154,6 @@ void main() {
 
     expect(find.text('Verano 2026'), findsOneWidget);
     expect(find.byType(Tab), findsNWidgets(DateTime.daysPerWeek));
-    expect(find.text('1 en emisión'), findsOneWidget);
   });
 
   testWidgets('requests each season once per session', (
@@ -373,7 +370,7 @@ void main() {
     expect(find.text('Primavera 2026'), findsOneWidget);
   });
 
-  testWidgets('fits the header with large text on a narrow phone', (
+  testWidgets('fits the season stepper with large text on a narrow phone', (
     WidgetTester tester,
   ) async {
     tester.platformDispatcher.textScaleFactorTestValue = 2;
@@ -387,6 +384,87 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Primavera 2026'), findsOneWidget);
-    expect(find.text('1 serie'), findsOneWidget);
+  });
+
+  testWidgets('puts the season arrows above the navigation bar', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBrowse(tester, catalog: _catalog());
+
+    final Rect previous = tester.getRect(
+      find.byTooltip(spanish.searchSeasonPrevious),
+    );
+    expect(
+      previous.top,
+      greaterThan(tester.getRect(find.byType(TabBar)).bottom),
+    );
+    expect(
+      previous.bottom,
+      lessThanOrEqualTo(tester.getRect(find.byType(NavigationBar)).top),
+    );
+  });
+
+  testWidgets('keeps the arrows in place when the season name changes', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBrowse(tester, catalog: _catalog());
+    Offset previous() =>
+        tester.getCenter(find.byTooltip(spanish.searchSeasonPrevious));
+    Offset next() => tester.getCenter(find.byTooltip(spanish.searchSeasonNext));
+    final (Offset, Offset) inSummer = (previous(), next());
+
+    await _previous(tester);
+
+    expect(find.text('Primavera 2026'), findsOneWidget);
+    expect((previous(), next()), inSummer);
+  });
+
+  testWidgets('keeps the arrows in place while a season loads', (
+    WidgetTester tester,
+  ) async {
+    final _PendingCatalog catalog = _PendingCatalog();
+    await _pumpBrowse(tester, catalog: catalog);
+    final Offset loaded = tester.getCenter(
+      find.byTooltip(spanish.searchSeasonPrevious),
+    );
+
+    await tester.tap(find.byTooltip(spanish.searchSeasonPrevious));
+    await tester.pump();
+
+    expect(
+      tester.getCenter(find.byTooltip(spanish.searchSeasonPrevious)),
+      loaded,
+    );
+    catalog.pending.complete(_premieres);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('keeps Retry clear of the season arrows in landscape', (
+    WidgetTester tester,
+  ) async {
+    final FakeAnimeCatalog catalog = _catalog()
+      ..premiereError = const CatalogNetworkException('down');
+    await _pumpBrowse(tester, catalog: catalog);
+    tester.view.physicalSize =
+        const Size(800, 360) * tester.view.devicePixelRatio;
+    await tester.pumpAndSettle();
+
+    await _previous(tester);
+    await tester.fling(
+      find.text(spanish.searchAiringFailed),
+      const Offset(0, -1000),
+      3000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester
+          .getRect(find.widgetWithText(OutlinedButton, spanish.commonRetry))
+          .bottom,
+      lessThanOrEqualTo(
+        tester.getRect(find.byTooltip(spanish.searchSeasonPrevious)).top,
+      ),
+    );
   });
 }

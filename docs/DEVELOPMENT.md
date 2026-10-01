@@ -279,26 +279,34 @@ tap installs it. Nothing is requested until the user taps.
   stories and spin-offs grow to hundreds of requests in franchises such as
   *Detective Conan*. The library shows the direct groups first and merges
   them when the chains arrive; the extra anime are never shown.
-- **Airing schedule.** Broadcast slots are in Japan Standard Time and shown
-  in local time, so a late-night slot in Japan falls on the previous day in
-  Europe or America. `ScheduleAiring` converts each slot at its next
-  occurrence, so daylight saving time is applied as it is that week. Each
-  day lists the most followed first, by how many MyAnimeList lists hold the
-  anime, and anime in fewer than 5000 are left out: about three in four
-  airing series are niche web series or children's shows. The count is
-  never shown. The week starts on the day picked in *Appearance*, or else
-  on the one of the device's region by the Unicode CLDR week data
-  (`lib/ui/week_start.dart`), since the language alone cannot tell the
-  United States from the United Kingdom. The list is requested once per
-  season and session, and not cached on disk: it changes every week and is
-  only useful online. The season and today are read again whenever the app
-  returns to the foreground, since it can stay open across a change.
+- **Airing schedule.** Broadcast slots are in Japan Standard Time and shown in
+  local time, so a late-night slot in Japan falls on the previous day in Europe
+  or America. `ScheduleAiring` converts each slot at its next occurrence, so
+  daylight saving time is applied as it is that week. Each day lists the most
+  followed first, by how many MyAnimeList lists hold the anime, and anime in
+  fewer than 5000 are left out: about three in four airing series are niche web
+  series or children's shows. No count is shown. Series being watched are listed
+  whatever their count: the threshold is there to find new series, not to hide
+  the user's own. The bookmark in the search bar, remembered under
+  `browse.airing.onlyMine`, shows only those, each day by local broadcast time,
+  the ones without a time last, and dims the days none of them airs; it shares
+  the clear button's slot, so it shows only while the field is empty, and only
+  in the current season with something airing. The week starts on the day picked
+  in *Appearance*, or else on the one of the device's region by the Unicode CLDR
+  week data (`lib/ui/week_start.dart`), since the language alone cannot tell the
+  United States from the United Kingdom. The list is requested once per season
+  and session, and not cached on disk: it changes every week and is only useful
+  online. The season and today are read again whenever the app returns to the
+  foreground, since it can stay open across a change.
   Other seasons are one grid, most followed first: the series that
   premiered in a past season, finished or not, and those announced for the
   next one. The next season uses a threshold of 1000 lists, since its series
   have not aired and even the awaited ones are in fewer lists. Browse goes
   back without a limit but only one season forward, the furthest MyAnimeList
   lists in useful numbers.
+  The season arrows float on a fade at the bottom of Browse, over the grid,
+  and the name takes the width of the widest season name of its year, so
+  the arrows never move while stepping or loading.
 - **Nullable `total_episodes`.** Airing series have no total; the type says so
   instead of using a sentinel value.
 - **One layout.** A single phone layout, also used in landscape and on

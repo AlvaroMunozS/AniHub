@@ -9,8 +9,13 @@ const double _fontSize = 17;
 /// Height of the pill, which also serves as the screen's top bar.
 const double _height = 52;
 
+/// Fits the clear button or the bookmark, so the field keeps its width with
+/// either or neither.
+const double _slotWidth = kMinInteractiveDimension;
+
 /// Rounded search field that serves as the top bar of its screen, with a
-/// clear button and an optional filter button.
+/// clear button, an optional bookmark that shows only the user's series, and
+/// an optional filter button.
 class PillSearchBar extends StatefulWidget {
   const PillSearchBar({
     required this.controller,
@@ -19,6 +24,8 @@ class PillSearchBar extends StatefulWidget {
     required this.onClear,
     this.onFilter,
     this.filterActive = false,
+    this.onToggleMine,
+    this.mineActive = false,
     super.key,
   });
 
@@ -31,6 +38,12 @@ class PillSearchBar extends StatefulWidget {
 
   final VoidCallback? onFilter;
   final bool filterActive;
+
+  /// Called with the new state when the bookmark is tapped; null hides it.
+  /// It shares the clear button's slot, so it shows only while the field is
+  /// empty.
+  final ValueChanged<bool>? onToggleMine;
+  final bool mineActive;
 
   @override
   State<PillSearchBar> createState() => _PillSearchBarState();
@@ -61,6 +74,23 @@ class _PillSearchBarState extends State<PillSearchBar> {
   }
 
   void _onControllerChanged() => setState(() {});
+
+  Widget? _mineButton(BuildContext context) {
+    final ValueChanged<bool>? onToggle = widget.onToggleMine;
+    if (onToggle == null) return null;
+    final bool active = widget.mineActive;
+    return IconButton(
+      tooltip: context.l10n.searchAiringMine,
+      isSelected: active,
+      icon: Icon(Icons.bookmark_border, color: context.palette.textSecondary),
+      selectedIcon: Icon(Icons.bookmark, color: context.palette.accent),
+      style: IconButton.styleFrom(
+        backgroundColor: active ? context.palette.accentSoft : null,
+      ),
+      onPressed: () => onToggle(!active),
+      visualDensity: VisualDensity.compact,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,13 +129,17 @@ class _PillSearchBarState extends State<PillSearchBar> {
                   ),
                 ),
               ),
-              if (hasText)
-                IconButton(
-                  tooltip: context.l10n.searchBarClear,
-                  icon: const Icon(Icons.close, size: AppSizes.iconMd),
-                  onPressed: widget.onClear,
-                  visualDensity: VisualDensity.compact,
-                ),
+              SizedBox(
+                width: _slotWidth,
+                child: hasText
+                    ? IconButton(
+                        tooltip: context.l10n.searchBarClear,
+                        icon: const Icon(Icons.close, size: AppSizes.iconMd),
+                        onPressed: widget.onClear,
+                        visualDensity: VisualDensity.compact,
+                      )
+                    : _mineButton(context),
+              ),
               if (widget.onFilter != null)
                 IconButton(
                   tooltip: widget.filterActive
