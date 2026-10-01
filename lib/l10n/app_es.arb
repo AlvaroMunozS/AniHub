@@ -126,6 +126,14 @@
   "searchAiringEmptyTitle": "Nada en emisión",
   "searchAiringEmptyMessage": "MyAnimeList aún no tiene anime para esta temporada.",
   "searchAiringDayEmpty": "Nada se emite este día",
+  "searchAiringMine": "Mías",
+  "@searchAiringMine": {
+    "description": "Filter chip that shows only the series being watched"
+  },
+  "searchAiringMineDayEmpty": "Ninguna de tus series se emite este día",
+  "searchAiringMineEmptyTitle": "Ninguna de tus series está en emisión",
+  "searchAiringMineEmptyMessage": "Las series que estás viendo aparecerán aquí cuando se emitan esta temporada.",
+  "searchAiringMineShowAll": "Ver todas",
   "searchSeasonPrevious": "Temporada anterior",
   "searchSeasonNext": "Temporada siguiente",
   "searchSeasonBackToCurrent": "Volver a la temporada actual",

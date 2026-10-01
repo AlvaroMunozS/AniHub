@@ -27,11 +27,12 @@ const double _todayDotSize = 5;
 /// after stepping with the header's arrows, a past season or the next one as a
 /// single grid, most followed first.
 ///
-/// Anime in [inLibrary] are dimmed, as in search results. The season and
-/// today are read from the clock on every build, and the broadcast times are
-/// converted again when the app returns to the foreground, since the app can
-/// stay open across midnight, a season, a daylight saving change or a move to
-/// another time zone.
+/// Anime in [inLibrary] are dimmed, as in search results, unless the current
+/// season is filtered to the series being watched, which are then listed by
+/// broadcast time. The season and today are read from the clock on every
+/// build, and the broadcast times are converted again when the app returns to
+/// the foreground, since the app can stay open across midnight, a season, a
+/// daylight saving change or a move to another time zone.
 class AiringView extends ConsumerStatefulWidget {
   const AiringView({required this.inLibrary, super.key});
 
@@ -84,7 +85,14 @@ class _AiringViewState extends ConsumerState<AiringView> {
     final List<CatalogAnime>? ranked = offset != 0 && loaded != null
         ? ref.watch(rankSeasonProvider)(loaded, upcoming: offset > 0)
         : null;
-    final String? count = switch ((schedule, ranked)) {
+    // The filter only applies to a current season that has something to
+    // filter; elsewhere the chip is hidden and the preference is kept.
+    final bool canFilter = schedule != null && !schedule.isEmpty;
+    final bool mine = canFilter && ref.watch(airingOnlyMineProvider);
+    final AiringSchedule? shown = mine
+        ? schedule.only(ref.watch(watchingIdsProvider))
+        : schedule;
+    final String? count = switch ((shown, ranked)) {
       (final AiringSchedule s, _) when !s.isEmpty =>
         context.l10n.searchAiringCount(s.length),
       (_, final List<CatalogAnime> r) when r.isNotEmpty =>
@@ -100,6 +108,7 @@ class _AiringViewState extends ConsumerState<AiringView> {
           offset: offset,
           count: count,
           loading: list.isLoading && loaded == null,
+          mine: canFilter ? mine : null,
         ),
         Expanded(
           // A failed refresh keeps the last list; the grid reports it.
@@ -123,11 +132,29 @@ class _AiringViewState extends ConsumerState<AiringView> {
                   message: context.l10n.searchAiringEmptyMessage,
                 ),
               ),
-              (final AiringSchedule s, _) => _AiringTabs(
+              (AiringSchedule(), _) when shown!.isEmpty => RefreshIndicator(
+                onRefresh: () =>
+                    _refresh(context, ref, airingAnimeProvider(season)),
+                child: _ScrollableEmpty(
+                  storageKey: const PageStorageKey<String>('mine'),
+                  child: EmptyState(
+                    icon: Icons.live_tv_outlined,
+                    title: context.l10n.searchAiringMineEmptyTitle,
+                    message: context.l10n.searchAiringMineEmptyMessage,
+                    actionLabel: context.l10n.searchAiringMineShowAll,
+                    onAction: () =>
+                        ref.read(airingOnlyMineProvider.notifier).set(false),
+                  ),
+                ),
+              ),
+              (AiringSchedule(), _) => _AiringTabs(
                 season: season,
                 today: now.weekday,
-                schedule: s,
-                inLibrary: widget.inLibrary,
+                schedule: shown!,
+                inLibrary: mine ? const <int>{} : widget.inLibrary,
+                dayEmptyTitle: mine
+                    ? context.l10n.searchAiringMineDayEmpty
+                    : context.l10n.searchAiringDayEmpty,
               ),
               (_, final List<CatalogAnime> r) => _SeasonGrid(
                 season: season,
@@ -149,6 +176,7 @@ class _AiringTabs extends ConsumerWidget {
     required this.today,
     required this.schedule,
     required this.inLibrary,
+    required this.dayEmptyTitle,
   });
 
   final YearSeason season;
@@ -158,6 +186,9 @@ class _AiringTabs extends ConsumerWidget {
 
   final AiringSchedule schedule;
   final Set<int> inLibrary;
+
+  /// Shown on a day without anime.
+  final String dayEmptyTitle;
 
   /// Weekdays from [DateTime.monday] to [DateTime.sunday], starting on
   /// [first].
@@ -214,6 +245,7 @@ class _AiringTabs extends ConsumerWidget {
                         ),
                     ],
                     inLibrary: inLibrary,
+                    dayEmptyTitle: dayEmptyTitle,
                   ),
               ],
             ),
@@ -278,6 +310,7 @@ class _AiringGrid extends ConsumerWidget {
     required this.storageKey,
     required this.anime,
     required this.inLibrary,
+    required this.dayEmptyTitle,
   });
 
   /// The season that pulling to refresh requests again.
@@ -288,27 +321,21 @@ class _AiringGrid extends ConsumerWidget {
   final List<_AiringItem> anime;
   final Set<int> inLibrary;
 
+  /// Shown on a day without anime.
+  final String dayEmptyTitle;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return RefreshIndicator(
       onRefresh: () => _refresh(context, ref, airingAnimeProvider(season)),
       child: anime.isEmpty
           // Scrollable so that an empty day can be pulled to refresh too.
-          ? CustomScrollView(
-              key: PageStorageKey<int>(storageKey),
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: <Widget>[
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: ContentColumn(
-                    alignment: Alignment.topCenter,
-                    child: EmptyState(
-                      icon: Icons.event_available_outlined,
-                      title: context.l10n.searchAiringDayEmpty,
-                    ),
-                  ),
-                ),
-              ],
+          ? _ScrollableEmpty(
+              storageKey: PageStorageKey<int>(storageKey),
+              child: EmptyState(
+                icon: Icons.event_available_outlined,
+                title: dayEmptyTitle,
+              ),
             )
           : ContentColumn(
               alignment: Alignment.topCenter,
@@ -339,6 +366,7 @@ class _SeasonHeader extends ConsumerWidget {
     required this.offset,
     required this.count,
     required this.loading,
+    required this.mine,
   });
 
   final YearSeason season;
@@ -349,6 +377,10 @@ class _SeasonHeader extends ConsumerWidget {
   /// Null while loading, after a failure or when the season is empty.
   final String? count;
   final bool loading;
+
+  /// Whether the chip that shows only the series being watched is selected;
+  /// null hides it.
+  final bool? mine;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -392,18 +424,31 @@ class _SeasonHeader extends ConsumerWidget {
                 ),
               ],
             ),
-            if (count case final String count)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.s12),
-                child: Text(
-                  count,
-                  style: AppTypography.caption.copyWith(
-                    color: context.palette.textFaint,
-                  ),
-                ),
-              )
-            else if (loading)
-              const Skeleton(width: 70, height: 12),
+            Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.s12),
+              // Wraps instead of overflowing with large text.
+              child: Wrap(
+                spacing: AppSpacing.s8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  if (count case final String count)
+                    Text(
+                      count,
+                      style: AppTypography.caption.copyWith(
+                        color: context.palette.textFaint,
+                      ),
+                    )
+                  else if (loading)
+                    const Skeleton(width: 70, height: 12),
+                  if (mine case final bool selected)
+                    FilterChip(
+                      label: Text(context.l10n.searchAiringMine),
+                      selected: selected,
+                      onSelected: ref.read(airingOnlyMineProvider.notifier).set,
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -532,22 +577,13 @@ class _SeasonGrid extends ConsumerWidget {
             _refresh(context, ref, seasonPremieresProvider(season)),
         child: anime.isEmpty
             // Scrollable so that an empty season can be pulled to refresh.
-            ? CustomScrollView(
-                key: PageStorageKey<YearSeason>(season),
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: <Widget>[
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: ContentColumn(
-                      alignment: Alignment.topCenter,
-                      child: EmptyState(
-                        icon: Icons.event_busy_outlined,
-                        title: context.l10n.searchSeasonEmptyTitle,
-                        message: context.l10n.searchAiringEmptyMessage,
-                      ),
-                    ),
-                  ),
-                ],
+            ? _ScrollableEmpty(
+                storageKey: PageStorageKey<YearSeason>(season),
+                child: EmptyState(
+                  icon: Icons.event_busy_outlined,
+                  title: context.l10n.searchSeasonEmptyTitle,
+                  message: context.l10n.searchAiringEmptyMessage,
+                ),
               )
             : ContentColumn(
                 alignment: Alignment.topCenter,
@@ -566,6 +602,28 @@ class _SeasonGrid extends ConsumerWidget {
                 ),
               ),
       ),
+    );
+  }
+}
+
+/// An empty state that can still be pulled to refresh.
+class _ScrollableEmpty extends StatelessWidget {
+  const _ScrollableEmpty({required this.storageKey, required this.child});
+
+  final Key storageKey;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      key: storageKey,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: <Widget>[
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: ContentColumn(alignment: Alignment.topCenter, child: child),
+        ),
+      ],
     );
   }
 }
