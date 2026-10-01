@@ -100,7 +100,14 @@ Future<void> _pumpBrowse(
   );
 }
 
-Finder get _chip => find.widgetWithText(FilterChip, spanish.searchAiringMine);
+/// The bookmark in the search bar that shows only the series being watched.
+Finder get _mine => find.byTooltip(spanish.searchAiringMine);
+
+bool _mineSelected(WidgetTester tester) => tester
+    .widget<IconButton>(
+      find.ancestor(of: _mine, matching: find.byType(IconButton)),
+    )
+    .isSelected!;
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.tap(finder);
@@ -120,11 +127,12 @@ void main() {
   ) async {
     await _pumpBrowse(tester);
 
-    await _tap(tester, _chip);
+    await _tap(tester, _mine);
 
     expect(_titles(tester), <String>['Early mine', 'Niche mine', 'Late mine']);
     expect(_cards(tester).any((CatalogCard c) => c.inLibrary), isFalse);
     expect(find.text('3 en emisión'), findsOneWidget);
+    expect(_mineSelected(tester), isTrue);
   });
 
   testWidgets('lists a watched series in few lists, dimmed, unfiltered', (
@@ -144,7 +152,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await _pumpBrowse(tester);
-    await _tap(tester, _chip);
+    await _tap(tester, _mine);
 
     await _tap(tester, find.text('vie'));
 
@@ -158,42 +166,64 @@ void main() {
       tester,
       repo: inMemoryLibrary(<Entry>[_entry(305, WatchStatus.planned)]),
     );
-    await _tap(tester, _chip);
+    await _tap(tester, _mine);
 
     expect(find.text(spanish.searchAiringMineEmptyTitle), findsOneWidget);
     await _tap(tester, find.text(spanish.searchAiringMineShowAll));
 
     expect(find.widgetWithText(CatalogCard, 'Popular other'), findsOneWidget);
-    expect(tester.widget<FilterChip>(_chip).selected, isFalse);
+    expect(_mineSelected(tester), isFalse);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('browse.airing.onlyMine'), isFalse);
   });
 
-  testWidgets('hides the chip in other seasons and keeps the filter for the '
-      'current one', (WidgetTester tester) async {
-    await _pumpBrowse(
-      tester,
-      premieres: <CatalogAnime>[
-        const CatalogAnime(malId: 301, title: 'Late mine', memberCount: 900000),
-        const CatalogAnime(malId: 307, title: 'Past hit', memberCount: 800000),
-      ],
-    );
-    await _tap(tester, _chip);
+  testWidgets(
+    'hides the bookmark in other seasons and keeps the filter for the '
+    'current one',
+    (WidgetTester tester) async {
+      await _pumpBrowse(
+        tester,
+        premieres: <CatalogAnime>[
+          const CatalogAnime(
+            malId: 301,
+            title: 'Late mine',
+            memberCount: 900000,
+          ),
+          const CatalogAnime(
+            malId: 307,
+            title: 'Past hit',
+            memberCount: 800000,
+          ),
+        ],
+      );
+      final double fieldWidthInCurrentSeason = tester
+          .getSize(find.byType(TextField))
+          .width;
+      await _tap(tester, _mine);
 
-    await _tap(tester, find.byTooltip(spanish.searchSeasonPrevious));
+      await _tap(tester, find.byTooltip(spanish.searchSeasonPrevious));
 
-    expect(_chip, findsNothing);
-    expect(find.widgetWithText(CatalogCard, 'Past hit'), findsOneWidget);
-    final CatalogCard mine = tester.widget<CatalogCard>(
-      find.widgetWithText(CatalogCard, 'Late mine'),
-    );
-    expect(mine.inLibrary, isTrue);
+      expect(_mine, findsNothing);
+      expect(
+        tester.getSize(find.byType(TextField)).width,
+        fieldWidthInCurrentSeason,
+      );
+      expect(find.widgetWithText(CatalogCard, 'Past hit'), findsOneWidget);
+      final CatalogCard mine = tester.widget<CatalogCard>(
+        find.widgetWithText(CatalogCard, 'Late mine'),
+      );
+      expect(mine.inLibrary, isTrue);
 
-    await _tap(tester, find.byTooltip(spanish.searchSeasonNext));
+      await _tap(tester, find.byTooltip(spanish.searchSeasonNext));
 
-    expect(tester.widget<FilterChip>(_chip).selected, isTrue);
-    expect(_titles(tester), <String>['Early mine', 'Niche mine', 'Late mine']);
-  });
+      expect(_mineSelected(tester), isTrue);
+      expect(_titles(tester), <String>[
+        'Early mine',
+        'Niche mine',
+        'Late mine',
+      ]);
+    },
+  );
 
   testWidgets('opens filtered when the filter was left on', (
     WidgetTester tester,
@@ -211,7 +241,7 @@ void main() {
   ) async {
     final InMemoryEntryRepository repo = inMemoryLibrary(_library);
     await _pumpBrowse(tester, repo: repo);
-    await _tap(tester, _chip);
+    await _tap(tester, _mine);
 
     final Entry late = (await repo.findAll()).firstWhere(
       (Entry e) => e.malId == 301,
@@ -222,7 +252,7 @@ void main() {
     expect(_titles(tester), <String>['Early mine', 'Niche mine']);
   });
 
-  testWidgets('hides the chip when nothing airs this season', (
+  testWidgets('hides the bookmark when nothing airs this season', (
     WidgetTester tester,
   ) async {
     await _pumpBrowse(
@@ -231,13 +261,11 @@ void main() {
       prefs: <String, Object>{'browse.airing.onlyMine': true},
     );
 
-    expect(_chip, findsNothing);
+    expect(_mine, findsNothing);
     expect(find.text(spanish.searchAiringEmptyTitle), findsOneWidget);
   });
 
-  testWidgets('fits the chip in the header with large text', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('fits the bookmark with large text', (WidgetTester tester) async {
     tester.platformDispatcher.textScaleFactorTestValue = 2;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await _pumpBrowse(tester);
@@ -245,9 +273,24 @@ void main() {
         const Size(360, 800) * tester.view.devicePixelRatio;
     await tester.pumpAndSettle();
 
-    await _tap(tester, _chip);
+    await _tap(tester, _mine);
 
     expect(tester.takeException(), isNull);
     expect(find.text('3 en emisión'), findsOneWidget);
+  });
+
+  testWidgets('hides the bookmark while typing and shows it again when '
+      'cleared', (WidgetTester tester) async {
+    await _pumpBrowse(tester);
+
+    await tester.enterText(find.byType(TextField), 'f');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+
+    expect(_mine, findsNothing);
+
+    await _tap(tester, find.byTooltip(spanish.searchBarClear));
+
+    expect(_mine, findsOneWidget);
   });
 }

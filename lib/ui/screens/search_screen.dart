@@ -13,6 +13,7 @@ import '../providers.dart';
 import '../report_error.dart';
 import '../router.dart';
 import '../shell/content_column.dart';
+import '../state/airing_providers.dart';
 import '../state/library_providers.dart';
 import '../widgets/airing/airing_view.dart';
 import '../widgets/catalog_card.dart';
@@ -137,6 +138,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               hintText: context.l10n.searchHint,
               onChanged: _onQueryChanged,
               onClear: _clear,
+              onToggleMine: ref.watch(airingCanFilterProvider)
+                  ? ref.read(airingOnlyMineProvider.notifier).set
+                  : null,
+              mineActive: ref.watch(airingOnlyMineProvider),
             ),
           ),
           _LoadingLine(loading: _loading),

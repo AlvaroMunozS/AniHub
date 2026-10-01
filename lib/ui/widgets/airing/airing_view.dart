@@ -52,6 +52,7 @@ class _AiringViewState extends ConsumerState<AiringView> {
       ref.invalidate(
         airingScheduleProvider(seasonAt(ref.read(clockProvider)())),
       );
+      ref.invalidate(airingCanFilterProvider);
       setState(() {});
     },
   );
@@ -85,12 +86,11 @@ class _AiringViewState extends ConsumerState<AiringView> {
     final List<CatalogAnime>? ranked = offset != 0 && loaded != null
         ? ref.watch(rankSeasonProvider)(loaded, upcoming: offset > 0)
         : null;
-    // The filter only applies to a current season that has something to
-    // filter; elsewhere the chip is hidden and the preference is kept.
-    final bool canFilter = schedule != null && !schedule.isEmpty;
-    final bool mine = canFilter && ref.watch(airingOnlyMineProvider);
+    // Elsewhere the bookmark is hidden and the preference is kept.
+    final bool mine =
+        ref.watch(airingCanFilterProvider) && ref.watch(airingOnlyMineProvider);
     final AiringSchedule? shown = mine
-        ? schedule.only(ref.watch(watchingIdsProvider))
+        ? schedule!.only(ref.watch(watchingIdsProvider))
         : schedule;
     final String? count = switch ((shown, ranked)) {
       (final AiringSchedule s, _) when !s.isEmpty =>
@@ -108,7 +108,6 @@ class _AiringViewState extends ConsumerState<AiringView> {
           offset: offset,
           count: count,
           loading: list.isLoading && loaded == null,
-          mine: canFilter ? mine : null,
         ),
         Expanded(
           // A failed refresh keeps the last list; the grid reports it.
@@ -366,7 +365,6 @@ class _SeasonHeader extends ConsumerWidget {
     required this.offset,
     required this.count,
     required this.loading,
-    required this.mine,
   });
 
   final YearSeason season;
@@ -377,10 +375,6 @@ class _SeasonHeader extends ConsumerWidget {
   /// Null while loading, after a failure or when the season is empty.
   final String? count;
   final bool loading;
-
-  /// Whether the chip that shows only the series being watched is selected;
-  /// null hides it.
-  final bool? mine;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -424,7 +418,7 @@ class _SeasonHeader extends ConsumerWidget {
                 ),
               ],
             ),
-            if (count != null || loading || mine != null)
+            if (count != null || loading)
               Padding(
                 padding: const EdgeInsets.only(left: AppSpacing.s12),
                 // Wraps instead of overflowing with large text.
@@ -441,14 +435,6 @@ class _SeasonHeader extends ConsumerWidget {
                       )
                     else if (loading)
                       const Skeleton(width: 70, height: 12),
-                    if (mine case final bool selected)
-                      FilterChip(
-                        label: Text(context.l10n.searchAiringMine),
-                        selected: selected,
-                        onSelected: ref
-                            .read(airingOnlyMineProvider.notifier)
-                            .set,
-                      ),
                   ],
                 ),
               ),
