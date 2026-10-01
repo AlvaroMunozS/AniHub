@@ -68,7 +68,7 @@
   "searchAiringEmptyTitle": "Nothing airing",
   "searchAiringEmptyMessage": "MyAnimeList has no anime for this season yet.",
   "searchAiringDayEmpty": "Nothing airs on this day",
-  "searchAiringMine": "Mine",
+  "searchAiringMine": "Only my series",
   "searchAiringMineDayEmpty": "None of your series airs this day",
   "searchAiringMineEmptyTitle": "None of your series is airing",
   "searchAiringMineEmptyMessage": "The series you are watching appear here when they air this season.",

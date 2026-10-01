@@ -126,9 +126,9 @@
   "searchAiringEmptyTitle": "Nada en emisión",
   "searchAiringEmptyMessage": "MyAnimeList aún no tiene anime para esta temporada.",
   "searchAiringDayEmpty": "Nada se emite este día",
-  "searchAiringMine": "Mías",
+  "searchAiringMine": "Solo mis series",
   "@searchAiringMine": {
-    "description": "Filter chip that shows only the series being watched"
+    "description": "Tooltip of the bookmark in the search bar that shows only the series being watched"
   },
   "searchAiringMineDayEmpty": "Ninguna de tus series se emite este día",
   "searchAiringMineEmptyTitle": "Ninguna de tus series está en emisión",
