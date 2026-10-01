@@ -21,7 +21,7 @@ Covers of an imported library are loaded from the addresses in the imported
 file.
 
 If you turn on *Settings → Notifications → Remind me when it airs*, the app
-also asks MyAnimeList for the airing list each time it opens. The reminders
+also asks MyAnimeList for the airing list each time it starts. The reminders
 are local notifications scheduled on the device: nothing is sent anywhere else.
 
 The app connects to GitHub only when you tap *Check for updates* in

@@ -327,7 +327,10 @@ tap installs it. Nothing is requested until the user taps.
   but may fire a little late, and the plugin's boot receiver schedules them
   again after a restart. The app asks for `POST_NOTIFICATIONS` on Android 13
   and later. The time is the Japanese broadcast, so streaming services may
-  publish later.
+  publish later. The popularity threshold of *Browse* does not apply: every
+  series in *Watching* that appears in the airing list gets a reminder.
+  Force-stopping the app, or an OEM task killer that acts like it, clears the
+  scheduled alarms until the app is opened again.
 - **Manual updates.** The app looks for a new version only when asked, so it
   makes no request the user did not expect. It does no background network
   work: the airing list behind the reminders is requested only while the app is

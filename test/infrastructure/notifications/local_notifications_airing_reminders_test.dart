@@ -148,9 +148,9 @@ void main() {
   });
 
   test('never shares an id between two series', () async {
-    // The minute-based XOR of the old formula collided for these two.
+    // An id mixing the minute with the series by XOR repeats for these two.
     final int a =
-        (((now.add(const Duration(days: 1))).millisecondsSinceEpoch ~/
+        ((now.add(const Duration(days: 1)).millisecondsSinceEpoch ~/
                 Duration.millisecondsPerMinute) |
             0x3FFF) +
         1;
