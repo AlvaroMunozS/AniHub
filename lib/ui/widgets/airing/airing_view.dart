@@ -23,7 +23,9 @@ import '../skeleton.dart';
 /// Diameter of the dot that marks today's tab.
 const double _todayDotSize = 5;
 
-/// This season's airing anime, one tab per local weekday, opening on today.
+/// The season running now, one tab per local weekday, opening on today; or,
+/// after stepping with the header's arrows, a past season or the next one as a
+/// single grid, most followed first.
 ///
 /// Anime in [inLibrary] are dimmed, as in search results. The season and
 /// today are read from the clock on every build, and the broadcast times are
@@ -68,43 +70,75 @@ class _AiringViewState extends ConsumerState<AiringView> {
   @override
   Widget build(BuildContext context) {
     final DateTime now = ref.watch(clockProvider)();
-    final YearSeason season = seasonAt(now);
-    final AsyncValue<List<CatalogAnime>> airing = ref.watch(
-      airingAnimeProvider(season),
-    );
-    // A failed refresh keeps the last list; `_AiringGrid` reports it.
-    return airing.when(
-      skipError: true,
-      loading: () => const _AiringSkeleton(),
-      error: (Object error, StackTrace stackTrace) => ContentColumn(
-        child: EmptyState(
-          icon: catalogErrorIcon(error),
-          title: context.l10n.searchAiringFailed,
-          message: catalogErrorMessage(context.l10n, error),
-          actionLabel: context.l10n.commonRetry,
-          onAction: () => ref.invalidate(airingAnimeProvider(season)),
-        ),
-      ),
-      data: (List<CatalogAnime> _) {
-        final AiringSchedule schedule = ref.watch(
-          airingScheduleProvider(season),
-        );
-        if (schedule.isEmpty) {
-          return ContentColumn(
-            child: EmptyState(
-              icon: Icons.live_tv_outlined,
-              title: context.l10n.searchAiringEmptyTitle,
-              message: context.l10n.searchAiringEmptyMessage,
-            ),
-          );
-        }
-        return _AiringTabs(
+    final int offset = ref.watch(browsedSeasonOffsetProvider);
+    final YearSeason season = seasonAt(now).shifted(offset);
+    final FutureProvider<List<CatalogAnime>> source = offset == 0
+        ? airingAnimeProvider(season)
+        : seasonPremieresProvider(season);
+    final AsyncValue<List<CatalogAnime>> list = ref.watch(source);
+
+    final List<CatalogAnime>? loaded = list.value;
+    final AiringSchedule? schedule = offset == 0 && loaded != null
+        ? ref.watch(airingScheduleProvider(season))
+        : null;
+    final List<CatalogAnime>? ranked = offset != 0 && loaded != null
+        ? ref.watch(rankSeasonProvider)(loaded, upcoming: offset > 0)
+        : null;
+    final String? count = switch ((schedule, ranked)) {
+      (final AiringSchedule s, _) when !s.isEmpty =>
+        context.l10n.searchAiringCount(s.length),
+      (_, final List<CatalogAnime> r) when r.isNotEmpty =>
+        context.l10n.searchSeasonCount(r.length),
+      _ => null,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _SeasonHeader(
           season: season,
-          today: now.weekday,
-          schedule: schedule,
-          inLibrary: widget.inLibrary,
-        );
-      },
+          offset: offset,
+          count: count,
+          loading: list.isLoading && loaded == null,
+        ),
+        Expanded(
+          // A failed refresh keeps the last list; the grid reports it.
+          child: list.when(
+            skipError: true,
+            loading: () => _AiringSkeleton(tabs: offset == 0),
+            error: (Object error, StackTrace stackTrace) => ContentColumn(
+              child: EmptyState(
+                icon: catalogErrorIcon(error),
+                title: context.l10n.searchAiringFailed,
+                message: catalogErrorMessage(context.l10n, error),
+                actionLabel: context.l10n.commonRetry,
+                onAction: () => ref.invalidate(source),
+              ),
+            ),
+            data: (List<CatalogAnime> _) => switch ((schedule, ranked)) {
+              (final AiringSchedule s, _) when s.isEmpty => ContentColumn(
+                child: EmptyState(
+                  icon: Icons.live_tv_outlined,
+                  title: context.l10n.searchAiringEmptyTitle,
+                  message: context.l10n.searchAiringEmptyMessage,
+                ),
+              ),
+              (final AiringSchedule s, _) => _AiringTabs(
+                season: season,
+                today: now.weekday,
+                schedule: s,
+                inLibrary: widget.inLibrary,
+              ),
+              (_, final List<CatalogAnime> r) => _SeasonGrid(
+                season: season,
+                anime: r,
+                inLibrary: widget.inLibrary,
+              ),
+              _ => const SizedBox.shrink(),
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -148,7 +182,6 @@ class _AiringTabs extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _AiringHeader(season: season, count: schedule.length),
           ContentColumn(
             padded: false,
             child: TabBar(
@@ -199,41 +232,6 @@ class _AiringTabs extends ConsumerWidget {
     return MaterialLocalizations.of(context).formatTimeOfDay(
       TimeOfDay(hour: hour, minute: minute),
       alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
-    );
-  }
-}
-
-/// The season and how many anime air in it.
-class _AiringHeader extends StatelessWidget {
-  const _AiringHeader({required this.season, required this.count});
-
-  final YearSeason season;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return ContentColumn(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                formatSeasonOf(context.l10n, season.season, season.year),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            Text(
-              context.l10n.searchAiringCount(count),
-              style: AppTypography.caption.copyWith(
-                color: context.palette.textFaint,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -290,27 +288,10 @@ class _AiringGrid extends ConsumerWidget {
   final List<_AiringItem> anime;
   final Set<int> inLibrary;
 
-  /// Requests the season again. On failure the last list stays and a
-  /// snack bar says why; the provider has already reported any unexpected
-  /// error.
-  Future<void> _refresh(BuildContext context, WidgetRef ref) async {
-    try {
-      final Future<List<CatalogAnime>> reload = ref.refresh(
-        airingAnimeProvider(season).future,
-      );
-      await reload;
-    } on Object catch (error) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(catalogErrorMessage(context.l10n, error))),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return RefreshIndicator(
-      onRefresh: () => _refresh(context, ref),
+      onRefresh: () => _refresh(context, ref, airingAnimeProvider(season)),
       child: anime.isEmpty
           // Scrollable so that an empty day can be pulled to refresh too.
           ? CustomScrollView(
@@ -350,28 +331,207 @@ class _AiringGrid extends ConsumerWidget {
   }
 }
 
-class _AiringSkeleton extends StatelessWidget {
-  const _AiringSkeleton();
+/// The season shown, the arrows that step to another one and how many anime
+/// it lists.
+class _SeasonHeader extends ConsumerWidget {
+  const _SeasonHeader({
+    required this.season,
+    required this.offset,
+    required this.count,
+    required this.loading,
+  });
+
+  final YearSeason season;
+
+  /// Seasons from the current one; see [BrowsedSeasonOffset].
+  final int offset;
+
+  /// Null while loading, after a failure or when the season is empty.
+  final String? count;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final BrowsedSeasonOffset stepper = ref.read(
+      browsedSeasonOffsetProvider.notifier,
+    );
+    return ContentColumn(
+      padded: false,
+      child: Padding(
+        // The arrow's glyph, not its tap target, lines up with the grid.
+        padding: const EdgeInsets.only(
+          left: ContentColumn.gutter - AppSpacing.s12,
+          right: ContentColumn.gutter,
+        ),
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                IconButton(
+                  tooltip: context.l10n.searchSeasonPrevious,
+                  icon: const Icon(Icons.chevron_left, size: AppSizes.iconMd),
+                  onPressed: stepper.previous,
+                ),
+                _SeasonTitle(
+                  season: season,
+                  offset: offset,
+                  onReset: stepper.reset,
+                ),
+                IconButton(
+                  tooltip: context.l10n.searchSeasonNext,
+                  icon: const Icon(Icons.chevron_right, size: AppSizes.iconMd),
+                  onPressed: offset < BrowsedSeasonOffset.max
+                      ? stepper.next
+                      : null,
+                ),
+              ],
+            ),
+            if (count case final String count)
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.s12),
+                child: Text(
+                  count,
+                  style: AppTypography.caption.copyWith(
+                    color: context.palette.textFaint,
+                  ),
+                ),
+              )
+            else if (loading)
+              const Skeleton(width: 70, height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The season's name; away from the current season, tapping it goes back.
+class _SeasonTitle extends StatelessWidget {
+  const _SeasonTitle({
+    required this.season,
+    required this.offset,
+    required this.onReset,
+  });
+
+  final YearSeason season;
+  final int offset;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
-    return const ContentColumn(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: offset == 0 ? null : onReset,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s4,
+          vertical: AppSpacing.s12,
+        ),
+        child: Text(
+          formatSeasonOf(context.l10n, season.season, season.year),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+      ),
+    );
+  }
+}
+
+/// The series of a season other than the current one, most followed first.
+class _SeasonGrid extends ConsumerWidget {
+  const _SeasonGrid({
+    required this.season,
+    required this.anime,
+    required this.inLibrary,
+  });
+
+  /// Also keeps the scroll position of each season apart.
+  final YearSeason season;
+  final List<CatalogAnime> anime;
+  final Set<int> inLibrary;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s16),
+      child: RefreshIndicator(
+        onRefresh: () =>
+            _refresh(context, ref, seasonPremieresProvider(season)),
+        child: anime.isEmpty
+            // Scrollable so that an empty season can be pulled to refresh.
+            ? CustomScrollView(
+                key: PageStorageKey<YearSeason>(season),
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: <Widget>[
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: ContentColumn(
+                      alignment: Alignment.topCenter,
+                      child: EmptyState(
+                        icon: Icons.event_busy_outlined,
+                        title: context.l10n.searchSeasonEmptyTitle,
+                        message: context.l10n.searchAiringEmptyMessage,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : ContentColumn(
+                alignment: Alignment.topCenter,
+                child: PosterGrid(
+                  key: PageStorageKey<YearSeason>(season),
+                  itemCount: anime.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final CatalogAnime item = anime[index];
+                    return CatalogCard(
+                      anime: item,
+                      inLibrary: inLibrary.contains(item.malId),
+                      onOpen: () =>
+                          context.push(RoutePaths.animeDetail(item.malId)),
+                    );
+                  },
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+/// Requests [provider] again. On failure the last list stays and a snack bar
+/// says why; the provider has already reported any unexpected error.
+Future<void> _refresh(
+  BuildContext context,
+  WidgetRef ref,
+  FutureProvider<List<CatalogAnime>> provider,
+) async {
+  try {
+    final Future<List<CatalogAnime>> reload = ref.refresh(provider.future);
+    await reload;
+  } on Object catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(catalogErrorMessage(context.l10n, error))),
+    );
+  }
+}
+
+class _AiringSkeleton extends StatelessWidget {
+  const _AiringSkeleton({required this.tabs});
+
+  /// Whether to leave the space of the weekday tabs.
+  final bool tabs;
+
+  @override
+  Widget build(BuildContext context) {
+    return ContentColumn(
       alignment: Alignment.topCenter,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.s12),
-            child: Row(
-              children: <Widget>[
-                Skeleton(width: 110, height: 16),
-                Spacer(),
-                Skeleton(width: 70, height: 12),
-              ],
-            ),
-          ),
-          SizedBox(height: AppSpacing.s48),
-          Expanded(child: PosterGridSkeleton()),
+          SizedBox(height: tabs ? AppSpacing.s48 : AppSpacing.s16),
+          const Expanded(child: PosterGridSkeleton()),
         ],
       ),
     );

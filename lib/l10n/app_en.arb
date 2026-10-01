@@ -68,6 +68,11 @@
   "searchAiringEmptyTitle": "Nothing airing",
   "searchAiringEmptyMessage": "MyAnimeList has no anime for this season yet.",
   "searchAiringDayEmpty": "Nothing airs on this day",
+  "searchSeasonPrevious": "Previous season",
+  "searchSeasonNext": "Next season",
+  "searchSeasonBackToCurrent": "Back to the current season",
+  "searchSeasonCount": "{count, plural, =1{1 series} other{{count} series}}",
+  "searchSeasonEmptyTitle": "Nothing for this season",
   "searchNothingMatching": "Nothing matches “{query}”.",
 
   "catalogCardInLibrary": "In library",
