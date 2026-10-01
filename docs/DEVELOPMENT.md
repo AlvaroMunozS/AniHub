@@ -390,7 +390,9 @@ legacy launcher mipmaps and the adaptive icon layers in `android/`. The
 adaptive foreground scales the glyph to 75% around (54, 54) so it survives
 circular masks. The notification icon
 `android/app/src/main/res/drawable/ic_stat_anihub.xml` is derived from the
-same glyph paths, as a single-color vector.
+same glyph paths, as a single-color vector. `res/raw/keep.xml` keeps it in
+release builds: only a Dart string names it, so the resource shrinker would
+otherwise strip it and every notification call would fail.
 
 ## Signing a release build
 
