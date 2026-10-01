@@ -126,6 +126,20 @@
   "searchAiringEmptyTitle": "Nada en emisión",
   "searchAiringEmptyMessage": "MyAnimeList aún no tiene anime para esta temporada.",
   "searchAiringDayEmpty": "Nada se emite este día",
+  "searchSeasonPrevious": "Temporada anterior",
+  "searchSeasonNext": "Temporada siguiente",
+  "searchSeasonBackToCurrent": "Volver a la temporada actual",
+  "@searchSeasonBackToCurrent": {
+    "description": "Hint read by the screen reader on the season name when Browse shows another season."
+  },
+  "searchSeasonCount": "{count, plural, =1{1 serie} other{{count} series}}",
+  "@searchSeasonCount": {
+    "description": "How many series a past or upcoming season lists in Browse.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "searchSeasonEmptyTitle": "Nada para esta temporada",
   "searchNothingMatching": "No hay nada para «{query}».",
   "@searchNothingMatching": {
     "placeholders": {

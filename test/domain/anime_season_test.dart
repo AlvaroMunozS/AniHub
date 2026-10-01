@@ -17,4 +17,14 @@ void main() {
     expect(() => AnimeSeason.ofMonth(0), throwsRangeError);
     expect(() => AnimeSeason.ofMonth(13), throwsRangeError);
   });
+
+  test('steps forward and back across the year', () {
+    const YearSeason fall = (year: 2026, season: AnimeSeason.fall);
+    const YearSeason winter = (year: 2026, season: AnimeSeason.winter);
+
+    expect(fall.shifted(1), (year: 2027, season: AnimeSeason.winter));
+    expect(winter.shifted(-1), (year: 2025, season: AnimeSeason.fall));
+    expect(fall.shifted(-5), (year: 2025, season: AnimeSeason.summer));
+    expect(fall.shifted(0), fall);
+  });
 }

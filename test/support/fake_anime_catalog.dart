@@ -11,14 +11,17 @@ import 'sample_data.dart';
 ///
 /// An unknown id throws [CatalogNotFoundException]. The airing list is
 /// [airing], or else the airing anime of the catalog, whatever the season.
+/// The premieres of any season are [premieres], or else the whole catalog.
 /// When [error] is set, searches and lookups throw it instead, and
-/// [airingError] does the same for the airing list.
+/// [airingError] and [premiereError] do the same for the airing list and the
+/// premieres.
 class FakeAnimeCatalog implements AnimeCatalog {
   FakeAnimeCatalog({
     List<CatalogAnime>? catalog,
     this.airing,
     this.error,
     this.airingError,
+    this.premieres,
     this.minQueryLength = 3,
   }) : _catalog = catalog ?? sampleCatalog;
 
@@ -26,9 +29,14 @@ class FakeAnimeCatalog implements AnimeCatalog {
   final List<CatalogAnime>? airing;
   final Object? error;
   Object? airingError;
+  final List<CatalogAnime>? premieres;
+  Object? premiereError;
 
   /// The seasons [airingIn] was asked for, in order.
   final List<(int, AnimeSeason)> airingRequests = <(int, AnimeSeason)>[];
+
+  /// The seasons [premieringIn] was asked for, in order.
+  final List<(int, AnimeSeason)> premiereRequests = <(int, AnimeSeason)>[];
 
   @override
   final int minQueryLength;
@@ -61,5 +69,12 @@ class FakeAnimeCatalog implements AnimeCatalog {
     return List<CatalogAnime>.unmodifiable(
       airing ?? _catalog.where((CatalogAnime a) => a.isAiring),
     );
+  }
+
+  @override
+  Future<List<CatalogAnime>> premieringIn(int year, AnimeSeason season) async {
+    premiereRequests.add((year, season));
+    if (premiereError case final Object error) throw error;
+    return List<CatalogAnime>.unmodifiable(premieres ?? _catalog);
   }
 }

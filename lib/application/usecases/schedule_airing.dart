@@ -1,6 +1,6 @@
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/values/broadcast.dart';
-import 'title_key.dart';
+import 'relevance.dart';
 
 /// An anime of an [AiringSchedule] with its broadcast time in local time.
 class ScheduledAnime {
@@ -79,7 +79,7 @@ class ScheduleAiring {
     for (final List<ScheduledAnime> day in byWeekday.values) {
       day.sort(
         (ScheduledAnime a, ScheduledAnime b) =>
-            _compareRelevance(a.anime, b.anime),
+            compareRelevance(a.anime, b.anime),
       );
     }
     return AiringSchedule(
@@ -127,15 +127,4 @@ class ScheduleAiring {
       ScheduledAnime(anime, hour: local.hour, minute: local.minute),
     );
   }
-}
-
-/// Most followed first, then by title; unknown counts go last.
-int _compareRelevance(CatalogAnime a, CatalogAnime b) {
-  final int membersCompare = (b.memberCount ?? -1).compareTo(
-    a.memberCount ?? -1,
-  );
-  if (membersCompare != 0) return membersCompare;
-  final int keyCompare = titleKey(a.title).compareTo(titleKey(b.title));
-  if (keyCompare != 0) return keyCompare;
-  return a.malId.compareTo(b.malId);
 }

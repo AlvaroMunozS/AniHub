@@ -27,4 +27,11 @@ abstract interface class AnimeCatalog {
   /// Only series are listed, not films, specials or music videos. Throws a
   /// [CatalogException] if the request fails.
   Future<List<CatalogAnime>> airingIn(int year, AnimeSeason season);
+
+  /// Returns the series that premiere in the [season] of [year], including
+  /// those that have finished and those not aired yet.
+  ///
+  /// Only series are listed, as in [airingIn]. Throws a [CatalogException] if
+  /// the request fails.
+  Future<List<CatalogAnime>> premieringIn(int year, AnimeSeason season);
 }
