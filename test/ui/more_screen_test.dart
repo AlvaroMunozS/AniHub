@@ -49,6 +49,7 @@ void main() {
 
     for (final (String label, String path) in <(String, String)>[
       ('Apariencia', RoutePaths.appearanceSettings),
+      ('Notificaciones', RoutePaths.notificationSettings),
       ('Copia de seguridad', RoutePaths.backupSettings),
       ('Almacenamiento', RoutePaths.storageSettings),
     ]) {

@@ -202,6 +202,7 @@ class MalCatalog implements AnimeCatalog {
         {'num_list_users': final int count} when count >= 0 => count,
         _ => null,
       },
+      startDate: parseStartDate(node),
     );
   }
 }

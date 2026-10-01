@@ -181,6 +181,16 @@
   "aboutUpdateChecksumFailed": "The download is corrupted. Try again",
   "aboutUpdateInstallFailed": "Could not install the update",
 
+  "settingsNotifications": "Notifications",
+  "notificationsAiring": "Airing",
+  "notificationsAiringReminders": "Notify of new episodes",
+  "notificationsAiringRemindersSubtitle": "Sends a notification whenever an episode of an anime you are watching airs",
+  "notificationsBlocked": "Android isn't allowing AniHub to send notifications.",
+  "notificationsOpenSystemSettings": "Open settings",
+  "reminderChannelName": "Airing",
+  "reminderChannelDescription": "A reminder when a series you're watching airs in Japan.",
+  "reminderBody": "Now airing in Japan",
+
   "startupErrorTitle": "Could not open your library",
   "startupErrorMessage": "Close the app and open it again. If it keeps happening, restart your phone or free up storage space. Your library has not been deleted."
 }

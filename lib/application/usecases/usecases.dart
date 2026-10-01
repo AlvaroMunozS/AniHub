@@ -18,6 +18,7 @@ export 'library_item.dart';
 export 'library_order.dart';
 export 'link_franchise_chains.dart';
 export 'list_entries.dart';
+export 'plan_airing_reminders.dart';
 export 'rank_season.dart';
 export 'remove_entry.dart';
 export 'schedule_airing.dart';

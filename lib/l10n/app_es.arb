@@ -298,6 +298,16 @@
   "aboutUpdateChecksumFailed": "La descarga está dañada. Vuelve a intentarlo",
   "aboutUpdateInstallFailed": "No se pudo instalar la actualización",
 
+  "settingsNotifications": "Notificaciones",
+  "notificationsAiring": "Emisiones",
+  "notificationsAiringReminders": "Avisar de capítulos nuevos",
+  "notificationsAiringRemindersSubtitle": "Envía una notificación cada vez que un capítulo de un anime que estás viendo se emita",
+  "notificationsBlocked": "Android no permite notificaciones a AniHub.",
+  "notificationsOpenSystemSettings": "Abrir ajustes",
+  "reminderChannelName": "Emisiones",
+  "reminderChannelDescription": "Un aviso cuando se emite en Japón una serie que estás viendo.",
+  "reminderBody": "Se está emitiendo en Japón",
+
   "startupErrorTitle": "No se pudo abrir tu biblioteca",
   "startupErrorMessage": "Cierra la app y vuelve a abrirla. Si sigue igual, reinicia el teléfono o libera espacio de almacenamiento. Tu biblioteca no se ha borrado."
 }

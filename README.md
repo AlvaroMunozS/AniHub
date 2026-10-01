@@ -37,6 +37,8 @@ The app is available in Spanish and English.
 - Catalog search powered by [MyAnimeList](https://myanimelist.net).
 - The library works offline, and cover images are cached on the device.
 - Light, dark and pure black themes, with a choice of accent color.
+- Optional reminders, off by default, when a series you are watching airs in
+  Japan, in *Settings → Notifications*.
 - Settings for the theme, the app language and the image cache.
 - Library export and import as an `anihub-library` JSON file in
   *Settings → Backup* ([format](docs/DEVELOPMENT.md#backup-format)).

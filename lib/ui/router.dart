@@ -11,6 +11,7 @@ import 'screens/more_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/settings/appearance_settings_screen.dart';
 import 'screens/settings/backup_settings_screen.dart';
+import 'screens/settings/notification_settings_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/settings/storage_settings_screen.dart';
 import 'shell/app_shell.dart';
@@ -58,6 +59,7 @@ class RoutePaths {
   static const String about = '/more/about';
   static const String settings = '/more/settings';
   static const String appearanceSettings = '/more/settings/appearance';
+  static const String notificationSettings = '/more/settings/notifications';
   static const String backupSettings = '/more/settings/backup';
   static const String storageSettings = '/more/settings/storage';
 
@@ -142,6 +144,11 @@ GoRouter buildRouter({String? initialLocation}) {
                     path: 'appearance',
                     builder: (BuildContext context, GoRouterState state) =>
                         const AppearanceSettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'notifications',
+                    builder: (BuildContext context, GoRouterState state) =>
+                        const NotificationSettingsScreen(),
                   ),
                   GoRoute(
                     path: 'backup',
