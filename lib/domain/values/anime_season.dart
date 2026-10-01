@@ -12,3 +12,19 @@ enum AnimeSeason {
     return values[(month - 1) ~/ 3];
   }
 }
+
+/// A season with its year.
+typedef YearSeason = ({int year, AnimeSeason season});
+
+extension YearSeasonSteps on YearSeason {
+  /// Returns the season [count] seasons after this one, or before it when
+  /// [count] is negative.
+  YearSeason shifted(int count) {
+    final int perYear = AnimeSeason.values.length;
+    final int index = year * perYear + season.index + count;
+    return (
+      year: index ~/ perYear,
+      season: AnimeSeason.values[index % perYear],
+    );
+  }
+}

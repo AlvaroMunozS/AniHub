@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../application/usecases/usecases.dart';
 import '../../../domain/entities/catalog_anime.dart';
+import '../../../domain/values/anime_season.dart';
 import '../../../l10n/l10n.dart';
 import '../../catalog_messages.dart';
 import '../../format/anime_meta.dart';
@@ -67,7 +68,7 @@ class _AiringViewState extends ConsumerState<AiringView> {
   @override
   Widget build(BuildContext context) {
     final DateTime now = ref.watch(clockProvider)();
-    final AiringSeason season = seasonAt(now);
+    final YearSeason season = seasonAt(now);
     final AsyncValue<List<CatalogAnime>> airing = ref.watch(
       airingAnimeProvider(season),
     );
@@ -116,7 +117,7 @@ class _AiringTabs extends ConsumerWidget {
     required this.inLibrary,
   });
 
-  final AiringSeason season;
+  final YearSeason season;
 
   /// From [DateTime.monday] to [DateTime.sunday].
   final int today;
@@ -206,7 +207,7 @@ class _AiringTabs extends ConsumerWidget {
 class _AiringHeader extends StatelessWidget {
   const _AiringHeader({required this.season, required this.count});
 
-  final AiringSeason season;
+  final YearSeason season;
   final int count;
 
   @override
@@ -282,7 +283,7 @@ class _AiringGrid extends ConsumerWidget {
   });
 
   /// The season that pulling to refresh requests again.
-  final AiringSeason season;
+  final YearSeason season;
 
   /// Keeps the scroll position of each tab apart.
   final int storageKey;
