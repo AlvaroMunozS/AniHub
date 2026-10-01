@@ -370,7 +370,9 @@ every theme, checked by `test/ui/theme/accents_test.dart`.
 `tool/anihub-icon.svg` is the source of `assets/images/app_icon.png`, the
 legacy launcher mipmaps and the adaptive icon layers in `android/`. The
 adaptive foreground scales the glyph to 75% around (54, 54) so it survives
-circular masks.
+circular masks. The notification icon
+`android/app/src/main/res/drawable/ic_stat_anihub.xml` is derived from the
+same glyph paths, as a single-color vector.
 
 ## Signing a release build
 
