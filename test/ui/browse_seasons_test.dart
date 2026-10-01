@@ -8,6 +8,7 @@ import 'package:anihub/domain/values/anime_season.dart';
 import 'package:anihub/domain/values/broadcast.dart';
 import 'package:anihub/ui/providers.dart';
 import 'package:anihub/ui/router.dart';
+import 'package:anihub/ui/theme/app_theme.dart';
 import 'package:anihub/ui/widgets/airing/airing_view.dart';
 import 'package:anihub/ui/widgets/catalog_card.dart';
 import 'package:anihub/ui/widgets/skeleton.dart';
@@ -277,5 +278,97 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Primavera 2026'), findsOneWidget);
+  });
+
+  testWidgets('colors the season name only away from the current season', (
+    WidgetTester tester,
+  ) async {
+    await _pumpBrowse(tester, catalog: _catalog());
+    final Color accent = tester
+        .element(find.text('Verano 2026'))
+        .palette
+        .accent;
+
+    expect(
+      tester.widget<Text>(find.text('Verano 2026')).style?.color,
+      isNot(accent),
+    );
+
+    await _previous(tester);
+
+    expect(
+      tester.widget<Text>(find.text('Primavera 2026')).style?.color,
+      accent,
+    );
+  });
+
+  testWidgets('announces the season and how to go back', (
+    WidgetTester tester,
+  ) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await _pumpBrowse(tester, catalog: _catalog());
+
+    expect(
+      tester.getSemantics(find.text('Verano 2026')),
+      isSemantics(isLiveRegion: true, isButton: false),
+    );
+
+    await _previous(tester);
+
+    expect(
+      tester.getSemantics(find.text('Primavera 2026')),
+      isSemantics(
+        isLiveRegion: true,
+        isButton: true,
+        hint: spanish.searchSeasonBackToCurrent,
+      ),
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('slides the season name in', (WidgetTester tester) async {
+    await _pumpBrowse(tester, catalog: _catalog());
+
+    await tester.tap(find.byTooltip(spanish.searchSeasonPrevious));
+    await tester.pump();
+
+    expect(find.text('Verano 2026'), findsOneWidget);
+    expect(find.text('Primavera 2026'), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Verano 2026'), findsNothing);
+  });
+
+  testWidgets('switches the season name at once with reduced motion', (
+    WidgetTester tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await _pumpBrowse(tester, catalog: _catalog());
+
+    await tester.tap(find.byTooltip(spanish.searchSeasonPrevious));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Verano 2026'), findsNothing);
+    expect(find.text('Primavera 2026'), findsOneWidget);
+  });
+
+  testWidgets('fits the header with large text on a narrow phone', (
+    WidgetTester tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await _pumpBrowse(tester, catalog: _catalog());
+    tester.view.physicalSize =
+        const Size(360, 800) * tester.view.devicePixelRatio;
+    await tester.pumpAndSettle();
+
+    await _previous(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Primavera 2026'), findsOneWidget);
+    expect(find.text('1 serie'), findsOneWidget);
   });
 }

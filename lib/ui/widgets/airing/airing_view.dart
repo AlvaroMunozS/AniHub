@@ -375,10 +375,13 @@ class _SeasonHeader extends ConsumerWidget {
                   icon: const Icon(Icons.chevron_left, size: AppSizes.iconMd),
                   onPressed: stepper.previous,
                 ),
-                _SeasonTitle(
-                  season: season,
-                  offset: offset,
-                  onReset: stepper.reset,
+                // Shrinks and wraps instead of overflowing with large text.
+                Flexible(
+                  child: _SeasonTitle(
+                    season: season,
+                    offset: offset,
+                    onReset: stepper.reset,
+                  ),
                 ),
                 IconButton(
                   tooltip: context.l10n.searchSeasonNext,
@@ -408,8 +411,12 @@ class _SeasonHeader extends ConsumerWidget {
   }
 }
 
-/// The season's name; away from the current season, tapping it goes back.
-class _SeasonTitle extends StatelessWidget {
+/// The season's name; away from the current season it takes the accent and
+/// tapping it goes back.
+///
+/// The name slides in from the side the user stepped towards, so the
+/// direction of travel is visible.
+class _SeasonTitle extends StatefulWidget {
   const _SeasonTitle({
     required this.season,
     required this.offset,
@@ -421,18 +428,75 @@ class _SeasonTitle extends StatelessWidget {
   final VoidCallback onReset;
 
   @override
+  State<_SeasonTitle> createState() => _SeasonTitleState();
+}
+
+class _SeasonTitleState extends State<_SeasonTitle> {
+  /// 1 when the last step went forward, -1 when it went back.
+  int _direction = 1;
+
+  @override
+  void didUpdateWidget(_SeasonTitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.offset != oldWidget.offset) {
+      _direction = widget.offset > oldWidget.offset ? 1 : -1;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: offset == 0 ? null : onReset,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.s4,
-          vertical: AppSpacing.s12,
-        ),
-        child: Text(
-          formatSeasonOf(context.l10n, season.season, season.year),
-          style: Theme.of(context).textTheme.titleMedium,
+    final bool away = widget.offset != 0;
+    final ValueKey<YearSeason> key = ValueKey<YearSeason>(widget.season);
+    return Semantics(
+      liveRegion: true,
+      button: away,
+      hint: away ? context.l10n.searchSeasonBackToCurrent : null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: away ? widget.onReset : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s4,
+            vertical: AppSpacing.s12,
+          ),
+          child: AnimatedSwitcher(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : AppDuration.base,
+            switchInCurve: AppDuration.curve,
+            switchOutCurve: AppDuration.curve,
+            layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
+              alignment: Alignment.centerLeft,
+              children: <Widget>[...previous, ?current],
+            ),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              // The outgoing name runs the animation backwards, so it leaves
+              // towards the side opposite the incoming one.
+              final double side = child.key == key
+                  ? _direction.toDouble()
+                  : -_direction.toDouble();
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(0.25 * side, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: Text(
+              formatSeasonOf(
+                context.l10n,
+                widget.season.season,
+                widget.season.year,
+              ),
+              key: key,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: away ? context.palette.accent : null),
+            ),
+          ),
         ),
       ),
     );
