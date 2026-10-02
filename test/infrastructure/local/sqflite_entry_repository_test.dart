@@ -182,6 +182,24 @@ void main() {
       expect(entry.isFavorite, isFalse);
     });
 
+    test('keeps a completed entry that is not a favorite', () async {
+      await db.insert(
+        'entries',
+        _rowV1(
+          id: 'a',
+          malId: 1,
+          status: 'completed',
+          updatedAt: '2024-03-01T12:00:00.000Z',
+        ),
+      );
+
+      await upgradeAniHubSchema(db, 1, 2);
+
+      final Entry entry = (await readAll()).single;
+      expect(entry.status, WatchStatus.completed);
+      expect(entry.isFavorite, isFalse);
+    });
+
     test('recreates the updatedAt index', () async {
       await upgradeAniHubSchema(db, 1, 2);
 
@@ -255,5 +273,62 @@ void main() {
       whereArgs: <Object?>['index', 'idx_entries_updated_at'],
     );
     expect(indexes, hasLength(1));
+  });
+
+  test('openAniHubDatabase leaves a version 1 library intact when the '
+      'upgrade fails', () async {
+    final Directory dir = await Directory.systemTemp.createTemp('anihub_db');
+    addTearDown(() => dir.delete(recursive: true));
+    sqflite.databaseFactory = databaseFactoryFfi;
+    await databaseFactoryFfi.setDatabasesPath(dir.path);
+    final String path = p.join(dir.path, 'library.db');
+    final Database v1 = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(version: 1, onCreate: _createSchemaV1),
+    );
+    final Map<String, Object?> valid = _rowV1(
+      id: 'a',
+      malId: 1,
+      status: 'completed',
+      isFavorite: 1,
+      updatedAt: '2024-03-01T12:00:00.000Z',
+    );
+    // The migration parses every timestamp, so this row makes it throw
+    // after the new table exists and before the old one is dropped.
+    final Map<String, Object?> broken = _rowV1(
+      id: 'b',
+      malId: 2,
+      status: 'watching',
+      updatedAt: 'not a date',
+    );
+    await v1.insert('entries', valid);
+    await v1.insert('entries', broken);
+    await v1.close();
+
+    await expectLater(openAniHubDatabase(), throwsFormatException);
+
+    // Opened without a version so that nothing migrates on this open.
+    final Database db = await databaseFactoryFfi.openDatabase(path);
+    addTearDown(db.close);
+    expect(await db.getVersion(), 1);
+    final List<Map<String, Object?>> columns = await db.rawQuery(
+      'PRAGMA table_info(entries)',
+    );
+    expect(
+      columns.singleWhere(
+        (Map<String, Object?> c) => c['name'] == 'updated_at',
+      )['type'],
+      'TEXT',
+    );
+    expect(await db.query('entries', orderBy: 'mal_id'), <Map<String, Object?>>[
+      valid,
+      broken,
+    ]);
+    final List<Map<String, Object?>> leftovers = await db.query(
+      'sqlite_master',
+      where: 'name = ?',
+      whereArgs: <Object?>['entries_v2'],
+    );
+    expect(leftovers, isEmpty);
   });
 }
