@@ -17,17 +17,16 @@ for approval in the `release` environment before it runs.
    way, or adds a few requests. Earning money through the app also needs
    MyAnimeList's written authorization, requested through the same form
    (section 3(a)(xiv)).
-1. Open a pull request titled `chore: release X.Y.Z` that:
+1. Commit `chore: release X.Y.Z` on `main`, which:
    - renames `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`,
      adds a new empty `## [Unreleased]` above it and updates the comparison
      links at the bottom;
    - bumps `version` in `pubspec.yaml` to `X.Y.Z+N`, where `N` is the previous
      build number plus one.
-2. Squash-merge it once CI passes.
-3. Tag the merge commit and push the tag:
+2. Push `main`. The `pre-push` hook runs the checks.
+3. Tag the commit and push the tag:
 
    ```bash
-   git switch main && git pull
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
@@ -45,10 +44,10 @@ not signed with the certificate in `ANDROID_CERT_SHA256`.
 A tag with a suffix, such as `vX.Y.Z-beta.N`, is published as a pre-release.
 The app offers it only to users who turn on *Recibir versiones preliminares*.
 
-1. Open a pull request titled `chore: release X.Y.Z-beta.N` that bumps
-   `version` in `pubspec.yaml` to `X.Y.Z-beta.N+B`. Leave `CHANGELOG.md` as
-   it is: the notes come from `## [Unreleased]`, which must not be empty.
-2. Merge, tag and approve as in the steps above.
+1. Commit `chore: release X.Y.Z-beta.N` on `main`, bumping `version` in
+   `pubspec.yaml` to `X.Y.Z-beta.N+B`. Leave `CHANGELOG.md` as it is: the
+   notes come from `## [Unreleased]`, which must not be empty.
+2. Push, tag and approve as in the steps above.
 
 The build number still increases with every release, pre-release or not, and
 the stable `X.Y.Z` gets a higher one than its pre-releases.

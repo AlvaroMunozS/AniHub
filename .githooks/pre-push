@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Keeps main formatted, analyzed and tested: nothing else checks it before a
+# release.
+# Install once with: git config core.hooksPath .githooks
+set -euo pipefail
+
+zero=0000000000000000000000000000000000000000
+check=false
+while read -r local_ref local_sha remote_ref _; do
+  if [ "$remote_ref" != refs/heads/main ] || [ "$local_sha" = "$zero" ]; then
+    continue
+  fi
+  # The checks run on the working tree, so it must be exactly what is pushed.
+  if [ "$local_sha" != "$(git rev-parse HEAD)" ]; then
+    echo "pre-push: check out $local_ref before pushing it to main." >&2
+    exit 1
+  fi
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "pre-push: commit or stash local changes before pushing to main." >&2
+    exit 1
+  fi
+  check=true
+done
+
+if [ "$check" = true ]; then
+  # Without it, analyze and test would quietly rewrite an outdated lockfile.
+  flutter pub get --enforce-lockfile
+  dart format --output=none --set-exit-if-changed lib test
+  flutter analyze
+  # More workers make the machine unresponsive.
+  flutter test --concurrency=2
+fi

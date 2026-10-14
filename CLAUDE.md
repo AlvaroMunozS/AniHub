@@ -20,7 +20,8 @@ are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The release process is in
 - Follow the code style in `docs/DEVELOPMENT.md`. A comment explains why, not
   what, and never tells the history of the code.
 - `dart format lib test`, `flutter analyze` (no issues) and `flutter test`
-  must pass before a pull request is merged.
+  must pass before a change reaches `main`. The `pre-push` hook in
+  `.githooks/` enforces it.
 - No secrets, personal paths or personal data in the repository.
 
 ## Scope
@@ -37,23 +38,28 @@ is in [CONTRIBUTING.md](CONTRIBUTING.md#scope).
    git-ignored and never committed. Writing a plan is not approval to
    implement it.
 3. Work on a `feat/<topic>`, `fix/<topic>` or `chore/<topic>` branch from
-   `main`. Direct pushes to `main` are blocked.
-4. Open a pull request with a Conventional Commits title (it becomes the squash
-   commit message), `Closes #N` in the body and the template checklist filled.
-5. User-facing changes add a line under `## [Unreleased]` in `CHANGELOG.md`,
+   `main`. Release commits are the exception: they go straight on `main`
+   (see [docs/RELEASING.md](docs/RELEASING.md)).
+4. User-facing changes add a line under `## [Unreleased]` in `CHANGELOG.md`,
    written for users.
-6. Review the diff against the code style before merging. When the change was
+5. Review the diff against the code style before merging. When the change was
    written by an agent, a different agent reviews it.
-7. Squash-merge once CI passes.
+6. Update `main` with `git pull`, squash-merge locally with
+   `git merge --squash <branch>` and commit with a Conventional Commits message
+   and `Closes #N` in the body. Push `main` once the maintainer confirms. The
+   `pre-push` hook runs the checks; a failure is fixed, never skipped with
+   `--no-verify`.
+
+Changes are not merged through pull requests, so CI runs only on Dependabot's.
+The release workflow runs the checks again before building.
 
 ### Parallel agents
 
 - One `git worktree` and one branch (`feat/<topic>-<track>`) per agent, with
   exclusive ownership of its folders.
 - An agent that needs to touch another track's files stops and reports it.
-- Agents do not push, merge or open pull requests. The coordinating agent
-  merges the tracks into `feat/<topic>` in the planned order and opens a single
-  pull request.
+- Agents do not push or merge. The coordinating agent merges the tracks into
+  `feat/<topic>` in the planned order and then follows Workflow 5 and 6.
 
 ## Superpowers
 
@@ -70,14 +76,16 @@ is in [CONTRIBUTING.md](CONTRIBUTING.md#scope).
   them before implementation starts.
 - The test-first rule applies to what a change touches. Existing code and
   tests are not rewritten only to meet it.
-- The review in Workflow 6 uses `requesting-code-review`. The agent that opens
-  the pull request runs `finishing-a-development-branch` and always takes the
-  pull request option, never a local merge; in parallel tracks, track agents
-  stop and report instead.
+- The review in Workflow 5 uses `requesting-code-review`. The agent that
+  merges runs `finishing-a-development-branch` and takes the local merge
+  option, never the pull request one, but merges as in Workflow 6: a squash,
+  not a plain merge, and the branch is deleted with `git branch -D` after the
+  push. In parallel tracks, track agents stop and report instead.
 
 ## Commands
 
 ```bash
+git config core.hooksPath .githooks                        # once per clone
 flutter run -d <device> --dart-define-from-file=env.json   # env.json holds MAL_CLIENT_ID
 flutter test
 flutter analyze

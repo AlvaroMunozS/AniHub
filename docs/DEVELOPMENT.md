@@ -56,18 +56,27 @@ flutter run -d <device> --dart-define-from-file=env.json
 Without a client id the app still runs, but search and anime details show an
 error. Tests do not need one.
 
-Run the same checks as CI before opening a pull request (CI runs the formatter
-in check mode):
+Install the Git hooks once per clone:
 
 ```bash
-dart format lib test
-flutter analyze
-flutter test
+git config core.hooksPath .githooks
 ```
 
-CI skips these checks when a change touches no code, build or workflow files,
-and builds a debug APK only when `android/`, `assets/`, `pubspec.*` or the CI
-workflow change.
+Whenever `main` is pushed, the `pre-push` hook runs these checks. It refuses
+the push if the working tree has uncommitted or untracked files, or is not the
+commit being pushed, since the checks run on the working tree:
+
+```bash
+flutter pub get --enforce-lockfile
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test --concurrency=2
+```
+
+CI runs the same checks only on pull requests, which come from Dependabot. It
+skips them when a change touches no code, build or workflow files, and builds a
+debug APK only when `android/`, `assets/`, `pubspec.*` or the CI workflow
+change.
 
 ## Local storage
 
