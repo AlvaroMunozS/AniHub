@@ -2,12 +2,14 @@ import '../../domain/entities/catalog_anime.dart';
 import '../../domain/values/airing_reminder.dart';
 import '../../domain/values/broadcast.dart';
 import '../../domain/values/release_date.dart';
+import 'has_ended.dart';
 
 /// Turns the airing list into reminders of the series being watched.
 ///
 /// Only [horizon] ahead is planned: the app plans again whenever it is
 /// opened, and a series that ends or moves its slot leaves the airing list,
-/// so its reminders stop without asking MyAnimeList in the background.
+/// so its reminders stop without asking MyAnimeList in the background. A
+/// series MyAnimeList still lists after it [hasEnded] is not reminded either.
 /// The popularity threshold of `ScheduleAiring` does not apply: these are the
 /// user's own series.
 class PlanAiringReminders {
@@ -25,7 +27,11 @@ class PlanAiringReminders {
     final List<AiringReminder> reminders = <AiringReminder>[];
     for (final CatalogAnime anime in airing) {
       final Broadcast? broadcast = anime.broadcast;
-      if (!watching.contains(anime.malId) || broadcast == null) continue;
+      if (!watching.contains(anime.malId) ||
+          broadcast == null ||
+          hasEnded(anime, now: now)) {
+        continue;
+      }
       final DateTime? premiere = _premiere(anime);
       if (!anime.isAiring && premiere == null) continue;
       for (

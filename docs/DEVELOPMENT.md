@@ -197,7 +197,9 @@ dialog, so the file can go to the device or to a cloud storage app.
   which holds everything `currently_airing` whenever it started (*One
   Piece*, the second half of a two-cour series). Both allow 500 results per
   page. Only `tv` and `ona` are kept, and anime that have already finished
-  are dropped. `num_list_users` orders them.
+  are dropped. `num_list_users` orders them. MyAnimeList can keep a finished
+  series as `currently_airing` for weeks, so `hasEnded` also counts its
+  episodes (see *Airing schedule*).
 - `broadcast` gives `day_of_the_week` and `start_time` (`HH:mm`) in Japan
   Standard Time. Many ONAs have none, or `other` as the day.
 - Queries shorter than three characters are rejected with HTTP 400, so the app
@@ -297,7 +299,14 @@ tap installs it. Nothing is requested until the user taps.
   fewer than 5000 are left out: about three in four airing series are niche web
   series or children's shows. No count is shown. Series being watched are listed
   whatever their count: the threshold is there to find new series, not to hide
-  the user's own. The bookmark in the search bar, remembered under
+  the user's own. MyAnimeList can keep a series as airing for weeks after it
+  ends, so one whose last episode, counted weekly from its start date, aired
+  more than two weeks ago is taken as ended (`hasEnded`) and left out, the
+  user's own included; the two weeks leave room for breaks and recaps. A
+  series whose breaks add up to more slack drops out early, which is accepted
+  over listing ended series for weeks. Without an episode count or a full
+  start date, as with *One Piece*, the series stays until MyAnimeList marks it
+  finished. The bookmark in the search bar, remembered under
   `browse.airing.onlyMine`, shows only those, each day by local broadcast time,
   the ones without a time last, and dims the days none of them airs; it shares
   the clear button's slot, so it shows only while the field is empty, and only
@@ -337,7 +346,8 @@ tap installs it. Nothing is requested until the user taps.
   again after a restart. The app asks for `POST_NOTIFICATIONS` on Android 13
   and later. The time is the Japanese broadcast, so streaming services may
   publish later. The popularity threshold of *Browse* does not apply: every
-  series in *Watching* that appears in the airing list gets a reminder.
+  series in *Watching* that appears in the airing list gets a reminder, unless
+  it has ended by its episode count (see *Airing schedule*).
   Force-stopping the app, or an OEM task killer that acts like it, clears the
   scheduled alarms until the app is opened again.
 - **Manual updates.** The app looks for a new version only when asked, so it

@@ -1,6 +1,7 @@
 import 'package:anihub/application/usecases/usecases.dart';
 import 'package:anihub/domain/entities/catalog_anime.dart';
 import 'package:anihub/domain/values/broadcast.dart';
+import 'package:anihub/domain/values/release_date.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Thursday 24 September 2026 at noon UTC.
@@ -252,6 +253,27 @@ void main() {
     );
 
     expect(_titles(schedule.byWeekday[DateTime.monday]), <String>['Followed']);
+  });
+
+  test('leaves out a series past its last episode, even a kept one', () {
+    const Broadcast saturday = Broadcast(weekday: DateTime.saturday);
+    // Ten weekly episodes from 4 July end on 5 September, more than two weeks
+    // before now.
+    const CatalogAnime ended = CatalogAnime(
+      malId: 1,
+      title: 'Ended',
+      broadcast: saturday,
+      isAiring: true,
+      startDate: ReleaseDate(year: 2026, month: 7, day: 4),
+      totalEpisodes: 10,
+    );
+    final AiringSchedule schedule = _at(Duration.zero)(
+      <CatalogAnime>[ended, _anime(2, 'Airing', saturday)],
+      now: _now,
+      keep: <int>{1},
+    );
+
+    expect(_titles(schedule.byWeekday[DateTime.saturday]), <String>['Airing']);
   });
 
   test('leaves out a kept anime without a weekly slot', () {

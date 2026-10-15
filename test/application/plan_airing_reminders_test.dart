@@ -100,6 +100,26 @@ void main() {
     expect(reminders, isEmpty);
   });
 
+  test('leaves out a series past its last episode', () {
+    // Ten weekly episodes from 4 July end on 5 September, more than two weeks
+    // before now.
+    const CatalogAnime ended = CatalogAnime(
+      malId: 1,
+      title: 'Ended',
+      broadcast: friday23,
+      isAiring: true,
+      startDate: ReleaseDate(year: 2026, month: 7, day: 4),
+      totalEpisodes: 10,
+    );
+    final List<AiringReminder> reminders = plan(
+      <CatalogAnime>[ended],
+      watching: <int>{1},
+      now: _now,
+    );
+
+    expect(reminders, isEmpty);
+  });
+
   test('reminds niche series too', () {
     final List<AiringReminder> reminders = plan(
       <CatalogAnime>[_anime(1, 'Niche', broadcast: friday23, members: 10)],

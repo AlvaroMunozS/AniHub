@@ -13,6 +13,7 @@ export 'filter_mode.dart';
 export 'find_started_entries.dart';
 export 'franchises.dart';
 export 'group_library.dart';
+export 'has_ended.dart';
 export 'import_library.dart';
 export 'library_item.dart';
 export 'library_order.dart';

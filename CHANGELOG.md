@@ -6,6 +6,10 @@ All notable changes to AniHub are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- *Browse* no longer lists a series as airing, and airing reminders for it stop, once all its episodes have aired, even while MyAnimeList still shows it as airing. A series without a known episode count, like *One Piece*, stays until MyAnimeList marks it as finished.
+
 ## [1.4.0] - 2026-10-02
 
 ### Added

@@ -1,5 +1,6 @@
 import '../../domain/entities/catalog_anime.dart';
 import '../../domain/values/broadcast.dart';
+import 'has_ended.dart';
 import 'relevance.dart';
 
 /// An anime of an [AiringSchedule] with its broadcast time in local time.
@@ -75,7 +76,8 @@ class AiringSchedule {
 /// to find new series, not to hide the user's own, so the caller can name
 /// anime that are always kept. Anime without a weekly slot are left out too,
 /// since they have no day to go under; most are Chinese series MyAnimeList
-/// has no schedule for, or series released all at once.
+/// has no schedule for, or series released all at once. So are series that
+/// [hasEnded], even the kept ones.
 ///
 /// Broadcasts are in Japan Standard Time, so a late-night Japanese slot can
 /// fall on the previous day elsewhere. Each one is converted at its next
@@ -111,7 +113,7 @@ class ScheduleAiring {
         continue;
       }
       final Broadcast? broadcast = item.broadcast;
-      if (broadcast == null) continue;
+      if (broadcast == null || hasEnded(item, now: now)) continue;
       final (int weekday, ScheduledAnime scheduled) = _toLocal(
         item,
         broadcast,
